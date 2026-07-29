@@ -2,7 +2,9 @@
 
 **Dual n-back working memory training.**
 
-A single-page dual n-back trainer in the style of [Meridian](../meridian): no install, no account, no server. Sessions and stats live in your browser, and each completed session can post a datapoint to Beeminder.
+A single-page dual n-back trainer in the style of [Meridian](https://github.com/DrakeMorrison/meridian): no install, no account, no server. Sessions and stats live in your browser, and each completed session can post a datapoint to Beeminder.
+
+[**Live app →**](https://drakemorrison.github.io/NBacking/)
 
 ---
 

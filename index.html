@@ -759,27 +759,65 @@ let audioCtx = null;
 let speechOK = 'speechSynthesis' in window;
 
 function initAudio() {
-  if (!cfg.speech || !speechOK) {
-    if (!audioCtx) {
-      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
-    }
-    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
-  } else {
-    // warm up TTS so the first trial isn't delayed
-    try { speechSynthesis.getVoices(); } catch (e) {}
+  // iOS 17+: route audio as media playback so the silent switch and ringer
+  // volume don't mute it. No-op elsewhere.
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+  // Always set up the AudioContext here — mobile browsers only unlock audio
+  // started from a user gesture, and tones are the fallback even in speech mode.
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+  if (cfg.speech && speechOK) {
+    // Mobile browsers also require the first speak() to come from a user
+    // gesture; a silent utterance here unlocks TTS for the trial timer.
+    // getVoices() warms the voice list so trial 1 isn't delayed.
+    try {
+      speechSynthesis.getVoices();
+      const unlock = new SpeechSynthesisUtterance(' ');
+      unlock.volume = 0;
+      speechSynthesis.speak(unlock);
+    } catch (e) {}
   }
 }
 
+let currentUtter = null;  // held so Chrome doesn't GC an in-flight utterance
+let speechAudible = null; // null = untested; false = speak() is silently broken here
+
 function playStimulus(idx) {
-  if (cfg.speech && speechOK) {
+  if (cfg.speech && speechOK && speechAudible !== false) {
     try {
-      speechSynthesis.cancel();
+      // cancel() on an empty queue right before speak() drops the utterance
+      // on some Android Chrome versions — only cancel when needed.
+      if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(LETTERS[idx]);
       u.rate = 1.1;
+      u.volume = 1;
+      currentUtter = u;
+      // Until speech has proven itself once, watch for it never starting
+      // (mobile TTS can fail without throwing) and fall back to tones.
+      let watchdog = null;
+      if (speechAudible === null) {
+        watchdog = setTimeout(() => {
+          speechAudible = false;
+          try { speechSynthesis.cancel(); } catch (e) {}
+          playTone(idx);
+        }, 900);
+      }
+      u.onstart = () => { speechAudible = true; if (watchdog) clearTimeout(watchdog); };
+      u.onerror = (e) => {
+        if (watchdog) clearTimeout(watchdog);
+        if (e.error === 'interrupted' || e.error === 'canceled') return;
+        if (speechAudible !== true) { speechAudible = false; playTone(idx); }
+      };
       speechSynthesis.speak(u);
       return;
     } catch (e) { /* fall through to tone */ }
   }
+  playTone(idx);
+}
+
+function playTone(idx) {
   if (!audioCtx) return;
   try {
     const osc = audioCtx.createOscillator();

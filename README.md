@@ -4,6 +4,8 @@
 
 A single-page activity log in the style of [Meridian](https://github.com/DrakeMorrison/meridian): no install, no account, no server. Named for the part of the sundial that casts the shadow — Gnomon is built for shadowing: following someone's work (or your own) and logging what's happening as it happens, then turning the timestamps into a report of how much time went where. Everything lives in your browser.
 
+[**Live app →**](https://drakemorrison.github.io/gnomon/)
+
 ---
 
 ## How it works

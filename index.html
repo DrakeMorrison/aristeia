@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1d2021">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Sundial</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 20px; }
+
+  :root {
+    --bg: #1d2021;
+    --surface: #282828;
+    --surface2: #32302f;
+    --border: #504945;
+    --text: #ebdbb2;
+    --text-dim: #d5c4a1;
+    --muted: #928374;
+    --accent: #b8bb26;
+    --accent-dim: #98971a;
+    --accent2: #fabd2f;
+    --accent2-dim: #d79921;
+    --danger: #fb4934;
+    --danger-dim: #cc241d;
+    --orange: #fe8019;
+    --info: #83a598;
+    --mono: 'IBM Plex Mono', monospace;
+    --display: 'Cinzel', serif;
+    --data: 'Cormorant Garamond', serif;
+  }
+
+  body.light {
+    --bg: #f9f5d7;
+    --surface: #ebdbb2;
+    --surface2: #d5c4a1;
+    --border: #bdae93;
+    --text: #282828;
+    --text-dim: #3c3836;
+    --muted: #7c6f64;
+    --accent: #79740e;
+    --accent-dim: #98971a;
+    --accent2: #b57614;
+    --accent2-dim: #d79921;
+    --danger: #9d0006;
+    --danger-dim: #cc241d;
+    --orange: #d65d0e;
+    --info: #076678;
+  }
+
+  body {
+    font-family: var(--mono);
+    font-size: 1rem;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  header h1 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.4rem;
+    letter-spacing: 0.12em;
+    color: var(--text);
+  }
+  header h1 .sun { color: var(--accent2); }
+  .header-btns { display: flex; gap: 0.5rem; }
+  .icon-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    padding: 0.25rem 0.55rem;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .icon-btn:hover { color: var(--text); border-color: var(--muted); }
+
+  /* ── Now banner ─────────────────────────────────────────────── */
+  .now-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0.7rem 0.9rem;
+    margin-bottom: 1rem;
+  }
+  .now-banner.active { border-color: var(--accent-dim); }
+  .now-dot { flex: 0 0 auto; width: 0.5rem; height: 0.5rem; background: var(--muted); border-radius: 50%; }
+  .now-banner.active .now-dot { background: var(--accent); box-shadow: 0 0 0.5rem color-mix(in srgb, var(--accent) 60%, transparent); }
+  .now-main { flex: 1; min-width: 0; }
+  .now-text {
+    font-size: 0.85rem;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .now-banner:not(.active) .now-text { color: var(--muted); }
+  .now-since { font-size: 0.62rem; color: var(--muted); margin-top: 0.15rem; }
+  .now-elapsed {
+    font-family: var(--data);
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent);
+    flex: 0 0 auto;
+    line-height: 1;
+  }
+  .stop-btn {
+    flex: 0 0 auto;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    padding: 0.5rem 0.7rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .stop-btn:hover { border-color: var(--danger-dim); color: var(--danger); }
+
+  /* ── Quick log ──────────────────────────────────────────────── */
+  .log-form { display: flex; gap: 0.5rem; margin-bottom: 0.6rem; }
+  .log-form input {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--mono);
+    font-size: 1rem; /* ≥16px prevents iOS zoom-on-focus */
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.65rem 0.7rem;
+  }
+  .log-form input:focus { outline: none; border-color: var(--accent-dim); }
+  .log-form input::placeholder { color: var(--muted); }
+  .log-btn {
+    flex: 0 0 auto;
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    padding: 0.65rem 1.1rem;
+    background: var(--surface);
+    border: 1px solid var(--accent-dim);
+    color: var(--accent);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 0.15s;
+  }
+  .log-btn:hover { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 1.5rem; }
+  .chip {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  .chip:hover { border-color: var(--muted); color: var(--text); }
+  .chip.active { border-color: var(--accent-dim); color: var(--accent); }
+  .chips-empty { font-size: 0.65rem; color: var(--muted); padding: 0.2rem 0; }
+
+  /* ── Stat strip ─────────────────────────────────────────────── */
+  .stats-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+  .stat-cell { background: var(--surface); padding: 0.6rem 0.5rem; text-align: center; }
+  .stat-cell .stat-val {
+    font-family: var(--data);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--text);
+  }
+  .stat-cell .stat-val.accent { color: var(--accent); }
+  .stat-cell .stat-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.2rem;
+  }
+
+  /* ── Sections ───────────────────────────────────────────────── */
+  .section-title {
+    font-family: var(--display);
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    margin: 1.5rem 0 0.6rem;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .section-title .btn-tiny { text-transform: none; letter-spacing: normal; }
+
+  /* ── Report ─────────────────────────────────────────────────── */
+  .range-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+  .range-btn {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    padding: 0.35rem 0.6rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .range-btn:hover { color: var(--text); border-color: var(--muted); }
+  .range-btn.sel { border-color: var(--accent-dim); color: var(--accent); }
+
+  .report { border: 1px solid var(--border); background: var(--surface); padding: 0.8rem 0.9rem; }
+  .report-row { margin-bottom: 0.65rem; }
+  .report-row:last-of-type { margin-bottom: 0; }
+  .report-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.6rem;
+    font-size: 0.72rem;
+    margin-bottom: 0.25rem;
+  }
+  .report-head .r-name {
+    color: var(--text-dim);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .report-head .r-val { color: var(--text); flex: 0 0 auto; }
+  .report-head .r-pct { color: var(--muted); font-size: 0.62rem; }
+  .report-track { height: 10px; background: var(--surface2); }
+  .report-bar { height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; min-width: 2px; }
+  .report-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--text);
+    border-top: 1px solid var(--border);
+    margin-top: 0.8rem;
+    padding-top: 0.6rem;
+  }
+  .report-total .t-label { color: var(--muted); }
+  .report-empty { font-size: 0.72rem; color: var(--muted); text-align: center; padding: 0.4rem 0; }
+
+  /* ── Log list ───────────────────────────────────────────────── */
+  .log-list { border: 1px solid var(--border); }
+  .day-head {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--surface2);
+    padding: 0.35rem 0.7rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .log-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+  }
+  .log-row:last-child { border-bottom: none; }
+  .log-row:hover { background: var(--surface2); }
+  .log-row .l-time { color: var(--muted); flex: 0 0 3.2em; }
+  .log-row .l-text { color: var(--text); flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .log-row.stop .l-text { color: var(--muted); font-style: italic; }
+  .log-row .l-dur { color: var(--accent2); flex: 0 0 auto; font-size: 0.68rem; }
+  .log-row .l-dur.running { color: var(--accent); }
+  .log-row .l-del {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-family: var(--mono); font-size: 0.75rem; padding: 0 0.2rem; flex: 0 0 auto;
+  }
+  .log-row .l-del:hover { color: var(--danger); }
+  .log-empty { padding: 0.8rem; font-size: 0.72rem; color: var(--muted); text-align: center; background: var(--surface); }
+  .show-more {
+    width: 100%; font-family: var(--mono); font-size: 0.68rem;
+    background: var(--surface); border: none; border-top: 1px solid var(--border);
+    color: var(--muted); padding: 0.5rem; cursor: pointer;
+  }
+  .show-more:hover { color: var(--text); }
+
+  /* ── Buttons ────────────────────────────────────────────────── */
+  .btn {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    padding: 0.7rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { border-color: var(--accent-dim); color: var(--accent); }
+  .btn.danger { border-color: var(--danger-dim); color: var(--danger); }
+  .btn-tiny { font-size: 0.7rem; padding: 0.35rem 0.6rem; }
+
+  /* ── Overlays ───────────────────────────────────────────────── */
+  .overlay {
+    position: fixed; inset: 0;
+    background: color-mix(in srgb, var(--bg) 70%, transparent);
+    backdrop-filter: blur(4px);
+    display: none;
+    z-index: 20;
+    overflow-y: auto;
+  }
+  .overlay.visible { display: block; }
+  .panel {
+    max-width: 26rem;
+    margin: 3rem auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.2rem 1.4rem 1.6rem;
+  }
+  .panel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem; }
+  .panel-head h2 { font-family: var(--display); font-size: 0.95rem; letter-spacing: 0.12em; }
+  .settings-section-title {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted); margin: 1.2rem 0 0.5rem; padding-top: 0.9rem;
+    border-top: 1px solid var(--border);
+  }
+  .settings-section-title:first-of-type { margin-top: 0; border-top: none; padding-top: 0; }
+  .settings-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.55rem; flex-wrap: wrap; }
+  .settings-row label { font-size: 0.72rem; color: var(--text-dim); flex: 1 1 100%; }
+  .settings-row input[type="text"], .settings-row input[type="datetime-local"] {
+    font-family: var(--mono); font-size: 0.8rem;
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    padding: 0.4rem 0.5rem; flex: 1 1 100%; min-width: 0;
+  }
+  .settings-row input:focus { outline: none; border-color: var(--accent-dim); }
+  .settings-note { font-size: 0.62rem; color: var(--muted); line-height: 1.5; margin-bottom: 0.5rem; }
+  .btn-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .btn-group .btn.sel { border-color: var(--accent-dim); color: var(--accent); }
+  .edit-actions { display: flex; gap: 0.5rem; margin-top: 1.1rem; }
+  .edit-actions .primary { flex: 1; }
+
+  footer { margin-top: auto; padding-top: 2rem; font-size: 0.6rem; color: var(--muted); text-align: center; letter-spacing: 0.05em; }
+
+  @media (max-width: 480px) {
+    html { font-size: 17px; }
+    .now-elapsed { font-size: 1.4rem; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>S<span class="sun">U</span>NDIAL</h1>
+    <div class="header-btns">
+      <button class="icon-btn" onclick="toggleThemeQuick()" title="Theme">◐</button>
+      <button class="icon-btn" onclick="openSettings()" title="Settings [S]">⚙</button>
+    </div>
+  </header>
+
+  <div class="now-banner" id="now-banner">
+    <div class="now-dot"></div>
+    <div class="now-main">
+      <div class="now-text" id="now-text">idle — log something to start the clock</div>
+      <div class="now-since" id="now-since"></div>
+    </div>
+    <div class="now-elapsed" id="now-elapsed"></div>
+    <button class="stop-btn" id="stop-btn" onclick="stopNow()" style="display:none">■ stop</button>
+  </div>
+
+  <form class="log-form" onsubmit="logFromInput(); return false;">
+    <input type="text" id="log-input" placeholder="what are you doing?" autocomplete="off" enterkeyhint="done">
+    <button type="submit" class="log-btn">＋ Log</button>
+  </form>
+  <div class="chips" id="chips"></div>
+
+  <div class="stats-strip">
+    <div class="stat-cell"><div class="stat-val accent" id="stat-tracked">0m</div><div class="stat-label">Tracked Today</div></div>
+    <div class="stat-cell"><div class="stat-val" id="stat-entries">0</div><div class="stat-label">Entries Today</div></div>
+    <div class="stat-cell"><div class="stat-val" id="stat-acts">0</div><div class="stat-label">Activities</div></div>
+    <div class="stat-cell"><div class="stat-val" id="stat-streak">0</div><div class="stat-label">Day Streak</div></div>
+  </div>
+
+  <div class="section-title">Report <button class="btn btn-tiny" onclick="copyReport()" id="copy-btn">⧉ Copy</button></div>
+  <div class="range-row" id="range-row">
+    <button class="range-btn" data-range="today">Today</button>
+    <button class="range-btn" data-range="yesterday">Yesterday</button>
+    <button class="range-btn" data-range="7d">7 Days</button>
+    <button class="range-btn" data-range="30d">30 Days</button>
+    <button class="range-btn" data-range="all">All</button>
+  </div>
+  <div class="report" id="report"></div>
+
+  <div class="section-title">Log</div>
+  <div class="log-list" id="log-list"></div>
+
+  <footer>sundial · data lives in your browser</footer>
+</div>
+
+<div class="overlay" id="settings-overlay" onclick="if(event.target===this) closeSettings()">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>SETTINGS</h2>
+      <button class="icon-btn" onclick="closeSettings()">✕</button>
+    </div>
+
+    <div class="settings-section-title">Data</div>
+    <div class="settings-note">
+      Each log entry marks the start of an activity; its duration runs until the
+      next entry (or a ■ stop). Everything is stored in this browser only.
+    </div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" onclick="exportCSV()">↓ Export CSV [E]</button>
+      <button class="btn btn-tiny" onclick="importCSV()">↑ Import CSV [I]</button>
+      <button class="btn btn-tiny danger" onclick="clearAll()">✕ Clear All</button>
+    </div>
+    <input type="file" id="import-file" accept=".csv,text/csv" style="display:none" onchange="handleImportFile(this.files[0])">
+
+    <div class="settings-section-title">Theme</div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" id="theme-auto" onclick="setTheme('auto')">Auto</button>
+      <button class="btn btn-tiny" id="theme-dark" onclick="setTheme('dark')">Dark</button>
+      <button class="btn btn-tiny" id="theme-light" onclick="setTheme('light')">Light</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="edit-overlay" onclick="if(event.target===this) closeEdit()">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>EDIT ENTRY</h2>
+      <button class="icon-btn" onclick="closeEdit()">✕</button>
+    </div>
+    <div class="settings-row">
+      <label>Time</label>
+      <input type="datetime-local" id="edit-time" step="1">
+    </div>
+    <div class="settings-row">
+      <label>Activity (leave as-is for stop markers)</label>
+      <input type="text" id="edit-text" autocomplete="off">
+    </div>
+    <div class="edit-actions">
+      <button class="btn primary" onclick="saveEdit()">✓ Save</button>
+      <button class="btn danger" onclick="deleteEdit()">✕ Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const DB_KEY = 'sundial_entries';
+const THEME_KEY = 'sundial_theme';
+const RANGE_KEY = 'sundial_range';
+const STOP_TEXT = '— stop —';
+
+// ── Persistence (meridian-style: sanitize on load, never lose raw data) ──
+function loadJSON(key, fallback) {
+  const raw = localStorage.getItem(key);
+  if (raw == null) return fallback;
+  try { return JSON.parse(raw); }
+  catch (e) {
+    try { localStorage.setItem(key + '_corrupt', raw); } catch (e2) {}
+    return fallback;
+  }
+}
+
+function finiteOrNull(v) {
+  return typeof v === 'number' && isFinite(v) ? v : null;
+}
+
+// A malformed entry must never take down the whole log — repair what's
+// recoverable, drop only garbage.
+function sanitizeEntries(raw) {
+  if (!Array.isArray(raw)) return [];
+  const clean = [];
+  for (const e of raw) {
+    if (!e || typeof e !== 'object') continue;
+    const t = finiteOrNull(e.t);
+    if (t == null) continue;
+    const kind = e.kind === 'stop' ? 'stop' : 'act';
+    let text = typeof e.text === 'string' ? e.text.trim() : '';
+    if (kind === 'act' && !text) continue;
+    clean.push({ id: finiteOrNull(e.id) ?? t, t, kind, text: kind === 'stop' ? '' : text });
+  }
+  clean.sort((a, b) => a.t - b.t);
+  return clean;
+}
+
+let entries = sanitizeEntries(loadJSON(DB_KEY, []));
+
+function saveEntries() {
+  entries.sort((a, b) => a.t - b.t);
+  localStorage.setItem(DB_KEY, JSON.stringify(entries));
+}
+
+// ── Time helpers ─────────────────────────────────────────────────
+function dayKey(t) {
+  const d = new Date(t);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function startOfDay(t) { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); }
+
+function fmtClock(t) {
+  const d = new Date(t);
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
+function fmtDur(ms) {
+  const s = Math.max(0, Math.round(ms / 1000));
+  if (s < 60) return s + 's';
+  const m = Math.floor(s / 60);
+  if (m < 60) return m + 'm';
+  const h = Math.floor(m / 60);
+  return h + 'h ' + String(m % 60).padStart(2, '0') + 'm';
+}
+
+function fmtDayLabel(key) {
+  const today = dayKey(Date.now());
+  const yest = dayKey(Date.now() - 86400000);
+  if (key === today) return 'Today';
+  if (key === yest) return 'Yesterday';
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+// End of entry i = start of the next entry, or now for the open last one.
+function entryEnd(i) {
+  return i + 1 < entries.length ? entries[i + 1].t : Date.now();
+}
+
+function openEntry() {
+  const last = entries[entries.length - 1];
+  return last && last.kind === 'act' ? last : null;
+}
+
+// ── Logging ──────────────────────────────────────────────────────
+function addEntry(text, kind) {
+  const t = Date.now();
+  entries.push({ id: t + Math.random(), t, kind: kind || 'act', text: kind === 'stop' ? '' : text.trim() });
+  saveEntries();
+  renderAll();
+}
+
+function logFromInput() {
+  const input = document.getElementById('log-input');
+  const text = input.value.trim();
+  if (!text) { input.focus(); return; }
+  addEntry(text, 'act');
+  input.value = '';
+  input.blur(); // drop the mobile keyboard — logging is done
+}
+
+function stopNow() {
+  if (!openEntry()) return;
+  addEntry('', 'stop');
+}
+
+// ── Aggregation ──────────────────────────────────────────────────
+const normKey = s => s.trim().toLowerCase();
+
+// Time per activity inside [a, b), clipping entries that span the edges.
+function aggregate(a, b) {
+  const byAct = new Map(); // norm -> { name, ms }
+  let total = 0;
+  for (let i = 0; i < entries.length; i++) {
+    const e = entries[i];
+    if (e.kind !== 'act') continue;
+    const start = Math.max(e.t, a);
+    const end = Math.min(entryEnd(i), b);
+    if (end <= start) continue;
+    const ms = end - start;
+    const k = normKey(e.text);
+    const cur = byAct.get(k) || { name: e.text, ms: 0 };
+    cur.ms += ms;
+    cur.name = e.text; // keep the most recent casing
+    byAct.set(k, cur);
+    total += ms;
+  }
+  const rows = [...byAct.values()].sort((x, y) => y.ms - x.ms);
+  return { rows, total };
+}
+
+function rangeBounds(range) {
+  const now = Date.now();
+  const today = startOfDay(now);
+  switch (range) {
+    case 'today': return [today, now];
+    case 'yesterday': return [today - 86400000, today];
+    case '7d': return [today - 6 * 86400000, now];
+    case '30d': return [today - 29 * 86400000, now];
+    default: return [0, now];
+  }
+}
+
+// ── Rendering ────────────────────────────────────────────────────
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+function renderNow() {
+  const banner = document.getElementById('now-banner');
+  const open = openEntry();
+  banner.classList.toggle('active', !!open);
+  document.getElementById('stop-btn').style.display = open ? '' : 'none';
+  if (open) {
+    document.getElementById('now-text').textContent = open.text;
+    document.getElementById('now-since').textContent = 'since ' + fmtClock(open.t);
+    document.getElementById('now-elapsed').textContent = fmtDur(Date.now() - open.t);
+  } else {
+    document.getElementById('now-text').textContent = 'idle — log something to start the clock';
+    document.getElementById('now-since').textContent = '';
+    document.getElementById('now-elapsed').textContent = '';
+  }
+}
+
+function renderStats() {
+  const now = Date.now();
+  const { rows, total } = aggregate(startOfDay(now), now);
+  document.getElementById('stat-tracked').textContent = total ? fmtDur(total) : '0m';
+  const todayKey = dayKey(now);
+  document.getElementById('stat-entries').textContent = entries.filter(e => dayKey(e.t) === todayKey).length;
+  document.getElementById('stat-acts').textContent = rows.length;
+
+  const days = new Set(entries.map(e => dayKey(e.t)));
+  let streak = 0;
+  const d = new Date();
+  if (!days.has(dayKey(d.getTime()))) d.setDate(d.getDate() - 1); // today not yet logged doesn't break the streak
+  while (days.has(dayKey(d.getTime()))) { streak++; d.setDate(d.getDate() - 1); }
+  document.getElementById('stat-streak').textContent = streak;
+}
+
+// Chips: the fastest path — one tap re-logs a recent activity.
+function renderChips() {
+  const el = document.getElementById('chips');
+  el.innerHTML = '';
+  const cutoff = Date.now() - 30 * 86400000;
+  const freq = new Map(); // norm -> { name, count, last }
+  for (const e of entries) {
+    if (e.kind !== 'act' || e.t < cutoff) continue;
+    const k = normKey(e.text);
+    const cur = freq.get(k) || { name: e.text, count: 0, last: 0 };
+    cur.count++;
+    cur.last = Math.max(cur.last, e.t);
+    cur.name = e.text;
+    freq.set(k, cur);
+  }
+  const top = [...freq.values()].sort((a, b) => b.count - a.count || b.last - a.last).slice(0, 8);
+  if (top.length === 0) {
+    el.innerHTML = '<div class="chips-empty">your recent activities will appear here as one-tap buttons</div>';
+    return;
+  }
+  const open = openEntry();
+  for (const a of top) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip' + (open && normKey(open.text) === normKey(a.name) ? ' active' : '');
+    b.textContent = a.name;
+    b.onclick = () => addEntry(a.name, 'act');
+    el.appendChild(b);
+  }
+}
+
+let curRange = loadJSON(RANGE_KEY, 'today');
+if (!['today', 'yesterday', '7d', '30d', 'all'].includes(curRange)) curRange = 'today';
+
+function setRange(r) {
+  curRange = r;
+  localStorage.setItem(RANGE_KEY, JSON.stringify(r));
+  renderReport();
+}
+
+document.querySelectorAll('.range-btn').forEach(b => {
+  b.onclick = () => setRange(b.dataset.range);
+});
+
+function renderReport() {
+  document.querySelectorAll('.range-btn').forEach(b =>
+    b.classList.toggle('sel', b.dataset.range === curRange));
+  const [a, b] = rangeBounds(curRange);
+  const { rows, total } = aggregate(a, b);
+  const el = document.getElementById('report');
+  if (rows.length === 0) {
+    el.innerHTML = '<div class="report-empty">nothing logged in this range</div>';
+    return;
+  }
+  const max = rows[0].ms;
+  let html = '';
+  for (const r of rows) {
+    const pct = total ? Math.round((r.ms / total) * 100) : 0;
+    html += '<div class="report-row">' +
+      '<div class="report-head">' +
+        '<span class="r-name">' + esc(r.name) + '</span>' +
+        '<span class="r-val">' + fmtDur(r.ms) + ' <span class="r-pct">' + pct + '%</span></span>' +
+      '</div>' +
+      '<div class="report-track"><div class="report-bar" style="width:' + (r.ms / max * 100).toFixed(1) + '%"></div></div>' +
+      '</div>';
+  }
+  html += '<div class="report-total"><span class="t-label">total tracked</span><span>' + fmtDur(total) + '</span></div>';
+  el.innerHTML = html;
+}
+
+let logShowAll = false;
+
+function renderLog() {
+  const el = document.getElementById('log-list');
+  el.innerHTML = '';
+  if (entries.length === 0) {
+    el.innerHTML = '<div class="log-empty">no entries yet — type an activity or tap a chip</div>';
+    return;
+  }
+  const LIMIT = 40;
+  const shown = logShowAll ? entries.slice() : entries.slice(-LIMIT);
+  const hidden = entries.length - shown.length;
+  let lastDay = null;
+  // newest first, with day headers
+  const frag = document.createDocumentFragment();
+  const list = shown.slice().reverse();
+  for (const e of list) {
+    const dk = dayKey(e.t);
+    if (dk !== lastDay) {
+      lastDay = dk;
+      const [da, db] = [startOfDay(e.t), startOfDay(e.t) + 86400000];
+      const head = document.createElement('div');
+      head.className = 'day-head';
+      head.innerHTML = '<span>' + fmtDayLabel(dk) + '</span><span>' + fmtDur(aggregate(da, Math.min(db, Date.now())).total) + '</span>';
+      frag.appendChild(head);
+    }
+    const i = entries.indexOf(e);
+    const row = document.createElement('div');
+    row.className = 'log-row' + (e.kind === 'stop' ? ' stop' : '');
+    const isOpen = e.kind === 'act' && i === entries.length - 1;
+    const dur = e.kind === 'stop' ? '' :
+      '<span class="l-dur' + (isOpen ? ' running' : '') + '">' + fmtDur(entryEnd(i) - e.t) + (isOpen ? ' ●' : '') + '</span>';
+    row.innerHTML =
+      '<span class="l-time">' + fmtClock(e.t) + '</span>' +
+      '<span class="l-text">' + (e.kind === 'stop' ? STOP_TEXT : esc(e.text)) + '</span>' +
+      dur +
+      '<button class="l-del" title="delete">✕</button>';
+    row.querySelector('.l-del').onclick = (ev) => {
+      ev.stopPropagation();
+      if (!confirm('Delete this entry?')) return;
+      entries = entries.filter(x => x.id !== e.id);
+      saveEntries();
+      renderAll();
+    };
+    row.onclick = () => openEdit(e.id);
+    frag.appendChild(row);
+  }
+  el.appendChild(frag);
+  if (hidden > 0) {
+    const more = document.createElement('button');
+    more.className = 'show-more';
+    more.textContent = '▾ show ' + hidden + ' older entries';
+    more.onclick = () => { logShowAll = true; renderLog(); };
+    el.appendChild(more);
+  }
+}
+
+function renderAll() {
+  renderNow();
+  renderStats();
+  renderChips();
+  renderReport();
+  renderLog();
+}
+
+// Live clock: cheap per-second update for the banner, full refresh each minute
+// so open-entry durations in the report and log keep pace.
+setInterval(renderNow, 1000);
+setInterval(() => { renderStats(); renderReport(); renderLog(); }, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) renderAll(); });
+
+// ── Edit overlay ─────────────────────────────────────────────────
+let editId = null;
+
+function toLocalInput(t) {
+  const d = new Date(t - new Date(t).getTimezoneOffset() * 60000);
+  return d.toISOString().slice(0, 19);
+}
+
+function openEdit(id) {
+  const e = entries.find(x => x.id === id);
+  if (!e) return;
+  editId = id;
+  document.getElementById('edit-time').value = toLocalInput(e.t);
+  const txt = document.getElementById('edit-text');
+  txt.value = e.kind === 'stop' ? STOP_TEXT : e.text;
+  txt.disabled = e.kind === 'stop';
+  document.getElementById('edit-overlay').classList.add('visible');
+}
+
+function closeEdit() {
+  editId = null;
+  document.getElementById('edit-overlay').classList.remove('visible');
+}
+
+function saveEdit() {
+  const e = entries.find(x => x.id === editId);
+  if (!e) { closeEdit(); return; }
+  const t = new Date(document.getElementById('edit-time').value).getTime();
+  if (isFinite(t)) e.t = Math.min(t, Date.now());
+  if (e.kind === 'act') {
+    const text = document.getElementById('edit-text').value.trim();
+    if (text) e.text = text;
+  }
+  saveEntries();
+  closeEdit();
+  renderAll();
+}
+
+function deleteEdit() {
+  if (!confirm('Delete this entry?')) return;
+  entries = entries.filter(x => x.id !== editId);
+  saveEntries();
+  closeEdit();
+  renderAll();
+}
+
+// ── Report copy ──────────────────────────────────────────────────
+function copyReport() {
+  const [a, b] = rangeBounds(curRange);
+  const { rows, total } = aggregate(a, b);
+  const label = document.querySelector('.range-btn[data-range="' + curRange + '"]').textContent;
+  let text = 'Sundial — ' + label + '\n';
+  for (const r of rows) {
+    const pct = total ? Math.round((r.ms / total) * 100) : 0;
+    text += fmtDur(r.ms).padStart(7) + '  ' + pct + '%\t' + r.name + '\n';
+  }
+  text += 'total: ' + fmtDur(total) + '\n';
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ Copied';
+    setTimeout(() => { btn.textContent = '⧉ Copy'; }, 1500);
+  }).catch(() => alert(text));
+}
+
+// ── CSV export / import ──────────────────────────────────────────
+const CSV_HEADER = 'id,timestamp,iso,kind,text';
+const csvQuote = s => '"' + String(s).replace(/"/g, '""') + '"';
+
+function exportCSV() {
+  const rows = [CSV_HEADER];
+  for (const e of entries) {
+    rows.push([e.id, e.t, new Date(e.t).toISOString(), e.kind, csvQuote(e.text)].join(','));
+  }
+  const blob = new Blob([rows.join('\n') + '\n'], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'sundial-' + dayKey(Date.now()) + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importCSV() {
+  document.getElementById('import-file').click();
+}
+
+// Minimal CSV line parser that honors quoted fields with embedded commas/quotes.
+function parseCSVLine(line) {
+  const out = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQ) {
+      if (c === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i++; }
+        else inQ = false;
+      } else cur += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ',') { out.push(cur); cur = ''; }
+    else cur += c;
+  }
+  out.push(cur);
+  return out;
+}
+
+function handleImportFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const lines = String(reader.result).split(/\r?\n/).filter(l => l.trim());
+    const imported = [];
+    for (const line of lines) {
+      if (line.startsWith('id,')) continue;
+      const f = parseCSVLine(line);
+      if (f.length < 5) continue;
+      imported.push({ id: Number(f[0]), t: Number(f[1]), kind: f[3], text: f[4] });
+    }
+    const existing = new Set(entries.map(e => e.id));
+    const added = imported.filter(e => isFinite(e.id) && !existing.has(e.id));
+    entries = sanitizeEntries(entries.concat(added));
+    saveEntries();
+    renderAll();
+    alert('Imported ' + added.length + ' new entr' + (added.length === 1 ? 'y' : 'ies') + ' (' + (imported.length - added.length) + ' duplicates skipped).');
+  };
+  reader.readAsText(file);
+  document.getElementById('import-file').value = '';
+}
+
+function clearAll() {
+  if (!confirm('Delete ALL ' + entries.length + ' entries? Export first if you want a backup.')) return;
+  entries = [];
+  saveEntries();
+  renderAll();
+}
+
+// ── Settings ─────────────────────────────────────────────────────
+function openSettings() {
+  document.getElementById('settings-overlay').classList.add('visible');
+}
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.remove('visible');
+}
+
+// ── Theme (meridian-style: auto / dark / light) ──────────────────
+function setTheme(pref) {
+  localStorage.setItem(THEME_KEY, pref);
+  applyTheme(pref);
+  for (const p of ['auto', 'dark', 'light']) {
+    document.getElementById('theme-' + p).classList.toggle('sel', p === pref);
+  }
+}
+function applyTheme(pref) {
+  const dark = pref === 'dark' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.body.classList.toggle('light', !dark);
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if ((localStorage.getItem(THEME_KEY) || 'auto') === 'auto') applyTheme('auto');
+});
+function toggleThemeQuick() {
+  const dark = !document.body.classList.contains('light');
+  setTheme(dark ? 'light' : 'dark');
+}
+
+// ── Keyboard ─────────────────────────────────────────────────────
+document.addEventListener('keydown', (ev) => {
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+    if (ev.key === 'Escape') document.activeElement.blur();
+    return;
+  }
+  const k = ev.key.toLowerCase();
+  if (k === 'escape') { closeSettings(); closeEdit(); }
+  else if (k === '/') { document.getElementById('log-input').focus(); ev.preventDefault(); }
+  else if (k === 's') openSettings();
+  else if (k === 'e') exportCSV();
+  else if (k === 'i') importCSV();
+  else if (k === 'x') stopNow();
+});
+
+// ── Service worker (PWA install + offline) ───────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+setTheme(localStorage.getItem(THEME_KEY) || 'auto');
+renderAll();
+</script>
+</body>
+</html>

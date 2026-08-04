@@ -1,6 +1,6 @@
 {
-  "name": "Sundial",
-  "short_name": "Sundial",
+  "name": "Gnomon",
+  "short_name": "Gnomon",
   "description": "One-tap timestamped activity log with time-per-activity reports",
   "start_url": "./",
   "display": "standalone",

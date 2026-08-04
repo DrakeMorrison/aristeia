@@ -9,7 +9,7 @@
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Sundial</title>
+<title>Gnomon</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;700&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -394,7 +394,7 @@
 <body>
 <div class="app">
   <header>
-    <h1>S<span class="sun">U</span>NDIAL</h1>
+    <h1>GN<span class="sun">O</span>MON</h1>
     <div class="header-btns">
       <button class="icon-btn" onclick="toggleThemeQuick()" title="Theme">◐</button>
       <button class="icon-btn" onclick="openSettings()" title="Settings [S]">⚙</button>
@@ -437,7 +437,7 @@
   <div class="section-title">Log</div>
   <div class="log-list" id="log-list"></div>
 
-  <footer>sundial · data lives in your browser</footer>
+  <footer>gnomon · data lives in your browser</footer>
 </div>
 
 <div class="overlay" id="settings-overlay" onclick="if(event.target===this) closeSettings()">
@@ -491,9 +491,9 @@
 
 <script>
 'use strict';
-const DB_KEY = 'sundial_entries';
-const THEME_KEY = 'sundial_theme';
-const RANGE_KEY = 'sundial_range';
+const DB_KEY = 'gnomon_entries';
+const THEME_KEY = 'gnomon_theme';
+const RANGE_KEY = 'gnomon_range';
 const STOP_TEXT = '— stop —';
 
 // ── Persistence (meridian-style: sanitize on load, never lose raw data) ──
@@ -862,7 +862,7 @@ function copyReport() {
   const [a, b] = rangeBounds(curRange);
   const { rows, total } = aggregate(a, b);
   const label = document.querySelector('.range-btn[data-range="' + curRange + '"]').textContent;
-  let text = 'Sundial — ' + label + '\n';
+  let text = 'Gnomon — ' + label + '\n';
   for (const r of rows) {
     const pct = total ? Math.round((r.ms / total) * 100) : 0;
     text += fmtDur(r.ms).padStart(7) + '  ' + pct + '%\t' + r.name + '\n';
@@ -887,7 +887,7 @@ function exportCSV() {
   const blob = new Blob([rows.join('\n') + '\n'], { type: 'text/csv' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'sundial-' + dayKey(Date.now()) + '.csv';
+  a.download = 'gnomon-' + dayKey(Date.now()) + '.csv';
   a.click();
   URL.revokeObjectURL(a.href);
 }

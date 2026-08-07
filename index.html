@@ -133,6 +133,39 @@
   .cd-row .cd-when { color: var(--muted); text-align: right; }
   .cd-row .cd-when.now { color: var(--accent); }
 
+  /* ── Checkup card ───────────────────────────────────────────── */
+  .checkup-card {
+    border: 1px solid var(--orange);
+    background: var(--surface);
+    padding: 0.8rem 0.9rem;
+    margin-bottom: 1rem;
+  }
+  .checkup-title {
+    font-family: var(--display);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 0.35rem;
+  }
+  .checkup-q {
+    font-family: var(--data);
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 0.6rem;
+  }
+  .checkup-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .checkup-warning {
+    border: 1px solid var(--danger-dim);
+    background: var(--surface);
+    color: var(--danger);
+    font-size: 0.68rem;
+    line-height: 1.5;
+    padding: 0.6rem 0.9rem;
+    margin-bottom: 1rem;
+  }
+
   /* ── Substance cards ────────────────────────────────────────── */
   .sub-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; margin-bottom: 0.6rem; }
   .sub-card {
@@ -398,6 +431,17 @@
     <div class="countdown-rows" id="countdown-rows"></div>
   </div>
 
+  <div class="checkup-card" id="checkup-card" style="display:none">
+    <div class="checkup-title">Two-Week Checkup</div>
+    <div class="checkup-q">Do rest days feel noticeably worse than before you started?</div>
+    <div class="checkup-actions">
+      <button class="btn btn-tiny" onclick="answerCheckup('fine')">no, they feel fine</button>
+      <button class="btn btn-tiny" onclick="answerCheckup('meh')">somewhat</button>
+      <button class="btn btn-tiny danger" onclick="answerCheckup('worse')">yes, noticeably</button>
+    </div>
+  </div>
+  <div class="checkup-warning" id="checkup-warning" style="display:none"></div>
+
   <div class="sub-cards">
     <div class="sub-card">
       <div class="sub-name sub-nic">Nicotine</div>
@@ -510,7 +554,10 @@
 'use strict';
 const DB_KEY = 'pharmakon_doses';
 const PRESETS_KEY = 'pharmakon_presets';
+const CHECKUPS_KEY = 'pharmakon_checkups';
 const THEME_KEY = 'pharmakon_theme';
+const CHECKUP_GAP = 14; // days between "do rest days feel worse?" checkups
+const CHECKUP_ANSWERS = ['fine', 'meh', 'worse'];
 
 const SUBS = {
   nic: { name: 'nicotine', cls: 'sub-nic', defaults: [2, 4] },
@@ -608,8 +655,23 @@ function sanitizePresets(raw) {
   return out;
 }
 
+function sanitizeCheckups(raw) {
+  if (!Array.isArray(raw)) return [];
+  const clean = [];
+  for (const c of raw) {
+    if (!c || typeof c !== 'object') continue;
+    const t = finiteOrNull(c.t);
+    if (t == null) continue;
+    if (!CHECKUP_ANSWERS.includes(c.answer)) continue;
+    clean.push({ id: finiteOrNull(c.id) ?? t, t, answer: c.answer });
+  }
+  clean.sort((a, b) => a.t - b.t);
+  return clean;
+}
+
 let entries = sanitizeEntries(loadJSON(DB_KEY, []));
 let presets = sanitizePresets(loadJSON(PRESETS_KEY, null));
+let checkups = sanitizeCheckups(loadJSON(CHECKUPS_KEY, []));
 let selDose = { nic: presets.nic[0], caf: presets.caf[0] };
 
 function saveEntries() {
@@ -618,6 +680,10 @@ function saveEntries() {
 }
 function savePresets() {
   storageSet(PRESETS_KEY, JSON.stringify(presets));
+}
+function saveCheckups() {
+  checkups.sort((a, b) => a.t - b.t);
+  storageSet(CHECKUPS_KEY, JSON.stringify(checkups));
 }
 
 // ── Time helpers ─────────────────────────────────────────────────
@@ -752,6 +818,40 @@ function logDose(sub) {
   noteEl.blur(); // drop the mobile keyboard — logging is done
   saveEntries();
   renderAll();
+}
+
+// ── Two-week checkup ─────────────────────────────────────────────
+// The early warning sign of dependence is rest days starting to feel
+// degraded. Every 14 days from the first dose, ask — and keep the answer.
+function checkupDue(todayK) {
+  if (!entries.length) return false;
+  if (dayDiff(dayKey(entries[0].t), todayK) < CHECKUP_GAP) return false;
+  if (!checkups.length) return true;
+  return dayDiff(dayKey(checkups[checkups.length - 1].t), todayK) >= CHECKUP_GAP;
+}
+
+function answerCheckup(answer) {
+  const t = Date.now();
+  checkups.push({ id: t + Math.random(), t, answer });
+  saveCheckups();
+  renderAll();
+}
+
+function renderCheckup() {
+  const todayK = dayKey(Date.now());
+  const card = document.getElementById('checkup-card');
+  const warn = document.getElementById('checkup-warning');
+  const due = checkupDue(todayK);
+  card.style.display = due ? '' : 'none';
+  const lastC = checkups[checkups.length - 1];
+  if (!due && lastC && lastC.answer === 'worse') {
+    warn.style.display = '';
+    warn.textContent = '⚠ checkup ' + fmtDayLabel(dayKey(lastC.t)).toLowerCase() +
+      ': rest days feeling noticeably worse is the early warning sign — consider pausing the protocol. Asking again in ' +
+      Math.max(1, CHECKUP_GAP - dayDiff(dayKey(lastC.t), todayK)) + ' days.';
+  } else {
+    warn.style.display = 'none';
+  }
 }
 
 // ── Rendering ────────────────────────────────────────────────────
@@ -939,6 +1039,7 @@ function renderAll() {
   const violations = classifyViolations(entries);
   const last = lastUseDays(entries);
   renderToday(last);
+  renderCheckup();
   renderSubCards(last);
   renderHorizon(last, violations);
   renderStats(violations);
@@ -965,6 +1066,15 @@ function recoverFailedReads() {
     if (missing.length) {
       entries = sanitizeEntries(entries.concat(missing));
       saveEntries();
+    }
+  }
+  if (toRecover.has(CHECKUPS_KEY)) {
+    const stored = sanitizeCheckups(loadJSON(CHECKUPS_KEY, []));
+    const have = new Set(checkups.map(c => c.id));
+    const missing = stored.filter(c => !have.has(c.id));
+    if (missing.length) {
+      checkups = sanitizeCheckups(checkups.concat(missing));
+      saveCheckups();
     }
   }
   if (toRecover.has(PRESETS_KEY) && !pendingWrites.has(PRESETS_KEY)) {
@@ -1119,9 +1229,11 @@ function handleImportFile(file) {
 }
 
 function clearAll() {
-  if (!confirm('Delete ALL ' + entries.length + ' doses? Export first if you want a backup.')) return;
+  if (!confirm('Delete ALL ' + entries.length + ' doses and checkup history? Export first if you want a backup.')) return;
   entries = [];
+  checkups = [];
   saveEntries();
+  saveCheckups();
   renderAll();
 }
 

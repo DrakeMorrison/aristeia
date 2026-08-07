@@ -27,6 +27,7 @@ The app never blocks a dose. Logging one that breaks a rule asks you to confirm 
 - **One-tap logging** — a dose button per substance with editable mg presets, plus an optional note
 - **Horizon strip** — the last 14 days and next 7 at a glance: what was taken, violation days, and forecast eligibility
 - **Honest log** — reverse-chronological entries with violation badges; tap to edit time/substance/dose or delete
+- **Two-week checkup** — every 14 days the app asks whether rest days feel noticeably worse than before you started; a "yes" stays on screen as the early dependence warning until the next checkup
 - **Stats** — clean streak, doses per substance, violations, average interval
 - **Import / Export** — CSV for portability and analysis elsewhere
 - **PWA** — installable, works offline

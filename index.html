@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1d2021">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Pharmakon</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 20px; }
+
+  :root {
+    --bg: #1d2021;
+    --surface: #282828;
+    --surface2: #32302f;
+    --border: #504945;
+    --text: #ebdbb2;
+    --text-dim: #d5c4a1;
+    --muted: #928374;
+    --accent: #b8bb26;
+    --accent-dim: #98971a;
+    --accent2: #fabd2f;
+    --accent2-dim: #d79921;
+    --danger: #fb4934;
+    --danger-dim: #cc241d;
+    --orange: #fe8019;
+    --info: #83a598;
+    --info-dim: #458588;
+    --mono: 'IBM Plex Mono', monospace;
+    --display: 'Cinzel', serif;
+    --data: 'Cormorant Garamond', serif;
+  }
+
+  body.light {
+    --bg: #f9f5d7;
+    --surface: #ebdbb2;
+    --surface2: #d5c4a1;
+    --border: #bdae93;
+    --text: #282828;
+    --text-dim: #3c3836;
+    --muted: #7c6f64;
+    --accent: #79740e;
+    --accent-dim: #98971a;
+    --accent2: #b57614;
+    --accent2-dim: #d79921;
+    --danger: #9d0006;
+    --danger-dim: #cc241d;
+    --orange: #d65d0e;
+    --info: #076678;
+    --info-dim: #458588;
+  }
+
+  body {
+    font-family: var(--mono);
+    font-size: 1rem;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  header h1 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.4rem;
+    letter-spacing: 0.12em;
+    color: var(--text);
+  }
+  header h1 .sun { color: var(--accent2); }
+  .header-btns { display: flex; gap: 0.5rem; }
+  .icon-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    padding: 0.25rem 0.55rem;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .icon-btn:hover { color: var(--text); border-color: var(--muted); }
+
+  /* ── Today card ─────────────────────────────────────────────── */
+  .today-card {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0.8rem 0.9rem 0.9rem;
+    margin-bottom: 1rem;
+  }
+  .today-date {
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  .today-status {
+    font-family: var(--data);
+    font-size: 1.45rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--text);
+    margin-bottom: 0.55rem;
+  }
+  .today-status.ok { color: var(--accent); }
+  .today-status.rest { color: var(--text-dim); }
+  .today-status.dosed { color: var(--accent2); }
+  .countdown-rows { display: flex; flex-direction: column; gap: 0.25rem; }
+  .cd-row { display: flex; justify-content: space-between; gap: 0.6rem; font-size: 0.72rem; }
+  .cd-row .cd-when { color: var(--muted); text-align: right; }
+  .cd-row .cd-when.now { color: var(--accent); }
+
+  /* ── Substance cards ────────────────────────────────────────── */
+  .sub-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; margin-bottom: 0.6rem; }
+  .sub-card {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0.7rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  .sub-name {
+    font-family: var(--display);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .sub-nic { color: var(--accent2); }
+  .sub-caf { color: var(--info); }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .chip {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    padding: 0.35rem 0.6rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    white-space: nowrap;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  .chip:hover { border-color: var(--muted); color: var(--text); }
+  .chip.active { border-color: var(--accent-dim); color: var(--accent); }
+  .dose-btn {
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    padding: 0.65rem 0.5rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .dose-btn:hover { border-color: var(--muted); }
+  .dose-btn.suggested { border-color: var(--accent-dim); color: var(--accent); }
+  .dose-btn.suggested:hover { background: color-mix(in srgb, var(--accent) 12%, var(--surface2)); }
+  .dose-btn.warn { border-color: var(--danger-dim); color: var(--danger); }
+
+  .note-form { margin-bottom: 1rem; }
+  .note-form input {
+    width: 100%;
+    font-family: var(--mono);
+    font-size: 1rem; /* ≥16px prevents iOS zoom-on-focus */
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.55rem 0.7rem;
+  }
+  .note-form input:focus { outline: none; border-color: var(--accent-dim); }
+  .note-form input::placeholder { color: var(--muted); }
+
+  /* ── Horizon strip ──────────────────────────────────────────── */
+  .horizon { display: flex; gap: 3px; margin-bottom: 0.3rem; }
+  .day-cell {
+    flex: 1;
+    aspect-ratio: 1;
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+  }
+  .day-cell.nic { background: var(--accent2); border-color: var(--accent2-dim); }
+  .day-cell.caf { background: var(--info); border-color: var(--info-dim); }
+  .day-cell.both { background: linear-gradient(135deg, var(--accent2) 50%, var(--info) 50%); border-color: var(--accent2-dim); }
+  .day-cell.viol { box-shadow: 0 0 0 2px var(--danger); }
+  .day-cell.future { background: var(--bg); border-style: dashed; }
+  .day-cell.future-ok { border-color: var(--accent-dim); border-style: solid; background: color-mix(in srgb, var(--accent) 14%, var(--bg)); }
+  .day-cell.today { outline: 2px solid var(--text-dim); outline-offset: 1px; }
+  .horizon-legend {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.58rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 1.5rem;
+  }
+
+  /* ── Stat strip ─────────────────────────────────────────────── */
+  .stats-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+  .stat-cell { background: var(--surface); padding: 0.6rem 0.5rem; text-align: center; }
+  .stat-cell .stat-val {
+    font-family: var(--data);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--text);
+  }
+  .stat-cell .stat-val.accent { color: var(--accent); }
+  .stat-cell .stat-val.danger { color: var(--danger); }
+  .stat-cell .stat-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.2rem;
+  }
+
+  /* ── Sections ───────────────────────────────────────────────── */
+  .section-title {
+    font-family: var(--display);
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    margin: 1.5rem 0 0.6rem;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  /* ── Log list ───────────────────────────────────────────────── */
+  .log-list { border: 1px solid var(--border); }
+  .day-head {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--surface2);
+    padding: 0.35rem 0.7rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .log-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+  }
+  .log-row:last-child { border-bottom: none; }
+  .log-row:hover { background: var(--surface2); }
+  .log-row .l-time { color: var(--muted); flex: 0 0 3.2em; }
+  .log-row .l-sub { flex: 0 0 auto; font-weight: 700; font-size: 0.68rem; letter-spacing: 0.06em; }
+  .log-row .l-dose { color: var(--text); flex: 0 0 auto; }
+  .log-row .l-note { color: var(--muted); flex: 1; min-width: 0; overflow-wrap: anywhere; font-style: italic; }
+  .viol-badge {
+    flex: 0 0 auto;
+    font-size: 0.56rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--danger);
+    border: 1px solid var(--danger-dim);
+    border-radius: 2px;
+    padding: 0.1rem 0.35rem;
+    white-space: nowrap;
+  }
+  .log-row .l-del {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-family: var(--mono); font-size: 0.75rem; padding: 0 0.2rem; flex: 0 0 auto;
+  }
+  .log-row .l-del:hover { color: var(--danger); }
+  .log-empty { padding: 0.8rem; font-size: 0.72rem; color: var(--muted); text-align: center; background: var(--surface); }
+  .show-more {
+    width: 100%; font-family: var(--mono); font-size: 0.68rem;
+    background: var(--surface); border: none; border-top: 1px solid var(--border);
+    color: var(--muted); padding: 0.5rem; cursor: pointer;
+  }
+  .show-more:hover { color: var(--text); }
+
+  /* ── Buttons ────────────────────────────────────────────────── */
+  .btn {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    padding: 0.7rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { border-color: var(--accent-dim); color: var(--accent); }
+  .btn.danger { border-color: var(--danger-dim); color: var(--danger); }
+  .btn-tiny { font-size: 0.7rem; padding: 0.35rem 0.6rem; }
+
+  /* ── Overlays ───────────────────────────────────────────────── */
+  .overlay {
+    position: fixed; inset: 0;
+    background: color-mix(in srgb, var(--bg) 70%, transparent);
+    backdrop-filter: blur(4px);
+    display: none;
+    z-index: 20;
+    overflow-y: auto;
+  }
+  .overlay.visible { display: block; }
+  .panel {
+    max-width: 26rem;
+    margin: 3rem auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.2rem 1.4rem 1.6rem;
+  }
+  .panel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem; }
+  .panel-head h2 { font-family: var(--display); font-size: 0.95rem; letter-spacing: 0.12em; }
+  .settings-section-title {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted); margin: 1.2rem 0 0.5rem; padding-top: 0.9rem;
+    border-top: 1px solid var(--border);
+  }
+  .settings-section-title:first-of-type { margin-top: 0; border-top: none; padding-top: 0; }
+  .settings-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.55rem; flex-wrap: wrap; }
+  .settings-row label { font-size: 0.72rem; color: var(--text-dim); flex: 1 1 100%; }
+  .settings-row input[type="text"], .settings-row input[type="number"],
+  .settings-row input[type="datetime-local"], .settings-row select {
+    font-family: var(--mono); font-size: 0.8rem;
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    padding: 0.4rem 0.5rem; flex: 1 1 100%; min-width: 0;
+  }
+  .settings-row input:focus, .settings-row select:focus { outline: none; border-color: var(--accent-dim); }
+  .settings-note { font-size: 0.62rem; color: var(--muted); line-height: 1.5; margin-bottom: 0.5rem; }
+  .btn-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .btn-group .btn.sel { border-color: var(--accent-dim); color: var(--accent); }
+  .edit-actions { display: flex; gap: 0.5rem; margin-top: 1.1rem; }
+  .edit-actions .primary { flex: 1; }
+
+  footer { margin-top: auto; padding-top: 2rem; font-size: 0.6rem; color: var(--muted); text-align: center; letter-spacing: 0.05em; }
+
+  @media (max-width: 480px) {
+    html { font-size: 17px; }
+    .today-status { font-size: 1.25rem; }
+    .horizon { gap: 2px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>PHARMAK<span class="sun">O</span>N</h1>
+    <div class="header-btns">
+      <button class="icon-btn" onclick="toggleThemeQuick()" title="Theme">◐</button>
+      <button class="icon-btn" onclick="openSettings()" title="Settings [S]">⚙</button>
+    </div>
+  </header>
+
+  <div class="today-card">
+    <div class="today-date" id="today-date"></div>
+    <div class="today-status" id="today-status"></div>
+    <div class="countdown-rows" id="countdown-rows"></div>
+  </div>
+
+  <div class="sub-cards">
+    <div class="sub-card">
+      <div class="sub-name sub-nic">Nicotine</div>
+      <div class="chips" id="chips-nic"></div>
+      <button class="dose-btn" id="log-btn-nic" onclick="logDose('nic')"></button>
+    </div>
+    <div class="sub-card">
+      <div class="sub-name sub-caf">Caffeine</div>
+      <div class="chips" id="chips-caf"></div>
+      <button class="dose-btn" id="log-btn-caf" onclick="logDose('caf')"></button>
+    </div>
+  </div>
+  <div class="note-form">
+    <input type="text" id="note-input" placeholder="note (optional) [N]" autocomplete="off" enterkeyhint="done">
+  </div>
+
+  <div class="section-title">Horizon</div>
+  <div class="horizon" id="horizon"></div>
+  <div class="horizon-legend"><span id="horizon-from"></span><span>today ▲</span><span id="horizon-to"></span></div>
+
+  <div class="stats-strip">
+    <div class="stat-cell"><div class="stat-val accent" id="stat-streak">0</div><div class="stat-label">Clean Days</div></div>
+    <div class="stat-cell"><div class="stat-val" id="stat-nic">0</div><div class="stat-label" id="stat-nic-label">Nicotine</div></div>
+    <div class="stat-cell"><div class="stat-val" id="stat-caf">0</div><div class="stat-label" id="stat-caf-label">Caffeine</div></div>
+    <div class="stat-cell"><div class="stat-val" id="stat-viol">0</div><div class="stat-label">Violations</div></div>
+  </div>
+
+  <div class="section-title">Log</div>
+  <div class="log-list" id="log-list"></div>
+
+  <footer>pharmakon · remedy and poison, separated by timing · data lives in your browser</footer>
+</div>
+
+<div class="overlay" id="settings-overlay" onclick="if(event.target===this) closeSettings()">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>SETTINGS</h2>
+      <button class="icon-btn" onclick="closeSettings()">✕</button>
+    </div>
+
+    <div class="settings-section-title">Rules</div>
+    <div class="settings-note">
+      Same substance: 4 days between uses (day 1 → day 5). Any substance: never
+      two stimulant days in a row. Doses that break a rule are still logged —
+      just flagged. Eligibility always follows your actual last doses, so
+      skipped days shift the schedule instead of breaking it.
+    </div>
+
+    <div class="settings-section-title">Dose presets (mg)</div>
+    <div class="settings-row">
+      <label for="preset-nic">Nicotine — comma-separated</label>
+      <input type="text" id="preset-nic" autocomplete="off" onchange="presetChanged('nic')">
+    </div>
+    <div class="settings-row">
+      <label for="preset-caf">Caffeine — comma-separated</label>
+      <input type="text" id="preset-caf" autocomplete="off" onchange="presetChanged('caf')">
+    </div>
+
+    <div class="settings-section-title">Data</div>
+    <div class="settings-note">Everything is stored in this browser only.</div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" onclick="exportCSV()">↓ Export CSV [E]</button>
+      <button class="btn btn-tiny" onclick="importCSV()">↑ Import CSV [I]</button>
+      <button class="btn btn-tiny danger" onclick="clearAll()">✕ Clear All</button>
+    </div>
+    <input type="file" id="import-file" accept=".csv,text/csv" style="display:none" onchange="handleImportFile(this.files[0])">
+
+    <div class="settings-section-title">Theme</div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" id="theme-auto" onclick="setTheme('auto')">Auto</button>
+      <button class="btn btn-tiny" id="theme-dark" onclick="setTheme('dark')">Dark</button>
+      <button class="btn btn-tiny" id="theme-light" onclick="setTheme('light')">Light</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="edit-overlay" onclick="if(event.target===this) closeEdit()">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>EDIT DOSE</h2>
+      <button class="icon-btn" onclick="closeEdit()">✕</button>
+    </div>
+    <div class="settings-row">
+      <label>Time</label>
+      <input type="datetime-local" id="edit-time" step="1">
+    </div>
+    <div class="settings-row">
+      <label>Substance</label>
+      <select id="edit-sub">
+        <option value="nic">nicotine</option>
+        <option value="caf">caffeine</option>
+      </select>
+    </div>
+    <div class="settings-row">
+      <label>Dose (mg)</label>
+      <input type="number" id="edit-dose" min="0" step="any">
+    </div>
+    <div class="settings-row">
+      <label>Note</label>
+      <input type="text" id="edit-note" autocomplete="off">
+    </div>
+    <div class="edit-actions">
+      <button class="btn primary" onclick="saveEdit()">✓ Save</button>
+      <button class="btn danger" onclick="deleteEdit()">✕ Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const DB_KEY = 'pharmakon_doses';
+const PRESETS_KEY = 'pharmakon_presets';
+const THEME_KEY = 'pharmakon_theme';
+
+const SUBS = {
+  nic: { name: 'nicotine', cls: 'sub-nic', defaults: [2, 4] },
+  caf: { name: 'caffeine', cls: 'sub-caf', defaults: [100, 200] },
+};
+const SUB_IDS = ['nic', 'caf'];
+
+// The two rules, as day-key differences.
+const SAME_SUB_GAP = 4; // same substance: use day 1 → next allowed day 5
+const ANY_SUB_GAP = 2;  // any substance: never two stimulant days in a row
+
+const VIOL_LABELS = {
+  repeat: 'same-day repeat',
+  consecutive: 'consecutive stimulant day',
+  tooSoon: 'same substance too soon',
+};
+
+// ── Storage (meridian-style) ─────────────────────────────────────
+// Mobile WebKit can detach localStorage while the app is suspended in the
+// background — every read/write then throws until the process is killed.
+// All storage goes through these helpers so a dead backend degrades to
+// in-memory state (retried on resume) instead of killing whatever handler
+// touched storage first.
+const pendingWrites = new Map();
+// Keys whose reads threw — the value we're holding for them is a fallback,
+// not the truth, so re-read them once storage comes back.
+const failedReads = new Set();
+
+function storageGet(key) {
+  try { const v = localStorage.getItem(key); failedReads.delete(key); return v; }
+  catch (e) {
+    failedReads.add(key);
+    return pendingWrites.has(key) ? pendingWrites.get(key) : null;
+  }
+}
+
+function storageSet(key, val) {
+  pendingWrites.set(key, val);
+  try { localStorage.setItem(key, val); pendingWrites.delete(key); } catch (e) {}
+}
+
+function flushPendingWrites() {
+  for (const [key, val] of [...pendingWrites]) {
+    try {
+      if (val == null) localStorage.removeItem(key);
+      else localStorage.setItem(key, val);
+      pendingWrites.delete(key);
+    } catch (e) { break; }
+  }
+}
+
+function loadJSON(key, fallback) {
+  const raw = storageGet(key);
+  if (raw == null) return fallback;
+  try { return JSON.parse(raw); }
+  catch (e) {
+    // keep the unreadable raw value around for manual recovery instead of silently losing it
+    storageSet(key + '_corrupt', raw);
+    return fallback;
+  }
+}
+
+function finiteOrNull(v) {
+  return typeof v === 'number' && isFinite(v) ? v : null;
+}
+
+// A malformed entry must never take down the whole log — repair what's
+// recoverable, drop only garbage. Also the validation gate for CSV import.
+function sanitizeEntries(raw) {
+  if (!Array.isArray(raw)) return [];
+  const clean = [];
+  for (const e of raw) {
+    if (!e || typeof e !== 'object') continue;
+    const t = finiteOrNull(e.t);
+    if (t == null) continue;
+    if (!SUB_IDS.includes(e.sub)) continue;
+    const dose = finiteOrNull(e.dose);
+    if (dose == null || dose <= 0) continue;
+    const note = typeof e.note === 'string' ? e.note.trim() : '';
+    clean.push({ id: finiteOrNull(e.id) ?? t, t, sub: e.sub, dose, note });
+  }
+  clean.sort((a, b) => a.t - b.t);
+  return clean;
+}
+
+function sanitizePresets(raw) {
+  const out = {};
+  for (const s of SUB_IDS) {
+    const arr = raw && Array.isArray(raw[s])
+      ? raw[s].filter(v => typeof v === 'number' && isFinite(v) && v > 0)
+      : [];
+    const uniq = [...new Set(arr)].slice(0, 4).sort((a, b) => a - b);
+    out[s] = uniq.length ? uniq : SUBS[s].defaults.slice();
+  }
+  return out;
+}
+
+let entries = sanitizeEntries(loadJSON(DB_KEY, []));
+let presets = sanitizePresets(loadJSON(PRESETS_KEY, null));
+let selDose = { nic: presets.nic[0], caf: presets.caf[0] };
+
+function saveEntries() {
+  entries.sort((a, b) => a.t - b.t);
+  storageSet(DB_KEY, JSON.stringify(entries));
+}
+function savePresets() {
+  storageSet(PRESETS_KEY, JSON.stringify(presets));
+}
+
+// ── Time helpers ─────────────────────────────────────────────────
+function dayKey(t) {
+  const d = new Date(t);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function startOfDay(t) { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); }
+
+// Day arithmetic is anchored to local noon so DST's 23h/25h days round away
+// instead of shifting a whole day.
+function keyToNoon(key) {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d, 12).getTime();
+}
+function dayDiff(keyA, keyB) { return Math.round((keyToNoon(keyB) - keyToNoon(keyA)) / 86400000); }
+function addDays(key, n) { return dayKey(keyToNoon(key) + n * 86400000); }
+
+function fmtClock(t) {
+  const d = new Date(t);
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
+function fmtDayLabel(key) {
+  const today = dayKey(Date.now());
+  if (key === today) return 'Today';
+  if (key === addDays(today, -1)) return 'Yesterday';
+  if (key === addDays(today, 1)) return 'Tomorrow';
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+// ── Scheduling engine ────────────────────────────────────────────
+function lastUseDays(entries) {
+  const bySub = { nic: null, caf: null };
+  let any = null;
+  for (const e of entries) {
+    const dk = dayKey(e.t);
+    if (bySub[e.sub] == null || dk > bySub[e.sub]) bySub[e.sub] = dk;
+    if (any == null || dk > any) any = dk;
+  }
+  return { bySub, any };
+}
+
+function eligibleOn(last, sub, key) {
+  return (last.bySub[sub] == null || dayDiff(last.bySub[sub], key) >= SAME_SUB_GAP)
+      && (last.any == null || dayDiff(last.any, key) >= ANY_SUB_GAP);
+}
+
+// Days until sub becomes eligible, from `key`. 0 = eligible that day.
+function daysUntil(last, sub, key) {
+  let wait = 0;
+  if (last.bySub[sub] != null) wait = Math.max(wait, SAME_SUB_GAP - dayDiff(last.bySub[sub], key));
+  if (last.any != null) wait = Math.max(wait, ANY_SUB_GAP - dayDiff(last.any, key));
+  return Math.max(0, wait);
+}
+
+// Violations are derived from the log on every render, never stored — editing
+// or deleting an entry reclassifies the whole history consistently.
+function classifyViolations(entries) {
+  const out = new Map(); // id -> [reason, ...]
+  const lastBySub = { nic: null, caf: null };
+  let lastAny = null;
+  for (const e of entries) {
+    const dk = dayKey(e.t);
+    const reasons = [];
+    const dSub = lastBySub[e.sub] == null ? null : dayDiff(lastBySub[e.sub], dk);
+    const dAny = lastAny == null ? null : dayDiff(lastAny, dk);
+    if (dSub === 0) reasons.push('repeat'); // repeat implies consecutive — don't double-flag
+    else {
+      if (dSub != null && dSub < SAME_SUB_GAP) reasons.push('tooSoon');
+      if (dAny != null && dAny < ANY_SUB_GAP) reasons.push('consecutive');
+    }
+    if (reasons.length) out.set(e.id, reasons);
+    lastBySub[e.sub] = dk;
+    lastAny = dk;
+  }
+  return out;
+}
+
+// Least-recently-used eligible substance; never-used wins, ties go to nicotine.
+function suggestSub(last, todayKey) {
+  const elig = SUB_IDS.filter(s => eligibleOn(last, s, todayKey));
+  if (!elig.length) return null;
+  elig.sort((a, b) =>
+    (last.bySub[a] ? keyToNoon(last.bySub[a]) : -Infinity) -
+    (last.bySub[b] ? keyToNoon(last.bySub[b]) : -Infinity));
+  return elig[0];
+}
+
+function computeStats(entries, violations, todayKey) {
+  let lastViolDay = null;
+  for (const e of entries) if (violations.has(e.id)) lastViolDay = dayKey(e.t);
+  let cleanStreak = 0;
+  if (lastViolDay != null) cleanStreak = Math.max(0, dayDiff(lastViolDay, todayKey));
+  else if (entries.length) cleanStreak = Math.max(0, dayDiff(dayKey(entries[0].t), todayKey));
+  const perSub = {};
+  for (const s of SUB_IDS) {
+    const doses = entries.filter(e => e.sub === s);
+    const days = [...new Set(doses.map(e => dayKey(e.t)))].sort();
+    let avg = null;
+    if (days.length >= 2) {
+      let sum = 0;
+      for (let i = 1; i < days.length; i++) sum += dayDiff(days[i - 1], days[i]);
+      avg = sum / (days.length - 1);
+    }
+    perSub[s] = { count: doses.length, avgInterval: avg };
+  }
+  return { cleanStreak, violCount: violations.size, perSub };
+}
+
+// ── Logging ──────────────────────────────────────────────────────
+function logDose(sub) {
+  const t = Date.now();
+  const noteEl = document.getElementById('note-input');
+  entries.push({ id: t + Math.random(), t, sub, dose: selDose[sub], note: noteEl.value.trim() });
+  noteEl.value = '';
+  noteEl.blur(); // drop the mobile keyboard — logging is done
+  saveEntries();
+  renderAll();
+}
+
+// ── Rendering ────────────────────────────────────────────────────
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+function renderToday(last) {
+  const todayK = dayKey(Date.now());
+  const sug = suggestSub(last, todayK);
+  const elig = SUB_IDS.filter(s => eligibleOn(last, s, todayK));
+  const takenToday = entries.filter(e => dayKey(e.t) === todayK);
+
+  document.getElementById('today-date').textContent =
+    new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+
+  const status = document.getElementById('today-status');
+  status.className = 'today-status';
+  if (takenToday.length) {
+    const what = takenToday.map(e => SUBS[e.sub].name + ' ' + e.dose + 'mg').join(' · ');
+    status.textContent = 'logged today: ' + what;
+    status.classList.add('dosed');
+  } else if (elig.length === 2) {
+    status.textContent = 'either eligible — ' + SUBS[sug].name + ' suggested';
+    status.classList.add('ok');
+  } else if (elig.length === 1) {
+    status.textContent = SUBS[elig[0]].name + ' eligible today';
+    status.classList.add('ok');
+  } else {
+    status.textContent = 'rest day';
+    status.classList.add('rest');
+  }
+
+  let html = '';
+  for (const s of SUB_IDS) {
+    const wait = daysUntil(last, s, todayK);
+    let when;
+    if (wait === 0) when = '<span class="cd-when now">eligible today' + (s === sug && elig.length === 2 ? ' · suggested' : '') + '</span>';
+    else if (wait === 1) when = '<span class="cd-when">tomorrow</span>';
+    else when = '<span class="cd-when">in ' + wait + ' days · ' + esc(fmtDayLabel(addDays(todayK, wait))) + '</span>';
+    html += '<div class="cd-row"><span class="' + SUBS[s].cls + '">' + SUBS[s].name + '</span>' + when + '</div>';
+  }
+  document.getElementById('countdown-rows').innerHTML = html;
+}
+
+function renderSubCards(last) {
+  const todayK = dayKey(Date.now());
+  const sug = suggestSub(last, todayK);
+  for (const s of SUB_IDS) {
+    if (!presets[s].includes(selDose[s])) selDose[s] = presets[s][0];
+    const chipsEl = document.getElementById('chips-' + s);
+    chipsEl.innerHTML = '';
+    for (const v of presets[s]) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip' + (v === selDose[s] ? ' active' : '');
+      b.textContent = v + 'mg';
+      b.onclick = () => { selDose[s] = v; renderSubCards(last); };
+      chipsEl.appendChild(b);
+    }
+    const btn = document.getElementById('log-btn-' + s);
+    btn.textContent = '＋ ' + selDose[s] + 'mg';
+    const ok = eligibleOn(last, s, todayK);
+    btn.classList.toggle('warn', !ok);
+    btn.classList.toggle('suggested', ok && s === sug);
+    btn.title = ok ? 'Log ' + SUBS[s].name : 'Not eligible today — logging will be flagged';
+  }
+}
+
+function renderHorizon(last, violations) {
+  const el = document.getElementById('horizon');
+  const todayK = dayKey(Date.now());
+  const byDay = new Map(); // dayKey -> { subs: Set, viol: bool }
+  for (const e of entries) {
+    const dk = dayKey(e.t);
+    const cur = byDay.get(dk) || { subs: new Set(), viol: false };
+    cur.subs.add(e.sub);
+    if (violations.has(e.id)) cur.viol = true;
+    byDay.set(dk, cur);
+  }
+  let html = '';
+  for (let off = -14; off <= 7; off++) {
+    const key = addDays(todayK, off);
+    let cls = 'day-cell';
+    let title = fmtDayLabel(key);
+    if (off <= 0) {
+      const d = byDay.get(key);
+      if (d) {
+        cls += d.subs.size === 2 ? ' both' : (d.subs.has('nic') ? ' nic' : ' caf');
+        title += ': ' + [...d.subs].map(s => SUBS[s].name).join(' + ');
+        if (d.viol) { cls += ' viol'; title += ' ⚠ violation'; }
+      } else {
+        title += ': rest';
+      }
+    } else {
+      cls += ' future';
+      const elig = SUB_IDS.filter(s => eligibleOn(last, s, key));
+      if (elig.length) {
+        cls += ' future-ok';
+        title += ': ' + elig.map(s => SUBS[s].name).join(' or ') + ' eligible';
+      } else {
+        title += ': rest';
+      }
+    }
+    if (key === todayK) cls += ' today';
+    html += '<div class="' + cls + '" title="' + esc(title) + '"></div>';
+  }
+  el.innerHTML = html;
+  document.getElementById('horizon-from').textContent = '−14d';
+  document.getElementById('horizon-to').textContent = '+7d';
+}
+
+function renderStats(violations) {
+  const st = computeStats(entries, violations, dayKey(Date.now()));
+  document.getElementById('stat-streak').textContent = st.cleanStreak;
+  for (const s of SUB_IDS) {
+    document.getElementById('stat-' + s).textContent = st.perSub[s].count;
+    document.getElementById('stat-' + s + '-label').textContent =
+      SUBS[s].name + (st.perSub[s].avgInterval != null ? ' · Ø' + st.perSub[s].avgInterval.toFixed(1) + 'd' : '');
+  }
+  const violEl = document.getElementById('stat-viol');
+  violEl.textContent = st.violCount;
+  violEl.classList.toggle('danger', st.violCount > 0);
+}
+
+let logShowAll = false;
+
+function renderLog(violations) {
+  const el = document.getElementById('log-list');
+  el.innerHTML = '';
+  if (entries.length === 0) {
+    el.innerHTML = '<div class="log-empty">no doses yet — tap a substance button to log the first one</div>';
+    return;
+  }
+  const LIMIT = 40;
+  const shown = logShowAll ? entries.slice() : entries.slice(-LIMIT);
+  const hidden = entries.length - shown.length;
+  let lastDay = null;
+  const frag = document.createDocumentFragment();
+  const list = shown.slice().reverse();
+  for (const e of list) {
+    const dk = dayKey(e.t);
+    if (dk !== lastDay) {
+      lastDay = dk;
+      const dayEntries = entries.filter(x => dayKey(x.t) === dk);
+      const summary = dayEntries.map(x => SUBS[x.sub].name + ' ' + x.dose + 'mg').join(' · ');
+      const head = document.createElement('div');
+      head.className = 'day-head';
+      head.innerHTML = '<span>' + esc(fmtDayLabel(dk)) + '</span><span>' + esc(summary) + '</span>';
+      frag.appendChild(head);
+    }
+    const row = document.createElement('div');
+    row.className = 'log-row';
+    const reasons = violations.get(e.id);
+    const badge = reasons
+      ? '<span class="viol-badge" title="' + esc(reasons.map(r => VIOL_LABELS[r]).join(' · ')) + '">⚠ ' +
+        esc(reasons.map(r => VIOL_LABELS[r]).join(' · ')) + '</span>'
+      : '';
+    row.innerHTML =
+      '<span class="l-time">' + fmtClock(e.t) + '</span>' +
+      '<span class="l-sub ' + SUBS[e.sub].cls + '">' + SUBS[e.sub].name.toUpperCase() + '</span>' +
+      '<span class="l-dose">' + e.dose + 'mg</span>' +
+      '<span class="l-note">' + esc(e.note) + '</span>' +
+      badge +
+      '<button class="l-del" title="delete">✕</button>';
+    row.querySelector('.l-del').onclick = (ev) => {
+      ev.stopPropagation();
+      if (!confirm('Delete this dose?')) return;
+      entries = entries.filter(x => x.id !== e.id);
+      saveEntries();
+      renderAll();
+    };
+    row.onclick = () => openEdit(e.id);
+    frag.appendChild(row);
+  }
+  el.appendChild(frag);
+  if (hidden > 0) {
+    const more = document.createElement('button');
+    more.className = 'show-more';
+    more.textContent = '▾ show ' + hidden + ' older doses';
+    more.onclick = () => { logShowAll = true; renderLog(classifyViolations(entries)); };
+    el.appendChild(more);
+  }
+}
+
+function renderAll() {
+  const violations = classifyViolations(entries);
+  const last = lastUseDays(entries);
+  renderToday(last);
+  renderSubCards(last);
+  renderHorizon(last, violations);
+  renderStats(violations);
+  renderLog(violations);
+}
+
+// Midnight rollover + backgrounded-tab catch-up.
+setInterval(renderAll, 60000);
+
+// ── Resume handling (meridian-style) ─────────────────────────────
+// If the page loaded while localStorage was detached, the app came up empty.
+// Once storage is reachable again, union stored data with anything logged
+// since. Must run BEFORE flushPendingWrites — otherwise a save made against
+// the empty in-memory log would overwrite the real history.
+function recoverFailedReads() {
+  if (failedReads.size === 0) return;
+  try { localStorage.getItem(DB_KEY); } catch (e) { return; } // still detached, retry next resume
+  const toRecover = new Set(failedReads);
+  failedReads.clear();
+  if (toRecover.has(DB_KEY)) {
+    const stored = sanitizeEntries(loadJSON(DB_KEY, []));
+    const have = new Set(entries.map(e => e.id));
+    const missing = stored.filter(e => !have.has(e.id));
+    if (missing.length) {
+      entries = sanitizeEntries(entries.concat(missing));
+      saveEntries();
+    }
+  }
+  if (toRecover.has(PRESETS_KEY) && !pendingWrites.has(PRESETS_KEY)) {
+    presets = sanitizePresets(loadJSON(PRESETS_KEY, null));
+  }
+  if (toRecover.has(THEME_KEY) && !pendingWrites.has(THEME_KEY)) {
+    setTheme(storageGet(THEME_KEY) || 'auto');
+  }
+}
+
+function resyncAfterResume() {
+  recoverFailedReads();
+  flushPendingWrites();
+  renderAll();
+}
+window.addEventListener('pageshow', (e) => { if (e.persisted) resyncAfterResume(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) flushPendingWrites();
+  else resyncAfterResume();
+});
+
+// ── Edit overlay ─────────────────────────────────────────────────
+let editId = null;
+
+function toLocalInput(t) {
+  const d = new Date(t - new Date(t).getTimezoneOffset() * 60000);
+  return d.toISOString().slice(0, 19);
+}
+
+function openEdit(id) {
+  const e = entries.find(x => x.id === id);
+  if (!e) return;
+  editId = id;
+  document.getElementById('edit-time').value = toLocalInput(e.t);
+  document.getElementById('edit-sub').value = e.sub;
+  document.getElementById('edit-dose').value = e.dose;
+  document.getElementById('edit-note').value = e.note;
+  document.getElementById('edit-overlay').classList.add('visible');
+}
+
+function closeEdit() {
+  editId = null;
+  document.getElementById('edit-overlay').classList.remove('visible');
+}
+
+function saveEdit() {
+  const e = entries.find(x => x.id === editId);
+  if (!e) { closeEdit(); return; }
+  const t = new Date(document.getElementById('edit-time').value).getTime();
+  if (isFinite(t)) e.t = Math.min(t, Date.now());
+  const sub = document.getElementById('edit-sub').value;
+  if (SUB_IDS.includes(sub)) e.sub = sub;
+  const dose = Number(document.getElementById('edit-dose').value);
+  if (isFinite(dose) && dose > 0) e.dose = dose;
+  e.note = document.getElementById('edit-note').value.trim();
+  saveEntries();
+  closeEdit();
+  renderAll();
+}
+
+function deleteEdit() {
+  if (!confirm('Delete this dose?')) return;
+  entries = entries.filter(x => x.id !== editId);
+  saveEntries();
+  closeEdit();
+  renderAll();
+}
+
+// ── Settings ─────────────────────────────────────────────────────
+function openSettings() {
+  for (const s of SUB_IDS) {
+    document.getElementById('preset-' + s).value = presets[s].join(', ');
+  }
+  document.getElementById('settings-overlay').classList.add('visible');
+}
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.remove('visible');
+}
+
+function presetChanged(sub) {
+  const el = document.getElementById('preset-' + sub);
+  const nums = el.value.split(',').map(v => Number(v.trim())).filter(v => isFinite(v) && v > 0);
+  presets = sanitizePresets({ ...presets, [sub]: nums });
+  savePresets();
+  el.value = presets[sub].join(', ');
+  renderAll();
+}
+
+// ── CSV export / import ──────────────────────────────────────────
+// No violation column on purpose: violations are always recomputed from the
+// doses themselves — exporting them would freeze a derived judgment.
+const CSV_HEADER = 'id,timestamp,iso,sub,dose,note';
+const csvQuote = s => '"' + String(s).replace(/"/g, '""') + '"';
+
+function exportCSV() {
+  const rows = [CSV_HEADER];
+  for (const e of entries) {
+    rows.push([e.id, e.t, new Date(e.t).toISOString(), e.sub, e.dose, csvQuote(e.note)].join(','));
+  }
+  const blob = new Blob([rows.join('\n') + '\n'], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'pharmakon-' + dayKey(Date.now()) + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importCSV() {
+  document.getElementById('import-file').click();
+}
+
+// Minimal CSV line parser that honors quoted fields with embedded commas/quotes.
+function parseCSVLine(line) {
+  const out = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQ) {
+      if (c === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i++; }
+        else inQ = false;
+      } else cur += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ',') { out.push(cur); cur = ''; }
+    else cur += c;
+  }
+  out.push(cur);
+  return out;
+}
+
+function handleImportFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const lines = String(reader.result).split(/\r?\n/).filter(l => l.trim());
+    const imported = [];
+    for (const line of lines) {
+      if (line.startsWith('id,')) continue;
+      const f = parseCSVLine(line);
+      if (f.length < 6) continue;
+      imported.push({ id: Number(f[0]), t: Number(f[1]), sub: f[3], dose: Number(f[4]), note: f[5] });
+    }
+    const existing = new Set(entries.map(e => e.id));
+    const added = imported.filter(e => isFinite(e.id) && !existing.has(e.id));
+    entries = sanitizeEntries(entries.concat(added));
+    saveEntries();
+    renderAll();
+    alert('Imported ' + added.length + ' new dose' + (added.length === 1 ? '' : 's') + ' (' + (imported.length - added.length) + ' duplicates skipped).');
+  };
+  reader.readAsText(file);
+  document.getElementById('import-file').value = '';
+}
+
+function clearAll() {
+  if (!confirm('Delete ALL ' + entries.length + ' doses? Export first if you want a backup.')) return;
+  entries = [];
+  saveEntries();
+  renderAll();
+}
+
+// ── Theme (auto / dark / light) ──────────────────────────────────
+function setTheme(pref) {
+  storageSet(THEME_KEY, pref);
+  applyTheme(pref);
+  for (const p of ['auto', 'dark', 'light']) {
+    document.getElementById('theme-' + p).classList.toggle('sel', p === pref);
+  }
+}
+function applyTheme(pref) {
+  const dark = pref === 'dark' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.body.classList.toggle('light', !dark);
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if ((storageGet(THEME_KEY) || 'auto') === 'auto') applyTheme('auto');
+});
+function toggleThemeQuick() {
+  const dark = !document.body.classList.contains('light');
+  setTheme(dark ? 'light' : 'dark');
+}
+
+// ── Keyboard ─────────────────────────────────────────────────────
+document.addEventListener('keydown', (ev) => {
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+    if (ev.key === 'Escape') document.activeElement.blur();
+    return;
+  }
+  const k = ev.key.toLowerCase();
+  if (k === 'escape') { closeSettings(); closeEdit(); }
+  else if (k === '1') logDose('nic');
+  else if (k === '2') logDose('caf');
+  else if (k === 'n') { document.getElementById('note-input').focus(); ev.preventDefault(); }
+  else if (k === 's') openSettings();
+  else if (k === 'e') exportCSV();
+  else if (k === 'i') importCSV();
+});
+
+// ── Service worker (PWA install + offline) ───────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+setTheme(storageGet(THEME_KEY) || 'auto');
+renderAll();
+</script>
+</body>
+</html>

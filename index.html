@@ -733,7 +733,21 @@ function computeStats(entries, violations, todayKey) {
 function logDose(sub) {
   const t = Date.now();
   const noteEl = document.getElementById('note-input');
-  entries.push({ id: t + Math.random(), t, sub, dose: selDose[sub], note: noteEl.value.trim() });
+  const entry = { id: t + Math.random(), t, sub, dose: selDose[sub], note: noteEl.value.trim() };
+  // Probe what the classifier will say before committing, so the confirm
+  // names the exact rules this dose would break.
+  const probe = entries.concat(entry).sort((a, b) => a.t - b.t);
+  const reasons = classifyViolations(probe).get(entry.id);
+  if (reasons) {
+    const last = lastUseDays(entries);
+    const todayK = dayKey(t);
+    const wait = daysUntil(last, sub, todayK);
+    const when = wait === 1 ? 'tomorrow' : fmtDayLabel(addDays(todayK, wait));
+    const ok = confirm('This breaks the rules: ' + reasons.map(r => VIOL_LABELS[r]).join(' · ') + '.\n' +
+      SUBS[sub].name + ' is next eligible ' + when + '.\n\nLog it anyway? It will be flagged.');
+    if (!ok) return;
+  }
+  entries.push(entry);
   noteEl.value = '';
   noteEl.blur(); // drop the mobile keyboard — logging is done
   saveEntries();

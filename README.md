@@ -19,7 +19,7 @@ The intended rhythm is nicotine · rest · caffeine · rest · repeat — but th
 
 ## Honesty model
 
-The app never blocks a dose. Log everything; doses that break a rule are recorded and badged with exactly which rule they broke (same-day repeat · consecutive stimulant day · same substance too soon). Violations are derived from the log at render time, never stored — correct an entry's timestamp and the whole history reclassifies.
+The app never blocks a dose. Logging one that breaks a rule asks you to confirm first — naming the rules it breaks and when the substance is next eligible — then records it badged with exactly which rule it broke (same-day repeat · consecutive stimulant day · same substance too soon). Violations are derived from the log at render time, never stored — correct an entry's timestamp and the whole history reclassifies.
 
 ## Features
 

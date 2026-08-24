@@ -36,6 +36,13 @@
   a.app span { display: block; color: var(--muted); font-size: 0.95rem; margin-top: 0.15rem; }
   footer { margin-top: 3rem; color: var(--muted); font-size: 0.85rem; }
   footer a { color: inherit; }
+  #exportAll {
+    margin-top: 2rem; width: 100%; padding: 0.7rem 1.2rem;
+    background: none; border: 1px solid var(--border); border-radius: 10px;
+    color: var(--muted); font: inherit; font-size: 0.95rem; cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  #exportAll:hover { border-color: var(--accent); color: var(--fg); }
 </style>
 </head>
 <body>
@@ -49,7 +56,33 @@
     <li><a class="app" href="halteres/"><strong>halteres</strong><span>Simple &amp; Sinister kettlebell log</span></a></li>
     <li><a class="app" href="nbacking/"><strong>nbacking</strong><span>dual n-back working memory training</span></a></li>
   </ul>
+  <button id="exportAll" type="button">export all app data</button>
   <footer><a href="https://github.com/DrakeMorrison/aristeia">source on GitHub</a></footer>
 </main>
+<script>
+  document.getElementById('exportAll').addEventListener('click', () => {
+    const apps = ['meridian', 'gnomon', 'pharmakon', 'halteres', 'nbacking'];
+    const data = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      const app = apps.find(a => key.startsWith(a + '_'));
+      if (!app) continue;
+      const raw = localStorage.getItem(key);
+      let val;
+      try { val = JSON.parse(raw); } catch { val = raw; }
+      (data[app] ??= {})[key] = val;
+    }
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+    const blob = new Blob(
+      [JSON.stringify({ exported: new Date().toISOString(), origin: location.origin, data }, null, 2)],
+      { type: 'application/json' }
+    );
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `aristeia-export-${stamp}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+</script>
 </body>
 </html>

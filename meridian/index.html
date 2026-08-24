@@ -1,0 +1,3331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1d2021">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Meridian</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 20px; }
+
+  :root {
+    --bg: #1d2021;
+    --surface: #282828;
+    --surface2: #32302f;
+    --border: #504945;
+    --text: #ebdbb2;
+    --text-dim: #d5c4a1;
+    --muted: #928374;
+    --accent: #b8bb26;
+    --accent-dim: #98971a;
+    --accent2: #fabd2f;
+    --accent2-dim: #d79921;
+    --danger: #fb4934;
+    --danger-dim: #cc241d;
+    --orange: #fe8019;
+    --info: #83a598;
+    --mono: 'IBM Plex Mono', monospace;
+    --display: 'Cinzel', serif;
+    --data: 'Cormorant Garamond', serif;
+  }
+
+  body.light {
+    --bg: #f9f5d7;
+    --surface: #ebdbb2;
+    --surface2: #d5c4a1;
+    --border: #bdae93;
+    --text: #282828;
+    --text-dim: #3c3836;
+    --muted: #7c6f64;
+    --accent: #79740e;
+    --accent-dim: #98971a;
+    --accent2: #b57614;
+    --accent2-dim: #d79921;
+    --danger: #9d0006;
+    --danger-dim: #cc241d;
+    --orange: #d65d0e;
+    --info: #076678;
+  }
+
+  body {
+    font-family: var(--mono);
+    font-size: 1.25rem;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  #bg-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+  #bg-canvas.active { opacity: 1; }
+  body.graph-mode .app { opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+  body.graph-mode #bg-canvas { opacity: 1 !important; }
+  body.has-graph #bg-canvas { pointer-events: auto; cursor: pointer; }
+  #graph-tooltip {
+    position: fixed;
+    pointer-events: none;
+    display: none;
+    background: color-mix(in srgb, var(--bg) 90%, transparent);
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--text);
+    line-height: 1.6;
+    backdrop-filter: blur(6px);
+    z-index: 10;
+    max-width: 16.25rem;
+  }
+  #graph-tooltip .tt-task { color: var(--text); margin-bottom: 0.15rem; font-size: 0.8125rem; }
+  #graph-tooltip .tt-meta { color: var(--muted); }
+  #graph-tooltip .tt-delta { margin-top: 0.15rem; }
+  #graph-tooltip .tt-delta.over  { color: var(--danger); }
+  #graph-tooltip .tt-delta.under { color: var(--accent2); }
+  #graph-tooltip .tt-delta.exact { color: var(--muted); }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    backdrop-filter: blur(3px);
+    transition: background 0.3s ease, backdrop-filter 0.3s ease;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2.5rem;
+  }
+
+  .logo {
+    font-family: var(--display);
+    font-size: 0.8125rem;
+    letter-spacing: 0.3em;
+    color: var(--accent2);
+    text-transform: uppercase;
+  }
+
+  .header-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    font-family: var(--display);
+  }
+
+  .section-label {
+    font-family: var(--display);
+    font-size: 0.8125rem;
+    letter-spacing: 0.25em;
+    color: var(--orange);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  .input-block {
+    margin-bottom: 1.5rem;
+  }
+
+  input[type="text"], input[type="number"], input[type="time"] {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    padding: 0.6rem 0;
+    font-size: 1.1rem;
+    outline: none;
+    transition: border-color 0.2s;
+    caret-color: var(--accent);
+  }
+  input[type="text"]:focus, input[type="number"]:focus, input[type="time"]:focus {
+    border-bottom-color: var(--accent2);
+  }
+  input[type="text"]::placeholder, input[type="number"]::placeholder {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  input:disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .time-row {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+    margin-bottom: 1.5rem;
+  }
+  .time-row .input-block { flex: 1; margin-bottom: 0; }
+
+  .btn {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .btn:hover { color: var(--text); border-color: var(--muted); }
+
+  .start-btn {
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    padding: 0.6rem 1.4rem;
+    background: var(--accent2);
+    color: var(--bg);
+    border: none;
+    transition: opacity 0.15s, transform 0.1s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .start-btn:hover { background: var(--accent2-dim); }
+  .start-btn:active { transform: scale(0.97); }
+  .start-btn:disabled { opacity: 0.3; cursor: default; transform: none; }
+
+  .log-past-btn {
+    font-size: 0.6875rem;
+    letter-spacing: 0.15em;
+    padding: 0.6rem 0.9rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .log-past-btn:disabled { opacity: 0.3; cursor: default; }
+
+  .timer-display {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem 0 2rem;
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+  .timer-display.visible { display: flex; }
+
+  .task-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    font-family: var(--mono);
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+    max-width: 90%;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .time-digits {
+    font-family: var(--mono);
+    font-size: clamp(3rem, 12vw, 5.5rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--accent);
+    transition: color 0.5s;
+  }
+  .time-digits.over { color: var(--danger); }
+
+  .predicted-bar {
+    position: relative;
+    width: 80%;
+    height: 2px;
+    background: var(--border);
+    margin: 1.5rem 0;
+  }
+  .predicted-marker {
+    position: absolute;
+    top: -3px;
+    width: 2px;
+    height: 8px;
+    background: var(--muted);
+    left: 100%;
+    transition: left 0.5s linear;
+  }
+  .elapsed-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.5s linear, background 0.5s;
+  }
+  .elapsed-fill.over { background: var(--danger); }
+
+  .timer-meta {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .timer-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .stop-btn {
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    padding: 0.75rem 2.5rem;
+    color: var(--danger);
+    border-color: var(--danger);
+    transition: background 0.15s, color 0.15s;
+  }
+  .stop-btn:hover { background: var(--danger); color: var(--bg); }
+
+  .pause-btn {
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    padding: 0.75rem 2.5rem;
+    color: var(--accent2);
+    border-color: var(--accent2-dim);
+    transition: background 0.15s, color 0.15s;
+  }
+  .pause-btn:hover { background: var(--accent2); color: var(--bg); }
+
+  .paused-section {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .paused-section.empty { display: none; }
+  .paused-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .paused-entry {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--accent2) 6%, transparent);
+    border-left: 2px solid var(--accent2-dim);
+  }
+  .paused-info { min-width: 0; }
+  .paused-task {
+    font-family: var(--data);
+    font-size: 0.95rem;
+    color: var(--text);
+    margin-bottom: 0.2rem;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .paused-meta {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .paused-meta .paused-over { color: var(--danger); }
+  .paused-meta .voided-est { text-decoration: line-through; }
+  .paused-actions {
+    display: flex;
+    gap: 0.4rem;
+    flex-shrink: 0;
+  }
+  .paused-entry-editing { grid-template-columns: 1fr; }
+  .paused-rename-input { font-size: 0.95rem; margin-bottom: 0.4rem; }
+  .paused-rename-note {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+
+  .result-panel {
+    display: none;
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.4s ease;
+  }
+  .result-panel.visible { display: block; }
+  .result-graph-wrap {
+    display: none;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .result-graph-wrap.visible { display: block; }
+  .result-graph-wrap .rc-label {
+    font-size: 0.75rem;
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  #result-graph { display: block; width: 100%; cursor: crosshair; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes entryHighlight { 0% { box-shadow: none; } 20% { box-shadow: 0 0 18px 8px var(--entry-halo); } 100% { box-shadow: none; } }
+  .log-entry-highlight { animation: entryHighlight 1.5s ease forwards !important; }
+
+  .result-task {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+  }
+
+  .result-delta {
+    font-family: var(--mono);
+    font-size: 3rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+  .result-delta.under { color: var(--accent); }
+  .result-delta.over { color: var(--danger); }
+  .result-delta.exact { color: var(--accent2); }
+  .result-delta.voided {
+    color: var(--muted);
+    font-size: 1.5rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding-top: 0.75rem;
+  }
+  .rc-val.voided { text-decoration: line-through; color: var(--muted); }
+
+  .result-subline {
+    font-size: 0.8125rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+    font-family: var(--mono);
+  }
+
+  .result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .result-cell {
+    background: var(--surface2);
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+  }
+  .result-cell .rc-label {
+    font-size: 0.75rem;
+    font-family: var(--mono);
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.3rem;
+  }
+  .result-cell .rc-val {
+    font-size: 0.875rem;
+    font-family: var(--mono);
+    color: var(--text);
+  }
+
+  .result-actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .btn-ghost {
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    padding: 0.5rem 1rem;
+    flex: 1;
+  }
+
+
+  .log-section { margin-top: 1rem; }
+
+  .log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .log-count {
+    font-family: var(--display);
+    font-size: 0.6875rem;
+    color: var(--muted);
+  }
+
+  .gear-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    padding: 0.2rem;
+    line-height: 1;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+  }
+  .gear-btn:hover { color: var(--text); }
+  .gear-btn svg { display: block; }
+
+  .settings-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 100;
+  }
+  .settings-overlay.open { display: block; }
+
+  .settings-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(22.5rem, 100vw);
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    z-index: 101;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    overflow-y: auto;
+  }
+  .settings-panel.open { transform: translateX(0); }
+
+  .settings-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .settings-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 1.125rem;
+    line-height: 1;
+    padding: 0.1rem 0.3rem;
+    transition: color 0.2s;
+  }
+  .settings-close:hover { color: var(--text); }
+
+  .settings-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 2rem; }
+
+  .settings-section-title {
+    font-family: var(--display);
+    font-size: 0.6875rem;
+    letter-spacing: 0.25em;
+    color: var(--orange);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .settings-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .settings-row:last-child { margin-bottom: 0; }
+
+  .btn-tiny {
+    letter-spacing: 0.1em;
+    padding: 0.3rem 0.7rem;
+  }
+  .btn-tiny.accent { color: var(--accent2); border-color: var(--accent2-dim); }
+  .btn-tiny.accent:hover { background: var(--accent2); color: var(--bg); }
+
+  .log-empty {
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    color: var(--muted);
+    padding: 2rem 0;
+    text-align: center;
+    letter-spacing: 0.1em;
+  }
+
+  .log-entry {
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
+    align-items: start;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .log-task {
+    font-family: var(--data);
+    font-size: 1rem;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+    line-height: 1.4;
+  }
+
+  .log-meta {
+    font-family: var(--data);
+    font-size: 0.8125rem;
+    color: var(--muted);
+    letter-spacing: 0.03em;
+  }
+
+  .log-delta {
+    font-family: var(--data);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    text-align: right;
+    padding-top: 0.2rem;
+  }
+  .log-delta.under { color: var(--accent); }
+  .log-delta.over { color: var(--danger); }
+  .log-delta.exact { color: var(--accent2); }
+  .log-delta.unplanned, .log-delta.voided {
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding-top: 0.4rem;
+  }
+
+  .log-entry:not(.log-entry-editing) {
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+  .log-entry:not(.log-entry-editing):hover { background: var(--surface); }
+  .log-entry-editing { grid-template-columns: 1fr; }
+  .btn-tiny.danger { color: var(--danger); border-color: var(--danger-dim); }
+  .btn-tiny.danger:hover { background: var(--danger); color: var(--bg); }
+  .edit-input-task { font-size: 0.95rem; margin-bottom: 0.5rem; }
+  .edit-input-num  { font-size: 0.9rem; }
+  .log-edit-label {
+    font-family: var(--display);
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+  }
+  .log-edit-fields {
+    display: flex;
+    gap: 1.5rem;
+  }
+  .log-edit-fields > div { flex: 1; }
+  .log-edit-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.75rem;
+  }
+  .btn-group { display: flex; gap: 0.5rem; }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: var(--surface2);
+    padding: 0.75rem 1rem;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+  .stat-card .s-val {
+    font-family: var(--data);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 0.3rem;
+  }
+  .stat-card .s-label {
+    font-family: var(--display);
+    font-size: 0.6875rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .auto-export-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 0;
+    border-top: 1px solid var(--border);
+    margin-top: 1rem;
+  }
+  .auto-export-row.no-divider { margin-top: 0; border-top: none; padding-top: 0; }
+
+  .toggle-label {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    flex: 1;
+  }
+
+  .toggle {
+    width: 2.25rem;
+    height: 1.25rem;
+    background: var(--border);
+    border-radius: 0.625rem;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 0.2rem;
+    left: 0.2rem;
+    width: 0.875rem;
+    height: 0.875rem;
+    background: var(--muted);
+    border-radius: 50%;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .toggle.on { background: var(--accent-dim); }
+  .toggle.on::after { transform: translateX(1rem); background: var(--accent); }
+
+  .export-note {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-family: var(--mono);
+    line-height: 1.5;
+    padding: 0.5rem 0 0;
+  }
+
+  input.slack-webhook-input {
+    font-size: 0.8125rem;
+  }
+  input.slack-time-input {
+    width: auto;
+    font-size: 0.8125rem;
+    color-scheme: dark;
+  }
+  body.light input.slack-time-input { color-scheme: light; }
+  .file-handle-status {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--info);
+    letter-spacing: 0.1em;
+    margin-top: 0.25rem;
+  }
+
+  .theme-switcher {
+    display: flex;
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .theme-switcher button {
+    flex: 1;
+    text-align: center;
+    background: none;
+    border: none;
+    border-right: 1px solid var(--border);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    padding: 0.5rem 0.55rem;
+    transition: color 0.2s, background 0.2s;
+    line-height: 1.4;
+  }
+  .theme-switcher button:last-child { border-right: none; }
+  .theme-switcher button .key { letter-spacing: 0; }
+  .theme-switcher button:hover { color: var(--text); background: var(--surface2); }
+  .theme-switcher button.active { color: var(--text); background: var(--surface2); }
+  .key { text-decoration: underline; text-decoration-color: var(--muted); text-underline-offset: 2px; }
+
+  footer {
+    margin-top: auto;
+    padding-top: 3rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.1em;
+  }
+
+  .report-year-select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    padding: 0.4rem 0.6rem;
+    outline: none;
+    cursor: pointer;
+  }
+
+  /* ── Report mode (shared link view) ── */
+  #report-ui { display: none; }
+  body.report-mode #report-ui { display: block; }
+  body.report-mode .app { display: none; }
+
+  .report-head {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 5;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    pointer-events: none;
+  }
+  .report-head-left { display: flex; align-items: baseline; gap: 1.25rem; flex-wrap: wrap; }
+  .report-title {
+    font-family: var(--display);
+    font-size: 0.8125rem;
+    letter-spacing: 0.25em;
+    color: var(--orange);
+    text-transform: uppercase;
+  }
+  .report-range {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+  .report-app-link {
+    pointer-events: auto;
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border);
+    transition: color 0.2s;
+    white-space: nowrap;
+  }
+  .report-app-link:hover { color: var(--text); }
+
+  .report-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem 1rem;
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+    backdrop-filter: blur(6px);
+    border-top: 1px solid var(--border);
+    pointer-events: none;
+  }
+  .report-stats {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 2.5rem;
+  }
+  .report-stat { text-align: center; min-width: 5.5rem; pointer-events: auto; cursor: help; }
+  .report-stat .rs-val {
+    font-family: var(--data);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 0.3rem;
+  }
+  .report-stat .rs-val.over { color: var(--danger); }
+  .report-stat .rs-val.under { color: var(--accent); }
+  .report-stat .rs-label {
+    font-family: var(--display);
+    font-size: 0.625rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .report-note {
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    line-height: 1.7;
+    text-align: center;
+    max-width: 44rem;
+  }
+  .report-note b { color: var(--text-dim); font-weight: 400; }
+
+  .report-error {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 6;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    line-height: 2;
+    padding: 2rem;
+  }
+
+  @media (max-width: 480px) {
+    .report-head { padding: 1rem 1rem; }
+    .report-bar { gap: 0.5rem 1.25rem; }
+    .report-stat { min-width: 4.5rem; }
+    .report-stat .rs-val { font-size: 1.15rem; }
+  }
+
+
+  @media (max-width: 480px) {
+    html { font-size: 17px; }
+    .app { padding: 1.5rem 1rem; }
+    .time-row { flex-direction: column; align-items: stretch; }
+    .time-row .input-block { margin-bottom: 1rem; }
+    .start-btn { width: 100%; }
+    .log-past-btn { width: 100%; margin-top: 0.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div id="graph-tooltip"></div>
+
+<div class="app">
+  <header>
+    <div class="logo">MERIDIAN</div>
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <div class="header-sub">time · calibration</div>
+      <button class="gear-btn" onclick="openSettings()" title="Settings">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 512 512" fill="currentColor">
+          <path d="M495.9 166.6c3.2 8.7 .5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6c-4.4 11.9-9.7 23.3-15.8 34.3l-4.7 8.1c-6.6 11-14 21.4-22.1 31.2c-5.9 7.2-15.7 9.6-24.5 6.8l-55.7-17.7c-13.4 10.3-28.2 18.9-44 25.4l-12.5 57.1c-2 9.1-9 16.3-18.2 17.8c-13.8 2.3-28 3.5-42.5 3.5s-28.7-1.2-42.5-3.5c-9.2-1.5-16.2-8.7-18.2-17.8l-12.5-57.1c-15.8-6.5-30.6-15.1-44-25.4L83.1 425.9c-8.8 2.8-18.6 .3-24.5-6.8c-8.1-9.8-15.5-20.2-22.1-31.2l-4.7-8.1c-6.1-11-11.4-22.4-15.8-34.3c-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4C64.6 273.1 64 264.6 64 256s.6-17.1 1.7-25.4L22.4 191.2c-6.9-6.2-9.6-15.9-6.4-24.6c4.4-11.9 9.7-23.3 15.8-34.3l4.7-8.1c6.6-11 14-21.4 22.1-31.2c5.9-7.2 15.7-9.6 24.5-6.8l55.7 17.7c13.4-10.3 28.2-18.9 44-25.4l12.5-57.1c2-9.1 9-16.3 18.2-17.8C227.3 1.2 241.5 0 256 0s28.7 1.2 42.5 3.5c9.2 1.5 16.2 8.7 18.2 17.8l12.5 57.1c15.8 6.5 30.6 15.1 44 25.4l55.7-17.7c8.8-2.8 18.6-.3 24.5 6.8c8.1 9.8 15.5 20.2 22.1 31.2l4.7 8.1c6.1 11 11.4 22.4 15.8 34.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div id="input-section">
+    <div class="input-block">
+      <div class="section-label">Task</div>
+      <input type="text" id="task-input" placeholder="What are you doing?" autocomplete="off" />
+    </div>
+    <div class="time-row">
+      <div class="input-block">
+        <div class="section-label">Estimate (min)</div>
+        <input type="number" id="estimate-input" placeholder="30" min="0" step="0.5" title="0 = no estimate — just log the time" />
+      </div>
+      <button class="btn start-btn" id="start-btn" onclick="startTimer()">START ↵</button>
+      <button class="btn log-past-btn" id="log-past-btn" onclick="logPastTask()" title="Log a task you already did — estimate field holds how long it took; no prediction is recorded">log past (<span class="key">r</span>)</button>
+    </div>
+  </div>
+
+  <div class="timer-display" id="timer-display">
+    <div class="task-label" id="running-task-label"></div>
+    <div class="time-digits" id="time-digits">00:00</div>
+    <div class="predicted-bar">
+      <div class="elapsed-fill" id="elapsed-fill"></div>
+      <div class="predicted-marker" id="predicted-marker"></div>
+    </div>
+    <div class="timer-meta" id="timer-meta">est. — min</div>
+    <div class="timer-actions">
+      <button class="btn pause-btn" onclick="pauseActiveTimer()"><span class="key">P</span>AUSE</button>
+      <button class="btn stop-btn" onclick="stopTimer()"><span class="key">S</span>TOP</button>
+    </div>
+  </div>
+
+  <div class="result-panel" id="result-panel">
+    <div class="result-task" id="result-task-label"></div>
+    <div class="result-delta" id="result-delta"></div>
+    <div class="result-subline" id="result-subline"></div>
+    <div class="result-grid">
+      <div class="result-cell">
+        <div class="rc-label">Predicted</div>
+        <div class="rc-val" id="res-predicted"></div>
+      </div>
+      <div class="result-cell">
+        <div class="rc-label">Actual</div>
+        <div class="rc-val" id="res-actual"></div>
+      </div>
+      <div class="result-cell">
+        <div class="rc-label">Started</div>
+        <div class="rc-val" id="res-start"></div>
+      </div>
+      <div class="result-cell">
+        <div class="rc-label">Ended</div>
+        <div class="rc-val" id="res-end"></div>
+      </div>
+    </div>
+    <div class="result-graph-wrap" id="result-graph-wrap">
+      <div class="rc-label" title="Your full prediction history — each point is your average absolute estimate miss over the 7 tasks ending there. Lower is better">Calibration · 7-task rolling avg miss</div>
+      <canvas id="result-graph"></canvas>
+    </div>
+    <div class="result-actions">
+      <button class="btn btn-ghost" onclick="clearResult()"><span class="key">N</span>EW TASK</button>
+    </div>
+  </div>
+
+  <div class="paused-section empty" id="paused-section">
+    <div class="section-label" style="margin-bottom:0.5rem">Paused</div>
+    <div class="paused-list" id="paused-list"></div>
+  </div>
+
+  <div class="log-section">
+    <div class="log-header">
+      <div>
+        <div class="section-label" style="margin-bottom:0">Session Log</div>
+        <div class="log-count" id="log-count">0 entries</div>
+      </div>
+      <button class="btn btn-tiny" id="summary-btn" onclick="copyDailySummary()" title="Copy today's sessions as Slack-ready text">⧉ Dail<span class="key">y</span> Summary</button>
+    </div>
+
+    <div class="stats-row" id="stats-row" style="display:none">
+      <div class="stat-card">
+        <div class="s-val" id="stat-count">0</div>
+        <div class="s-label">Tasks</div>
+      </div>
+      <div class="stat-card">
+        <div class="s-val" id="stat-avg">—</div>
+        <div class="s-label">Avg Delta</div>
+      </div>
+      <div class="stat-card">
+        <div class="s-val" id="stat-bias">—</div>
+        <div class="s-label">Brier Score</div>
+      </div>
+    </div>
+
+    <div id="backup-reminder" style="display:none; margin-top:1rem; padding:0.75rem 1rem; border:1px solid var(--accent2-dim); background:color-mix(in srgb, var(--accent2) 8%, transparent);">
+      <div style="font-family:var(--mono); font-size:0.6875rem; color:var(--accent2); letter-spacing:0.1em; margin-bottom:0.4rem;">BACKUP REMINDER</div>
+      <div style="font-family:var(--mono); font-size:0.6875rem; color:var(--text-dim);" id="reminder-text"></div>
+      <div class="btn-group" style="margin-top:0.75rem;">
+        <button class="btn btn-tiny accent" onclick="runBackupNow()">&#x2193; Backup Now</button>
+        <button class="btn btn-tiny" onclick="snoozeReminder()">Remind Later</button>
+        <button class="btn btn-tiny" onclick="dismissReminder()">Dismiss</button>
+      </div>
+    </div>
+
+    <div id="log-list">
+      <div class="log-empty">No sessions yet.<br>Start a task to begin tracking.</div>
+    </div>
+  </div>
+
+  <footer>all data stored locally · no server · no cloud</footer>
+</div>
+
+<div id="report-ui">
+  <div class="report-head">
+    <div class="report-head-left">
+      <div class="logo">MERIDIAN</div>
+      <div class="report-title" id="report-title"></div>
+      <div class="report-range" id="report-range"></div>
+    </div>
+    <a class="report-app-link" id="report-app-link" href="./">track your own →</a>
+  </div>
+  <div class="report-bar">
+    <div class="report-stats">
+      <div class="report-stat" title="Every task logged that year, including unplanned ones"><div class="rs-val" id="rs-count">—</div><div class="rs-label">Tasks</div></div>
+      <div class="report-stat" title="Total actual time across all tasks"><div class="rs-val" id="rs-time">—</div><div class="rs-label">Total Time</div></div>
+      <div class="report-stat" title="Signed average error — overruns and underruns cancel out, so this shows bias: positive means estimates ran long overall. Closer to zero is better"><div class="rs-val" id="rs-avg">—</div><div class="rs-label">Avg Delta</div></div>
+      <div class="report-stat" title="Average absolute error — nothing cancels, so this shows accuracy: how far off a typical estimate was, in either direction. Lower is better"><div class="rs-val" id="rs-miss">—</div><div class="rs-label">Avg Miss</div></div>
+      <div class="report-stat" title="Mean squared error, with each delta as a fraction — squaring makes one big blowout cost more than several small misses. Lower is better"><div class="rs-val" id="rs-brier">—</div><div class="rs-label">Brier Score</div></div>
+    </div>
+    <div class="report-note"><b>avg delta</b> is signed, so overruns and underruns cancel — it measures bias (closer to zero is better). <b>avg miss</b> averages the absolute error, so nothing cancels — it measures accuracy. <b>brier score</b> squares each error, so one big blowout costs more than several small misses (lower is better).</div>
+  </div>
+  <div class="report-error" id="report-error">This report link is invalid or damaged.<br>Ask for a fresh link, or start tracking your own time at <a class="report-app-link" href="./">meridian</a>.</div>
+</div>
+
+<div class="settings-overlay" id="settings-overlay" onclick="closeSettings()"></div>
+<div class="settings-panel" id="settings-panel">
+  <div class="settings-head">
+    <div class="section-label" style="margin-bottom:0">Settings</div>
+    <button class="settings-close" onclick="closeSettings()">&#x2715;</button>
+  </div>
+  <div class="settings-body">
+
+    <div>
+      <div class="settings-section-title">Appearance</div>
+      <div class="theme-switcher" id="theme-switcher">
+        <button id="theme-auto" onclick="setTheme('auto')"><span class="key">A</span>uto</button>
+        <button id="theme-light" onclick="setTheme('light')"><span class="key">L</span>ight</button>
+        <button id="theme-dark" onclick="setTheme('dark')"><span class="key">D</span>ark</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="settings-section-title">Data</div>
+      <div class="settings-row">
+        <button class="btn btn-tiny accent" onclick="exportLog()">↑ <span class="key">E</span>xport CSV</button>
+        <button class="btn btn-tiny accent" onclick="document.getElementById('import-input').click()">↓ <span class="key">I</span>mport CSV</button>
+        <input type="file" id="import-input" accept=".csv" style="display:none" onchange="importCSV(this)">
+      </div>
+      <div class="settings-row">
+        <button class="btn btn-tiny danger" onclick="clearLog()"><span class="key">C</span>lear Log</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="settings-section-title">Report</div>
+      <div class="settings-row">
+        <select id="report-year" class="report-year-select"></select>
+      </div>
+      <div class="settings-row">
+        <button class="btn btn-tiny accent" id="report-copy-btn" onclick="copyReportLink()">⧉ Copy Share Link</button>
+        <button class="btn btn-tiny" id="report-open-btn" onclick="openReport()">Open Report</button>
+      </div>
+      <div class="export-note">Yearly report: the full graph, hoverable, with summary stats. The link holds that year's data compressed in the URL itself — nothing is uploaded, but anyone with the link can see the tasks in it.</div>
+    </div>
+
+    <div>
+      <div class="settings-section-title">Slack</div>
+      <div class="auto-export-row no-divider">
+        <div class="toggle-label">Post completed tasks</div>
+        <div class="toggle" id="slack-toggle" onclick="toggleSlack()"></div>
+      </div>
+      <div class="auto-export-row no-divider">
+        <div class="toggle-label">Auto-send daily summary</div>
+        <div class="toggle" id="slack-daily-toggle" onclick="toggleSlackDaily()"></div>
+      </div>
+      <div id="slack-daily-settings" style="display:none">
+        <div class="auto-export-row no-divider">
+          <div class="toggle-label">Send at</div>
+          <input type="time" id="slack-daily-time" class="slack-time-input" value="23:30" onchange="setSlackDailyTime(this.value)">
+        </div>
+        <div class="export-note" id="slack-daily-note"></div>
+      </div>
+      <div id="slack-settings" style="display:none">
+        <input type="text" id="slack-webhook-input" class="slack-webhook-input" placeholder="https://hooks.slack.com/services/…" autocomplete="off" spellcheck="false" oninput="setSlackWebhook(this.value)">
+        <div class="settings-row" style="margin-top:0.75rem;">
+          <button class="btn btn-tiny accent" onclick="sendSlackTest()">Send Test</button>
+        </div>
+        <div class="export-note">Posts go to the channel this webhook is bound to — pick the channel when creating the webhook (Slack → your app → Incoming Webhooks). The URL is stored only on this device.</div>
+        <div class="file-handle-status" id="slack-status"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="settings-section-title">Backup</div>
+      <div class="auto-export-row no-divider">
+        <div class="toggle-label">Auto-backup</div>
+        <div class="toggle" id="backup-toggle" onclick="toggleBackup()"></div>
+      </div>
+      <div id="backup-settings" style="display:none">
+        <div class="btn-group" style="margin-bottom:0.75rem;">
+          <button class="btn btn-tiny" id="freq-daily" onclick="setBackupFreq('daily')">Daily</button>
+          <button class="btn btn-tiny" id="freq-weekly" onclick="setBackupFreq('weekly')">Weekly</button>
+        </div>
+        <div class="export-note" id="backup-note"></div>
+        <div class="file-handle-status" id="backup-dir-status"></div>
+        <div id="backup-now-row" style="margin-top:0.75rem;">
+          <button class="btn btn-tiny accent" onclick="runBackupNow()">&#x2193; Backup Now</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const DB_KEY = 'meridian_logs';
+const ACTIVE_KEY = 'meridian_active';
+const PAUSED_KEY = 'meridian_paused';
+
+// Shared report link: '#report=<tag>.<base64url payload>'. In report mode the
+// page renders someone else's data read-only — the viewer's own log is never
+// touched or saved.
+const REPORT_MODE = location.hash.startsWith('#report=');
+let reportLogs = [];
+
+// Mobile WebKit can detach localStorage while the app is suspended in the
+// background — every read/write then throws until the process is killed.
+// All storage goes through these helpers so a dead backend degrades to
+// in-memory state (retried on resume) instead of killing whatever handler
+// touched storage first.
+const pendingWrites = new Map();
+// Keys whose reads threw — the value we're holding for them is a fallback,
+// not the truth, so re-read them once storage comes back.
+const failedReads = new Set();
+
+function storageGet(key) {
+  try { const v = localStorage.getItem(key); failedReads.delete(key); return v; }
+  catch (e) {
+    failedReads.add(key);
+    return pendingWrites.has(key) ? pendingWrites.get(key) : null;
+  }
+}
+
+function storageSet(key, val) {
+  pendingWrites.set(key, val);
+  try { localStorage.setItem(key, val); pendingWrites.delete(key); } catch (e) {}
+}
+
+function storageRemove(key) {
+  pendingWrites.set(key, null);
+  try { localStorage.removeItem(key); pendingWrites.delete(key); } catch (e) {}
+}
+
+function flushPendingWrites() {
+  for (const [key, val] of [...pendingWrites]) {
+    try {
+      if (val == null) localStorage.removeItem(key);
+      else localStorage.setItem(key, val);
+      pendingWrites.delete(key);
+    } catch (e) { break; }
+  }
+}
+
+function loadJSON(key, fallback) {
+  const raw = storageGet(key);
+  if (raw == null) return fallback;
+  try { return JSON.parse(raw); }
+  catch (e) {
+    // keep the unreadable raw value around for manual recovery instead of silently losing it
+    storageSet(key + '_corrupt', raw);
+    return fallback;
+  }
+}
+
+function finiteOrNull(v) {
+  return typeof v === 'number' && isFinite(v) ? v : null;
+}
+
+// A single malformed entry (e.g. iOS killing the suspended page mid-save) must
+// never take down the whole log — repair what's recoverable, drop only garbage.
+function sanitizeLogs(raw) {
+  if (!Array.isArray(raw)) return [];
+  const clean = [];
+  for (const e of raw) {
+    if (!e || typeof e !== 'object') continue;
+    const entry = {
+      id: 0,
+      task: typeof e.task === 'string' ? e.task : (e.task == null ? '(untitled)' : String(e.task)),
+      predictedMs: finiteOrNull(e.predictedMs),
+      actualMs: finiteOrNull(e.actualMs),
+      startTime: finiteOrNull(e.startTime),
+      endTime: finiteOrNull(e.endTime),
+      pctDiff: finiteOrNull(e.pctDiff),
+      voided: e.voided === true,
+      tracked: e.tracked === true,
+    };
+    if (entry.actualMs == null && entry.startTime != null && entry.endTime != null) entry.actualMs = entry.endTime - entry.startTime;
+    if (entry.startTime == null && entry.endTime != null && entry.actualMs != null) entry.startTime = entry.endTime - entry.actualMs;
+    if (entry.endTime == null && entry.startTime != null && entry.actualMs != null) entry.endTime = entry.startTime + entry.actualMs;
+    if (entry.actualMs == null && entry.startTime == null && entry.endTime == null) continue;
+    if (!(entry.predictedMs > 0)) { entry.predictedMs = null; entry.pctDiff = null; entry.voided = false; }
+    // Voided: the estimate was invalidated (task renamed mid-timer) — keep it
+    // visible on the record but never score it.
+    else if (entry.voided) entry.pctDiff = null;
+    else if (entry.pctDiff == null && entry.actualMs != null) entry.pctDiff = ((entry.actualMs - entry.predictedMs) / entry.predictedMs) * 100;
+    entry.id = finiteOrNull(e.id) != null ? e.id : (entry.startTime != null ? entry.startTime : clean.length);
+    clean.push(entry);
+  }
+  return clean;
+}
+
+function sanitizePaused(raw) {
+  if (!Array.isArray(raw)) return [];
+  // predictedMs === null is a valid state (no-estimate timer); anything else
+  // non-finite is corruption and drops the entry.
+  return raw
+    .filter(t => t && typeof t === 'object' && t.task != null &&
+      (t.predictedMs === null || finiteOrNull(t.predictedMs) != null))
+    .map(t => ({
+      id: finiteOrNull(t.id) != null ? t.id : (finiteOrNull(t.startTime) || 0),
+      task: typeof t.task === 'string' ? t.task : String(t.task),
+      predictedMs: t.predictedMs,
+      startTime: finiteOrNull(t.startTime) || 0,
+      accumulatedMs: finiteOrNull(t.accumulatedMs) || 0,
+      voided: t.voided === true,
+    }));
+}
+
+let logs = sanitizeLogs(loadJSON(DB_KEY, []));
+let pausedTimers = sanitizePaused(loadJSON(PAUSED_KEY, []));
+let timerInterval = null;
+let editingIndex = -1;
+let editingPausedId = null;
+// Active timer: null when idle. Shape:
+// { id, task, predictedMs, startTime, accumulatedMs, lastResumeAt, voided }
+// voided: the task was renamed while paused, so the estimate no longer
+// describes what the timer measured — it logs as unplanned.
+let activeTimer = null;
+
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+
+function saveLogs() {
+  storageSet(DB_KEY, JSON.stringify(logs));
+}
+
+function saveActive() {
+  if (activeTimer) storageSet(ACTIVE_KEY, JSON.stringify(activeTimer));
+  else storageRemove(ACTIVE_KEY);
+}
+
+function savePaused() {
+  storageSet(PAUSED_KEY, JSON.stringify(pausedTimers));
+}
+
+function activeElapsed() {
+  if (!activeTimer) return 0;
+  return activeTimer.accumulatedMs + (Date.now() - activeTimer.lastResumeAt);
+}
+
+// Entries that had an advance prediction — retrodictions (pctDiff == null)
+// are excluded from all calibration graphs and stats.
+function predictedLogs() {
+  return (REPORT_MODE ? reportLogs : logs).filter(e => e.pctDiff != null);
+}
+
+// ── Service worker (PWA install + offline) ─────────────────────────
+// An installed PWA can stay resident for days without a real navigation, so
+// the browser never re-checks sw.js on its own — nudge it every time the app
+// comes back to the foreground, and when a new worker takes over, reload
+// (when safe) so the running page actually picks up the new code.
+if ('serviceWorker' in navigator) {
+  let swReg = null;
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then(reg => { swReg = reg; }).catch(() => {});
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && swReg) swReg.update().catch(() => {});
+  });
+  let hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController && !REPORT_MODE && !document.hidden && canReloadSafely()) location.reload();
+    hadController = true;
+  });
+}
+
+function formatDuration(ms) {
+  const totalSec = Math.abs(Math.floor(ms / 1000));
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+// Guard against invalid dates: some iOS WebKit versions throw a RangeError
+// from toLocale*String(options) where other engines return "Invalid Date".
+function formatTime(ts) {
+  if (ts == null) return '—';
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+}
+
+function formatDateShort(ts) {
+  if (ts == null) return '—';
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString([], {month:'short', day:'numeric'});
+}
+
+
+// An estimate of exactly 0 means "no prediction — just log the time":
+// the timer runs and measures, but predictedMs is null and the entry lands
+// as unplanned, outside all calibration stats.
+function startTimer() {
+  const taskEl = document.getElementById('task-input');
+  const estEl = document.getElementById('estimate-input');
+  const task = taskEl.value.trim();
+  const estMin = parseFloat(estEl.value);
+  const estOk = !isNaN(estMin) && estMin >= 0;
+
+  if (!task || !estOk) {
+    if (!task) taskEl.style.borderBottomColor = 'var(--danger)';
+    if (!estOk) estEl.style.borderBottomColor = 'var(--danger)';
+    setTimeout(() => {
+      taskEl.style.borderBottomColor = '';
+      estEl.style.borderBottomColor = '';
+    }, 1500);
+    return;
+  }
+
+  if (activeTimer) pauseActiveTimer();
+
+  const now = Date.now();
+  activeTimer = {
+    id: now,
+    task,
+    predictedMs: estMin === 0 ? null : estMin * 60 * 1000,
+    startTime: now,
+    accumulatedMs: 0,
+    lastResumeAt: now,
+    voided: false,
+  };
+  saveActive();
+
+  beginActiveTimerUI();
+}
+
+// Retrodiction: a task logged after the fact — no prediction existed, so
+// predictedMs/pctDiff are null and it never feeds the calibration stats.
+function logPastTask() {
+  const taskEl = document.getElementById('task-input');
+  const estEl = document.getElementById('estimate-input');
+  const task = taskEl.value.trim();
+  const tookMin = parseFloat(estEl.value);
+
+  if (!task || !tookMin || tookMin <= 0) {
+    if (!task) taskEl.style.borderBottomColor = 'var(--danger)';
+    if (!tookMin || tookMin <= 0) estEl.style.borderBottomColor = 'var(--danger)';
+    setTimeout(() => {
+      taskEl.style.borderBottomColor = '';
+      estEl.style.borderBottomColor = '';
+    }, 1500);
+    return;
+  }
+
+  const now = Date.now();
+  const actualMs = tookMin * 60 * 1000;
+  const entry = {
+    id: now,
+    task,
+    predictedMs: null,
+    actualMs,
+    startTime: now - actualMs,
+    endTime: now,
+    pctDiff: null,
+  };
+  logs.unshift(entry);
+  saveLogs();
+  postTaskToSlack(entry);
+
+  taskEl.value = '';
+  estEl.value = '';
+  renderLog();
+  drawBgGraph();
+  flashLogPastBtn();
+}
+
+let logPastBtnTimeout = null;
+function flashLogPastBtn() {
+  const btn = document.getElementById('log-past-btn');
+  btn.innerHTML = '✓ logged';
+  if (logPastBtnTimeout) clearTimeout(logPastBtnTimeout);
+  logPastBtnTimeout = setTimeout(() => {
+    btn.innerHTML = 'log past (<span class="key">r</span>)';
+  }, 1500);
+}
+
+function beginActiveTimerUI() {
+  const noEst = activeTimer.predictedMs == null;
+  document.getElementById('input-section').style.display = 'none';
+  document.getElementById('task-input').disabled = true;
+  document.getElementById('estimate-input').disabled = true;
+  document.getElementById('start-btn').disabled = true;
+  document.getElementById('log-past-btn').disabled = true;
+  document.getElementById('result-panel').classList.remove('visible');
+
+  document.getElementById('running-task-label').textContent = activeTimer.task.toUpperCase();
+  const estMin = noEst ? 0 : activeTimer.predictedMs / 60000;
+  document.getElementById('timer-meta').textContent = noEst
+    ? 'no estimate — logging time'
+    : activeTimer.voided
+      ? `est. ${(+estMin.toFixed(2))} min — voided`
+      : `est. ${(+estMin.toFixed(2))} min`;
+  document.querySelector('.predicted-bar').style.display = noEst ? 'none' : '';
+  document.getElementById('timer-display').classList.add('visible');
+
+  startBackgroundGraph();
+  updateTimerDisplay();
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(updateTimerDisplay, 500);
+}
+
+function updateTimerDisplay() {
+  if (!activeTimer) return;
+  const elapsed = activeElapsed();
+
+  const digits = document.getElementById('time-digits');
+  if (activeTimer.predictedMs == null) {
+    // No estimate at all — count up; the prediction bar is hidden.
+    digits.textContent = formatDuration(elapsed);
+    digits.classList.remove('over');
+    return;
+  }
+
+  const remaining = activeTimer.predictedMs - elapsed;
+  const isOver = remaining < 0;
+
+  if (activeTimer.voided) {
+    // No live prediction to count down against — just show elapsed.
+    digits.textContent = formatDuration(elapsed);
+    digits.classList.remove('over');
+  } else if (isOver) {
+    digits.textContent = '-' + formatDuration(Math.abs(remaining));
+    digits.classList.add('over');
+  } else {
+    digits.textContent = formatDuration(remaining);
+    digits.classList.remove('over');
+  }
+
+  const fill = document.getElementById('elapsed-fill');
+  const pct = Math.min((elapsed / activeTimer.predictedMs) * 100, 100);
+  fill.style.width = pct + '%';
+  if (isOver && !activeTimer.voided) fill.classList.add('over'); else fill.classList.remove('over');
+
+  const marker = document.getElementById('predicted-marker');
+  marker.style.left = '100%';
+}
+
+function clearActiveIntervals() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function hideActiveTimerUI() {
+  document.getElementById('timer-display').classList.remove('visible');
+  document.getElementById('task-input').disabled = false;
+  document.getElementById('estimate-input').disabled = false;
+  document.getElementById('start-btn').disabled = false;
+  document.getElementById('log-past-btn').disabled = false;
+}
+
+function logEntryFromTimer(t, actualMs) {
+  const endTime = Date.now();
+  const noEst = t.predictedMs == null;
+  const pct = (noEst || t.voided) ? null : ((actualMs - t.predictedMs) / t.predictedMs) * 100;
+  return {
+    id: t.id,
+    task: t.task,
+    predictedMs: noEst ? null : t.predictedMs,
+    actualMs,
+    startTime: t.startTime,
+    endTime,
+    pctDiff: pct,
+    voided: t.voided === true,
+    // tracked: unplanned but timer-measured — the duration is exact, unlike a
+    // retrodiction's after-the-fact guess.
+    tracked: noEst,
+  };
+}
+
+function stopTimer() {
+  if (!activeTimer) return;
+  clearActiveIntervals();
+  const entry = logEntryFromTimer(activeTimer, activeElapsed());
+  activeTimer = null;
+  saveActive();
+
+  logs.unshift(entry);
+  saveLogs();
+  postTaskToSlack(entry);
+
+  showResult(entry);
+  renderLog();
+  stopBackgroundGraph();
+  hideActiveTimerUI();
+}
+
+function pauseActiveTimer() {
+  if (!activeTimer) return;
+  activeTimer.accumulatedMs += Date.now() - activeTimer.lastResumeAt;
+  activeTimer.lastResumeAt = null;
+  pausedTimers.unshift({
+    id: activeTimer.id,
+    task: activeTimer.task,
+    predictedMs: activeTimer.predictedMs,
+    startTime: activeTimer.startTime,
+    accumulatedMs: activeTimer.accumulatedMs,
+    voided: activeTimer.voided === true,
+  });
+  activeTimer = null;
+  clearActiveIntervals();
+  saveActive();
+  savePaused();
+  hideActiveTimerUI();
+  document.getElementById('input-section').style.display = '';
+  document.getElementById('task-input').value = '';
+  document.getElementById('estimate-input').value = '';
+  renderLog();
+}
+
+function resumePausedTimer(id) {
+  if (activeTimer) pauseActiveTimer();
+  const idx = pausedTimers.findIndex(t => t.id === id);
+  if (idx === -1) return;
+  if (editingPausedId === id) editingPausedId = null;
+  const t = pausedTimers.splice(idx, 1)[0];
+  savePaused();
+  activeTimer = {
+    id: t.id,
+    task: t.task,
+    predictedMs: t.predictedMs,
+    startTime: t.startTime,
+    accumulatedMs: t.accumulatedMs,
+    lastResumeAt: Date.now(),
+    voided: t.voided === true,
+  };
+  saveActive();
+  beginActiveTimerUI();
+  renderLog();
+}
+
+function stopPausedTimer(id) {
+  const idx = pausedTimers.findIndex(t => t.id === id);
+  if (idx === -1) return;
+  if (editingPausedId === id) editingPausedId = null;
+  const t = pausedTimers.splice(idx, 1)[0];
+  savePaused();
+  const entry = logEntryFromTimer(t, t.accumulatedMs);
+  logs.unshift(entry);
+  saveLogs();
+  postTaskToSlack(entry);
+  showResult(entry);
+  renderLog();
+  drawBgGraph();
+}
+
+function deletePausedTimer(id) {
+  const idx = pausedTimers.findIndex(t => t.id === id);
+  if (idx === -1) return;
+  if (editingPausedId === id) editingPausedId = null;
+  pausedTimers.splice(idx, 1);
+  savePaused();
+  renderPaused();
+}
+
+function showResult(entry) {
+  const pct = entry.pctDiff;
+  const panel = document.getElementById('result-panel');
+  const delta = document.getElementById('result-delta');
+  const sub = document.getElementById('result-subline');
+
+  document.getElementById('result-task-label').textContent = entry.task.toUpperCase();
+
+  if (pct == null) {
+    if (entry.predictedMs == null) {
+      delta.textContent = 'time logged';
+      delta.className = 'result-delta voided';
+      sub.textContent = 'no estimate — logged as unplanned, excluded from calibration';
+    } else {
+      delta.textContent = 'est. voided';
+      delta.className = 'result-delta voided';
+      sub.textContent = 'renamed mid-timer — logged as unplanned, excluded from calibration';
+    }
+  } else {
+    const sign = pct > 0 ? '+' : '';
+    delta.textContent = sign + pct.toFixed(1) + '%';
+    delta.className = 'result-delta ' + (Math.abs(pct) < 2 ? 'exact' : pct > 0 ? 'over' : 'under');
+
+    if (Math.abs(pct) < 2) {
+      sub.textContent = 'nearly perfect estimate';
+    } else if (pct > 0) {
+      sub.textContent = `ran ${Math.abs(pct).toFixed(1)}% over — took longer than expected`;
+    } else {
+      sub.textContent = `finished ${Math.abs(pct).toFixed(1)}% faster than expected`;
+    }
+  }
+
+  const predEl = document.getElementById('res-predicted');
+  predEl.textContent = entry.predictedMs != null ? formatDuration(entry.predictedMs) : '—';
+  predEl.classList.toggle('voided', pct == null && entry.predictedMs != null);
+  document.getElementById('res-actual').textContent = formatDuration(entry.actualMs);
+  document.getElementById('res-start').textContent = formatTime(entry.startTime);
+  document.getElementById('res-end').textContent = formatTime(entry.endTime);
+
+  panel.classList.add('visible');
+  if (pct == null) document.getElementById('result-graph-wrap').classList.remove('visible');
+  else drawResultGraph(entry);
+}
+
+function clearResult() {
+  resultGraphEntry = null;
+  resultGraphPoints = [];
+  resultHoverIdx = null;
+  document.getElementById('result-panel').classList.remove('visible');
+  document.getElementById('result-graph-wrap').classList.remove('visible');
+  if (activeTimer) return;
+  document.getElementById('input-section').style.display = '';
+  document.getElementById('task-input').value = '';
+  document.getElementById('estimate-input').value = '';
+  document.getElementById('task-input').focus();
+}
+
+function renderPaused() {
+  const section = document.getElementById('paused-section');
+  const list = document.getElementById('paused-list');
+  if (!pausedTimers.length) {
+    section.classList.add('empty');
+    list.innerHTML = '';
+    return;
+  }
+  section.classList.remove('empty');
+  list.innerHTML = pausedTimers.map(t => {
+    if (t.id === editingPausedId) {
+      return `<div class="paused-entry paused-entry-editing">
+        <div>
+          <div class="log-edit-label">Rename task</div>
+          <input type="text" id="paused-rename-input" class="edit-input-task paused-rename-input" value="${escHtml(t.task)}" onkeydown="pausedRenameKeydown(event, ${t.id})">
+          ${t.voided || t.predictedMs == null ? '' : '<div class="paused-rename-note">renaming voids the estimate — this task will log as unplanned</div>'}
+          <div class="btn-group">
+            <button class="btn btn-tiny" onclick="cancelPausedRename()">Cancel</button>
+            <button class="btn btn-tiny ${t.voided || t.predictedMs == null ? 'accent' : 'danger'}" onclick="savePausedRename(${t.id})">${t.voided || t.predictedMs == null ? 'Rename' : 'Rename & void est.'}</button>
+          </div>
+        </div>
+      </div>`;
+    }
+    const elapsed = t.accumulatedMs;
+    const over = !t.voided && t.predictedMs != null && elapsed > t.predictedMs;
+    const elapsedStr = formatDuration(elapsed);
+    const metaCls = over ? 'paused-over' : '';
+    const estPart = t.predictedMs == null ? 'no est.'
+      : t.voided ? `<s class="voided-est">est. ${formatDuration(t.predictedMs)}</s> voided`
+      : `est. ${formatDuration(t.predictedMs)}`;
+    return `<div class="paused-entry">
+      <div class="paused-info">
+        <div class="paused-task">${escHtml(t.task)}</div>
+        <div class="paused-meta"><span class="${metaCls}">${elapsedStr}</span> / ${estPart} · paused</div>
+      </div>
+      <div class="paused-actions">
+        <button class="btn btn-tiny accent" onclick="resumePausedTimer(${t.id})">Resume</button>
+        <button class="btn btn-tiny" onclick="stopPausedTimer(${t.id})">Stop</button>
+        <button class="btn btn-tiny" onclick="startPausedRename(${t.id})" title="${t.voided || t.predictedMs == null ? 'Rename' : 'Rename — voids the estimate'}">✎</button>
+        <button class="btn btn-tiny danger" onclick="deletePausedTimer(${t.id})" title="Delete — discards without logging">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function startPausedRename(id) {
+  editingPausedId = id;
+  renderPaused();
+  const input = document.getElementById('paused-rename-input');
+  if (input) { input.focus(); input.select(); }
+}
+
+function cancelPausedRename() {
+  editingPausedId = null;
+  renderPaused();
+}
+
+function pausedRenameKeydown(e, id) {
+  if (e.key === 'Enter') savePausedRename(id);
+  else if (e.key === 'Escape') { e.stopPropagation(); cancelPausedRename(); }
+}
+
+// Renaming a paused timer voids its estimate: the prediction was made for a
+// different task than the one the clock ended up measuring, so scoring it
+// would pollute calibration. The original estimate stays on the record,
+// struck through, and the entry logs as unplanned.
+function savePausedRename(id) {
+  const t = pausedTimers.find(t => t.id === id);
+  const input = document.getElementById('paused-rename-input');
+  if (!t || !input) return;
+  const name = input.value.trim();
+  if (!name) {
+    input.style.borderBottomColor = 'var(--danger)';
+    setTimeout(() => { input.style.borderBottomColor = ''; }, 1500);
+    return;
+  }
+  if (name !== t.task) {
+    t.task = name;
+    // A no-estimate timer has nothing to void — renaming is just a rename.
+    if (t.predictedMs != null) t.voided = true;
+    savePaused();
+  }
+  editingPausedId = null;
+  renderPaused();
+}
+
+function renderLog() {
+  renderPaused();
+  updateSummaryBtn();
+  const list = document.getElementById('log-list');
+  const count = document.getElementById('log-count');
+  const statsRow = document.getElementById('stats-row');
+
+  document.body.classList.toggle('has-graph', predictedLogs().length >= 2);
+  count.textContent = logs.length + ' ' + (logs.length === 1 ? 'entry' : 'entries');
+
+  if (logs.length === 0) {
+    list.innerHTML = '<div class="log-empty">No sessions yet.<br>Start a task to begin tracking.</div>';
+    statsRow.style.display = 'none';
+    return;
+  }
+
+  statsRow.style.display = 'grid';
+
+  const predicted = predictedLogs();
+  document.getElementById('stat-count').textContent = logs.length;
+  if (predicted.length) {
+    const avgDelta = predicted.reduce((s, e) => s + e.pctDiff, 0) / predicted.length;
+    const brier = predicted.reduce((s, e) => s + Math.pow(e.pctDiff / 100, 2), 0) / predicted.length;
+    document.getElementById('stat-avg').textContent = (avgDelta >= 0 ? '+' : '') + avgDelta.toFixed(1) + '%';
+    document.getElementById('stat-bias').textContent = brier.toFixed(3);
+  } else {
+    document.getElementById('stat-avg').textContent = '—';
+    document.getElementById('stat-bias').textContent = '—';
+  }
+
+  list.innerHTML = logs.map((e, i) => {
+    // one unrenderable entry must not blank the whole list
+    try { return renderLogEntry(e, i); }
+    catch (err) {
+      return `<div class="log-entry" onclick="editEntry(${i})">
+        <div>
+          <div class="log-task">(unreadable entry)</div>
+          <div class="log-meta">tap to edit or delete</div>
+        </div>
+      </div>`;
+    }
+  }).join('');
+}
+
+function renderLogEntry(e, i) {
+    if (i === editingIndex) {
+      return `<div class="log-entry log-entry-editing">
+        <div>
+          <div class="log-edit-label">Task</div>
+          <input type="text" id="edit-task" class="edit-input-task" value="${escHtml(e.task)}">
+          <div class="log-edit-fields">
+            <div>
+              <div class="log-edit-label">Est. (min)</div>
+              <input type="number" id="edit-pred" class="edit-input-num" ${e.pctDiff == null ? (e.voided ? `value="${(e.predictedMs/60000).toFixed(2)}" disabled` : 'placeholder="—" disabled') : `value="${(e.predictedMs/60000).toFixed(2)}"`} min="0.01" step="0.01">
+            </div>
+            <div>
+              <div class="log-edit-label">${e.pctDiff == null && !e.voided && !e.tracked ? 'Took (min, estimated)' : 'Actual (min)'}</div>
+              <input type="number" id="edit-actual" class="edit-input-num" value="${(e.actualMs/60000).toFixed(2)}" min="0.01" step="0.01">
+            </div>
+          </div>
+          <div class="log-edit-actions">
+            <div class="btn-group">
+              <button class="btn btn-tiny" onclick="cancelEdit()">Cancel</button>
+              <button class="btn btn-tiny accent" onclick="saveEdit(${i})">Save</button>
+            </div>
+            <button class="btn btn-tiny danger" onclick="deleteEntry(${i})">Delete</button>
+          </div>
+        </div>
+      </div>`;
+    }
+    if (e.pctDiff == null) {
+      const tookPart = e.voided
+        ? `<s>est. ${formatDuration(e.predictedMs)}</s> / actual ${formatDuration(e.actualMs)}`
+        : e.tracked
+          ? `took ${formatDuration(e.actualMs)}`
+          : `took ~${formatDuration(e.actualMs)} (est.)`;
+      return `<div class="log-entry" id="entry-${e.id}" onclick="editEntry(${i})">
+        <div>
+          <div class="log-task">${escHtml(e.task)}</div>
+          <div class="log-meta">${formatDateShort(e.startTime)} · ${formatTime(e.startTime)} – ${formatTime(e.endTime)} · ${tookPart}</div>
+        </div>
+        <div class="log-delta ${e.voided ? 'voided' : 'unplanned'}">${e.voided ? 'voided' : 'unplanned'}</div>
+      </div>`;
+    }
+    const pct = e.pctDiff;
+    const cls = Math.abs(pct) < 2 ? 'exact' : pct > 0 ? 'over' : 'under';
+    const sign = pct > 0 ? '+' : '';
+    return `<div class="log-entry" id="entry-${e.id}" onclick="editEntry(${i})">
+      <div>
+        <div class="log-task">${escHtml(e.task)}</div>
+        <div class="log-meta">${formatDateShort(e.startTime)} · ${formatTime(e.startTime)} – ${formatTime(e.endTime)} · est. ${formatDuration(e.predictedMs)} / actual ${formatDuration(e.actualMs)}</div>
+      </div>
+      <div class="log-delta ${cls}">${sign}${pct.toFixed(1)}%</div>
+    </div>`;
+}
+
+function editEntry(i) {
+  editingIndex = i;
+  renderLog();
+}
+
+function cancelEdit() {
+  editingIndex = -1;
+  renderLog();
+}
+
+function saveEdit(i) {
+  const task = document.getElementById('edit-task').value.trim();
+  const actualMin = parseFloat(document.getElementById('edit-actual').value);
+  if (!task || !(actualMin > 0)) return;
+  if (logs[i].pctDiff == null) {
+    logs[i].task = task;
+    logs[i].actualMs = actualMin * 60000;
+    // Voided and tracked entries were timer-measured: the start is real, so
+    // trimming the duration moves the end. Plain retrodictions keep their end
+    // and shift start.
+    if (logs[i].voided || logs[i].tracked) logs[i].endTime = logs[i].startTime + logs[i].actualMs;
+    else logs[i].startTime = logs[i].endTime - logs[i].actualMs;
+  } else {
+    const predMin = parseFloat(document.getElementById('edit-pred').value);
+    if (!(predMin > 0)) return;
+    logs[i].task = task;
+    logs[i].predictedMs = predMin * 60000;
+    logs[i].actualMs = actualMin * 60000;
+    logs[i].pctDiff = ((logs[i].actualMs - logs[i].predictedMs) / logs[i].predictedMs) * 100;
+  }
+  editingIndex = -1;
+  saveLogs();
+  renderLog();
+  drawBgGraph();
+}
+
+function deleteEntry(i) {
+  logs.splice(i, 1);
+  if (editingIndex === i) editingIndex = -1;
+  else if (editingIndex > i) editingIndex--;
+  saveLogs();
+  renderLog();
+  drawBgGraph();
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function exportLog() {
+  if (logs.length === 0) return;
+  const lines = ['Task,Predicted (min),Actual (min),Delta %,Start,End'];
+  logs.forEach(e => {
+    lines.push([
+      `"${e.task.replace(/"/g,'""')}"`,
+      e.pctDiff == null ? '' : (e.predictedMs / 60000).toFixed(2),
+      (e.actualMs / 60000).toFixed(2),
+      e.pctDiff == null ? '' : e.pctDiff.toFixed(2),
+      new Date(e.startTime).toISOString(),
+      new Date(e.endTime).toISOString()
+    ].join(','));
+  });
+  const blob = new Blob([lines.join('\n')], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'meridian_log_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+}
+
+// ── Daily summary (Slack-ready) ────────────────────────────────────
+function formatDurationHuman(ms) {
+  const totalMin = Math.round(ms / 60000);
+  if (totalMin < 1) return '<1m';
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  return `${m}m`;
+}
+
+function summaryDay() {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  let day = todayStart;
+  let isYesterday = false;
+  let finished = logs.filter(e => e.startTime >= day.getTime());
+  // Paused timers are open work regardless of when they were started —
+  // filtering them by start day would drop any task carried over midnight.
+  const paused = pausedTimers.slice();
+  if (!finished.length) {
+    // posting after midnight: nothing finished yet today, so summarize yesterday
+    const yday = new Date(todayStart);
+    yday.setDate(yday.getDate() - 1);
+    const yFinished = logs.filter(e => e.startTime >= yday.getTime() && e.startTime < todayStart.getTime());
+    if (yFinished.length) {
+      day = yday;
+      finished = yFinished;
+      isYesterday = true;
+    }
+  }
+  return {day, finished, paused, isYesterday};
+}
+
+// includeItems=false gives just the heading + totals line — used by the Slack
+// auto-send when tasks were already posted one-by-one during the day.
+function buildSummaryText(day, finished, paused, includeItems) {
+  const todays = finished.concat(paused);
+  if (!todays.length) return null;
+
+  const dateStr = day.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'});
+  const lines = [`*Daily Summary — ${dateStr}*`, ''];
+  if (includeItems) {
+    finished.slice().sort((a, b) => a.startTime - b.startTime).forEach(e => {
+      if (e.voided) {
+        lines.push(`• ${e.task} — ${formatDurationHuman(e.actualMs)} (voided est. ${formatDurationHuman(e.predictedMs)})`);
+      } else if (e.pctDiff == null) {
+        lines.push(e.tracked
+          ? `• ${e.task} — ${formatDurationHuman(e.actualMs)} (unplanned)`
+          : `• ${e.task} — ~${formatDurationHuman(e.actualMs)} (unplanned, duration estimated)`);
+      } else {
+        const sign = e.pctDiff > 0 ? '+' : '';
+        lines.push(`• ${e.task} — ${formatDurationHuman(e.actualMs)} (est. ${formatDurationHuman(e.predictedMs)}, ${sign}${e.pctDiff.toFixed(0)}%)`);
+      }
+    });
+    if (finished.length) lines.push('');
+    if (paused.length) {
+      lines.push('*Not Finished*');
+      paused.slice().sort((a, b) => a.startTime - b.startTime).forEach(e => {
+        lines.push(e.predictedMs == null
+          ? `• ${e.task} — ${formatDurationHuman(e.accumulatedMs)} so far (no estimate)`
+          : e.voided
+            ? `• ${e.task} — ${formatDurationHuman(e.accumulatedMs)} so far (est. voided)`
+            : `• ${e.task} — ${formatDurationHuman(e.accumulatedMs)} so far (est. ${formatDurationHuman(e.predictedMs)})`);
+      });
+      lines.push('');
+    }
+  }
+
+  const totalMs = todays.reduce((s, e) => s + (e.endTime === undefined ? e.accumulatedMs : e.actualMs), 0);
+  let footer = `${todays.length} ${todays.length === 1 ? 'task' : 'tasks'} · ${formatDurationHuman(totalMs)} total`;
+  const withPred = finished.filter(e => e.pctDiff != null);
+  if (withPred.length) {
+    const avgDelta = withPred.reduce((s, e) => s + e.pctDiff, 0) / withPred.length;
+    const avgSign = avgDelta >= 0 ? '+' : '';
+    footer += ` · avg delta ${avgSign}${avgDelta.toFixed(1)}%`;
+  }
+  lines.push(footer);
+  return lines.join('\n');
+}
+
+// The copy button's view: today, falling back to yesterday after midnight.
+function buildDailySummary(includeItems = true) {
+  const {day, finished, paused} = summaryDay();
+  return buildSummaryText(day, finished, paused, includeItems);
+}
+
+// A specific calendar day — used by the Slack auto-send, including catch-ups
+// of days that ended while the app was asleep.
+function buildDailySummaryForDay(dayStart, includeItems, includePaused) {
+  const from = dayStart.getTime();
+  const to = new Date(dayStart);
+  to.setDate(to.getDate() + 1);
+  const finished = logs.filter(e => e.startTime >= from && e.startTime < to.getTime());
+  return buildSummaryText(dayStart, finished, includePaused ? pausedTimers.slice() : [], includeItems);
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text);
+  }
+  return new Promise((resolve, reject) => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    ok ? resolve() : reject();
+  });
+}
+
+function updateSummaryBtn() {
+  const btn = document.getElementById('summary-btn');
+  if (summaryDay().isYesterday) {
+    btn.innerHTML = '⧉ <span class="key">Y</span>esterday’s Summary';
+    btn.title = 'Copy yesterday’s sessions as Slack-ready text';
+  } else {
+    btn.innerHTML = '⧉ Dail<span class="key">y</span> Summary';
+    btn.title = 'Copy today’s sessions as Slack-ready text';
+  }
+}
+
+// Refresh label when returning to the tab (e.g. after midnight)
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) updateSummaryBtn();
+});
+
+let summaryBtnTimeout = null;
+function flashSummaryBtn(msg) {
+  const btn = document.getElementById('summary-btn');
+  btn.innerHTML = msg;
+  if (summaryBtnTimeout) clearTimeout(summaryBtnTimeout);
+  summaryBtnTimeout = setTimeout(updateSummaryBtn, 1800);
+}
+
+function copyDailySummary() {
+  const summary = buildDailySummary();
+  if (!summary) { flashSummaryBtn('No sessions today'); return; }
+  copyToClipboard(summary)
+    .then(() => flashSummaryBtn('✓ Copied'))
+    .catch(() => flashSummaryBtn('Copy failed'));
+}
+
+function importCSV(input) {
+  const file = input.files[0];
+  input.value = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
+    // skip header row
+    const dataLines = lines[0].toLowerCase().startsWith('task') ? lines.slice(1) : lines;
+    const imported = [];
+    for (const line of dataLines) {
+      // parse CSV respecting quoted fields
+      const fields = [];
+      let cur = '', inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') { inQ = !inQ; }
+        else if (ch === ',' && !inQ) { fields.push(cur); cur = ''; }
+        else cur += ch;
+      }
+      fields.push(cur);
+      if (fields.length < 6) continue;
+      const task = fields[0].trim();
+      const predMin = parseFloat(fields[1]);
+      const actualMin = parseFloat(fields[2]);
+      const startTime = new Date(fields[4].trim()).getTime();
+      const endTime = new Date(fields[5].trim()).getTime();
+      if (!task || isNaN(actualMin) || isNaN(startTime) || isNaN(endTime)) continue;
+      const actualMs = actualMin * 60000;
+      if (isNaN(predMin)) {
+        // retrodiction: logged after the fact, no prediction
+        imported.push({ id: startTime, task, predictedMs: null, actualMs, pctDiff: null, startTime, endTime });
+      } else {
+        const predictedMs = predMin * 60000;
+        imported.push({ id: startTime, task, predictedMs, actualMs, pctDiff: ((actualMs - predictedMs) / predictedMs) * 100, startTime, endTime });
+      }
+    }
+    if (!imported.length) { alert('No valid entries found in CSV.'); return; }
+    const merge = logs.length > 0 && confirm(`Merge ${imported.length} imported entries with existing log?\nCancel to replace instead.`);
+    if (merge) {
+      logs = logs.concat(imported).sort((a, b) => b.startTime - a.startTime);
+    } else {
+      logs = imported.sort((a, b) => b.startTime - a.startTime);
+    }
+    saveLogs();
+    renderLog();
+    drawBgGraph();
+  };
+  reader.readAsText(file);
+}
+
+function clearLog() {
+  if (!logs.length) return;
+  if (!confirm('Clear all log entries?')) return;
+  logs = [];
+  saveLogs();
+  renderLog();
+  drawBgGraph();
+}
+
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+let graphPoints = [];
+let hoveredGraphPoint = null;
+
+function drawBgGraph() {
+  resizeCanvas();
+  graphPoints = renderGraph(ctx, canvas.width, canvas.height, {
+    hoverEntry: hoveredGraphPoint ? hoveredGraphPoint.entry : null,
+  });
+}
+
+// Renderer for the full-screen background graph. Returns hit-test points
+// for the canvas it drew into.
+function renderGraph(g, W, H, opts = {}) {
+  g.clearRect(0, 0, W, H);
+  const points = [];
+  const pts = predictedLogs().reverse();
+  if (pts.length < 2) return points;
+  const pcts = pts.map(e => e.pctDiff);
+  const minV = Math.min(...pcts, -20);
+  const maxV = Math.max(...pcts, 20);
+  const range = maxV - minV || 40;
+
+  // report mode has fixed chrome (header + stats bar) the plot must clear;
+  // the bar's height varies with viewport width, so measure it
+  const pad = REPORT_MODE
+    ? { left: 40, right: 40, top: 110, bottom: (document.querySelector('.report-bar').offsetHeight || 110) + 40 }
+    : { left: 40, right: 40, top: 60, bottom: 60 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+
+  const toX = (i) => pad.left + (i / (pts.length - 1)) * plotW;
+  const toY = (v) => pad.top + (1 - (v - minV) / range) * plotH;
+
+  const zeroY = toY(0);
+
+  const isLight = document.body.classList.contains('light');
+  const zeroCol  = isLight ? 'rgba(80,73,69,0.35)'   : 'rgba(212,190,152,0.2)';
+  const lineCol  = isLight ? 'rgba(121,116,14,0.4)'  : 'rgba(184,187,38,0.25)';
+  const fillTop  = isLight ? 'rgba(121,116,14,0.12)' : 'rgba(184,187,38,0.10)';
+  const underDot = isLight ? 'rgba(121,116,14,0.85)' : 'rgba(184,187,38,0.75)';
+  const overDot  = isLight ? 'rgba(157,0,6,0.75)'    : 'rgba(251,73,52,0.7)';
+  const exactDot = isLight ? 'rgba(181,118,20,0.85)' : 'rgba(250,189,47,0.75)';
+  const zeroLbl  = isLight ? 'rgba(80,73,69,0.5)'    : 'rgba(212,190,152,0.3)';
+  g.strokeStyle = zeroCol;
+  g.lineWidth = 1;
+  g.setLineDash([4,4]);
+  g.beginPath();
+  g.moveTo(pad.left, zeroY);
+  g.lineTo(W - pad.right, zeroY);
+  g.stroke();
+  g.setLineDash([]);
+
+  if (pts.length > 1) {
+    g.beginPath();
+    g.moveTo(toX(0), toY(pcts[0]));
+    for (let i = 1; i < pts.length; i++) {
+      const x0 = toX(i-1), y0 = toY(pcts[i-1]);
+      const x1 = toX(i), y1 = toY(pcts[i]);
+      const cx = (x0 + x1) / 2;
+      g.bezierCurveTo(cx, y0, cx, y1, x1, y1);
+    }
+    g.strokeStyle = lineCol;
+    g.lineWidth = 1.5;
+    g.stroke();
+
+    const grad = g.createLinearGradient(0, pad.top, 0, H - pad.bottom);
+    grad.addColorStop(0, fillTop);
+    grad.addColorStop(1, 'rgba(184,187,38,0)');
+    g.lineTo(toX(pts.length-1), zeroY);
+    g.lineTo(toX(0), zeroY);
+    g.closePath();
+    g.fillStyle = grad;
+    g.fill();
+  }
+
+  pts.forEach((e, i) => {
+    const x = toX(i), y = toY(e.pctDiff);
+    const isOver = e.pctDiff > 0;
+    const color = Math.abs(e.pctDiff) < 2 ? exactDot : isOver ? overDot : underDot;
+    const isHovered = opts.hoverEntry === e;
+    if (isHovered) {
+      g.beginPath();
+      g.arc(x, y, 9, 0, Math.PI * 2);
+      g.fillStyle = color.replace(/[\d.]+\)$/, '0.15)');
+      g.fill();
+    }
+    g.beginPath();
+    g.arc(x, y, isHovered ? 5 : 3.5, 0, Math.PI * 2);
+    g.fillStyle = color;
+    g.fill();
+    points.push({ x, y, entry: e });
+  });
+
+  g.fillStyle = zeroLbl;
+  g.font = '10px "IBM Plex Mono", monospace';
+  g.fillText('0%', pad.left - 28, zeroY + 4);
+  return points;
+}
+
+let resultGraphEntry = null;
+let resultGraphPoints = [];
+let resultHoverIdx = null;
+
+const CALIBRATION_WINDOW = 7;
+
+// Rolling average of the absolute estimate miss, oldest → newest. One value
+// per completed task; the window expands until it holds CALIBRATION_WINDOW.
+function calibrationSeries() {
+  const chrono = predictedLogs().reverse();
+  return chrono.map((e, i) => {
+    const from = Math.max(0, i - CALIBRATION_WINDOW + 1);
+    let sum = 0;
+    for (let j = from; j <= i; j++) sum += Math.abs(chrono[j].pctDiff);
+    return { entry: e, avgMiss: sum / (i - from + 1) };
+  });
+}
+
+function drawResultGraph(entry) {
+  resultGraphEntry = entry || resultGraphEntry;
+  const wrap = document.getElementById('result-graph-wrap');
+  const c = document.getElementById('result-graph');
+  if (!resultGraphEntry || predictedLogs().length < 2) { wrap.classList.remove('visible'); return; }
+  wrap.classList.add('visible');
+  const dpr = window.devicePixelRatio || 1;
+  const w = wrap.clientWidth;
+  const h = 140;
+  if (!w) return;
+  c.width = w * dpr;
+  c.height = h * dpr;
+  c.style.height = h + 'px';
+  const g = c.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  resultGraphPoints = renderCalibrationGraph(g, w, h, resultHoverIdx);
+}
+
+function renderCalibrationGraph(g, W, H, hoverIdx) {
+  g.clearRect(0, 0, W, H);
+  const series = calibrationSeries();
+  if (series.length < 2) return [];
+
+  const maxV = Math.max(20, ...series.map(p => p.avgMiss));
+  const step = maxV <= 25 ? 10 : maxV <= 50 ? 25 : 50;
+  const top = Math.ceil(maxV / step) * step;
+
+  const pad = { left: 38, right: 48, top: 12, bottom: 12 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+  const toX = (i) => pad.left + (i / (series.length - 1)) * plotW;
+  const toY = (v) => pad.top + (1 - v / top) * plotH;
+
+  const isLight = document.body.classList.contains('light');
+  const lineCol = isLight ? 'rgba(121,116,14,0.9)'  : 'rgba(184,187,38,0.85)';
+  const washCol = isLight ? 'rgba(121,116,14,0.10)' : 'rgba(184,187,38,0.10)';
+  const gridCol = isLight ? 'rgba(80,73,69,0.18)'   : 'rgba(212,190,152,0.12)';
+  const tickInk = isLight ? 'rgba(124,111,100,0.9)' : 'rgba(146,131,116,0.9)';
+  const labelInk = isLight ? '#3c3836' : '#d5c4a1';
+  const surface = isLight ? '#f9f5d7' : '#1d2021';
+
+  // hairline gridlines at 0 (perfect), mid, and top; muted right-aligned ticks
+  g.font = '9px "IBM Plex Mono", monospace';
+  g.textAlign = 'right';
+  [0, top / 2, top].forEach(v => {
+    const y = toY(v);
+    g.strokeStyle = gridCol;
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(pad.left, y);
+    g.lineTo(W - pad.right, y);
+    g.stroke();
+    g.fillStyle = tickInk;
+    g.fillText(Math.round(v) + '%', pad.left - 6, y + 3);
+  });
+
+  // area wash down to the 0% baseline
+  g.beginPath();
+  series.forEach((p, i) => i ? g.lineTo(toX(i), toY(p.avgMiss)) : g.moveTo(toX(i), toY(p.avgMiss)));
+  g.lineTo(toX(series.length - 1), toY(0));
+  g.lineTo(toX(0), toY(0));
+  g.closePath();
+  g.fillStyle = washCol;
+  g.fill();
+
+  // the calibration line
+  g.beginPath();
+  series.forEach((p, i) => i ? g.lineTo(toX(i), toY(p.avgMiss)) : g.moveTo(toX(i), toY(p.avgMiss)));
+  g.strokeStyle = lineCol;
+  g.lineWidth = 2;
+  g.lineJoin = 'round';
+  g.lineCap = 'round';
+  g.stroke();
+
+  const points = series.map((p, i) => ({ x: toX(i), y: toY(p.avgMiss), entry: p.entry, avgMiss: p.avgMiss }));
+
+  // hover: vertical crosshair + marker on the hovered point
+  if (hoverIdx != null && points[hoverIdx]) {
+    const hp = points[hoverIdx];
+    g.strokeStyle = gridCol;
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(hp.x, pad.top);
+    g.lineTo(hp.x, H - pad.bottom);
+    g.stroke();
+    g.beginPath(); g.arc(hp.x, hp.y, 5.5, 0, Math.PI * 2); g.fillStyle = surface; g.fill();
+    g.beginPath(); g.arc(hp.x, hp.y, 3.5, 0, Math.PI * 2); g.fillStyle = lineCol; g.fill();
+  }
+
+  // end dot (surface ring so it stays legible over the line) + current value
+  const last = points[points.length - 1];
+  g.beginPath(); g.arc(last.x, last.y, 6, 0, Math.PI * 2); g.fillStyle = surface; g.fill();
+  g.beginPath(); g.arc(last.x, last.y, 4, 0, Math.PI * 2); g.fillStyle = lineCol; g.fill();
+  g.textAlign = 'left';
+  g.font = '10px "IBM Plex Mono", monospace';
+  g.fillStyle = labelInk;
+  g.fillText(Math.round(last.avgMiss) + '%', last.x + 9, Math.min(Math.max(last.y + 3, pad.top + 8), H - pad.bottom - 2));
+  return points;
+}
+
+function startBackgroundGraph() {
+  drawBgGraph();
+  canvas.classList.add('active');
+}
+
+function stopBackgroundGraph() {
+  drawBgGraph();
+}
+
+window.addEventListener('resize', () => {
+  if (REPORT_MODE || canvas.classList.contains('active') || logs.length > 1) drawBgGraph();
+  if (resultGraphEntry && document.getElementById('result-panel').classList.contains('visible')) drawResultGraph();
+});
+
+document.getElementById('task-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('estimate-input').focus();
+});
+document.getElementById('estimate-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.stopPropagation(); e.shiftKey ? logPastTask() : startTimer(); }
+});
+
+canvas.addEventListener('click', () => {
+  // no session log to jump to in a shared report — hover only
+  if (REPORT_MODE) return;
+  if (hoveredGraphPoint) {
+    const entry = hoveredGraphPoint.entry;
+    const pct = entry.pctDiff;
+    const haloColor = Math.abs(pct) < 2
+      ? 'rgba(250,189,47,0.2)'
+      : pct > 0 ? 'rgba(251,73,52,0.2)' : 'rgba(184,187,38,0.2)';
+    hoveredGraphPoint = null;
+    graphTooltip.style.display = 'none';
+    document.body.classList.remove('graph-mode');
+    setTimeout(() => {
+      const el = document.getElementById('entry-' + entry.id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const observer = new IntersectionObserver((entries) => {
+          if (entries[0].isIntersecting) {
+            observer.disconnect();
+            el.style.setProperty('--entry-halo', haloColor);
+            el.classList.add('log-entry-highlight');
+            el.addEventListener('animationend', () => {
+              el.classList.remove('log-entry-highlight');
+              el.style.animation = 'none';
+            }, { once: true });
+          }
+        }, { threshold: 0.8 });
+        observer.observe(el);
+      }
+    }, 350);
+  } else {
+    document.body.classList.toggle('graph-mode');
+  }
+});
+
+const graphTooltip = document.getElementById('graph-tooltip');
+canvas.addEventListener('mousemove', (e) => {
+  if (!document.body.classList.contains('graph-mode')) return;
+  const mx = e.clientX, my = e.clientY;
+  let nearest = null, nearestDist = Infinity;
+  for (const pt of graphPoints) {
+    const d = Math.hypot(pt.x - mx, pt.y - my);
+    if (d < nearestDist) { nearestDist = d; nearest = pt; }
+  }
+  if (!nearest || nearestDist > 48) {
+    if (hoveredGraphPoint !== null) { hoveredGraphPoint = null; drawBgGraph(); }
+    graphTooltip.style.display = 'none';
+    return;
+  }
+  if (hoveredGraphPoint !== nearest) { hoveredGraphPoint = nearest; drawBgGraph(); }
+  const entry = nearest.entry;
+  const pct = entry.pctDiff;
+  const sign = pct >= 0 ? '+' : '';
+  const cls = Math.abs(pct) < 2 ? 'exact' : pct > 0 ? 'over' : 'under';
+  graphTooltip.innerHTML =
+    `<div class="tt-task">${escHtml(entry.task)}</div>` +
+    `<div class="tt-meta">${formatDateShort(entry.startTime)} · ${formatTime(entry.startTime)} – ${formatTime(entry.endTime)}</div>` +
+    `<div class="tt-meta">est. ${formatDuration(entry.predictedMs)} / actual ${formatDuration(entry.actualMs)}</div>` +
+    `<div class="tt-delta ${cls}">${sign}${pct.toFixed(1)}%</div>`;
+
+  const tw = 270, th = 90, margin = 12;
+  const left = mx + tw + margin > window.innerWidth ? mx - tw - margin : mx + margin;
+  const top  = my + th + margin > window.innerHeight ? my - th - margin : my + margin;
+  graphTooltip.style.left = left + 'px';
+  graphTooltip.style.top  = top  + 'px';
+  graphTooltip.style.display = 'block';
+});
+
+canvas.addEventListener('mouseleave', () => {
+  graphTooltip.style.display = 'none';
+  if (hoveredGraphPoint !== null) { hoveredGraphPoint = null; drawBgGraph(); }
+});
+
+const resultGraphCanvas = document.getElementById('result-graph');
+resultGraphCanvas.addEventListener('mousemove', (e) => {
+  if (!resultGraphPoints.length) return;
+  const rect = resultGraphCanvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  let idx = null, best = Infinity;
+  resultGraphPoints.forEach((p, i) => {
+    const d = Math.abs(p.x - mx);
+    if (d < best) { best = d; idx = i; }
+  });
+  if (idx === null || best > 40) {
+    if (resultHoverIdx !== null) { resultHoverIdx = null; drawResultGraph(); }
+    graphTooltip.style.display = 'none';
+    return;
+  }
+  if (resultHoverIdx !== idx) { resultHoverIdx = idx; drawResultGraph(); }
+  const pt = resultGraphPoints[idx];
+  const entry = pt.entry;
+  const pct = entry.pctDiff;
+  const sign = pct >= 0 ? '+' : '';
+  const cls = Math.abs(pct) < 2 ? 'exact' : pct > 0 ? 'over' : 'under';
+  graphTooltip.innerHTML =
+    `<div class="tt-task">${escHtml(entry.task)}</div>` +
+    `<div class="tt-meta">${formatDateShort(entry.startTime)} · 7-task avg miss ${pt.avgMiss.toFixed(1)}%</div>` +
+    `<div class="tt-delta ${cls}">${sign}${pct.toFixed(1)}% this task</div>`;
+  const tw = 270, th = 70, margin = 12;
+  const left = e.clientX + tw + margin > window.innerWidth ? e.clientX - tw - margin : e.clientX + margin;
+  const topPos = e.clientY + th + margin > window.innerHeight ? e.clientY - th - margin : e.clientY + margin;
+  graphTooltip.style.left = left + 'px';
+  graphTooltip.style.top = topPos + 'px';
+  graphTooltip.style.display = 'block';
+});
+
+resultGraphCanvas.addEventListener('mouseleave', () => {
+  graphTooltip.style.display = 'none';
+  if (resultHoverIdx !== null) { resultHoverIdx = null; drawResultGraph(); }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (REPORT_MODE) return;
+  if (e.key === 'Escape') {
+    if (document.body.classList.contains('graph-mode')) {
+      document.body.classList.remove('graph-mode');
+      return;
+    }
+    closeSettings();
+    return;
+  }
+  const active = document.activeElement;
+  const inInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT');
+  if (inInput) return;
+  if (document.body.matches(':hover') && !document.querySelector('.app').matches(':hover')) return;
+
+  if (e.key === 'Enter') {
+    if (timerInterval) {
+      e.preventDefault();
+      stopTimer();
+    } else if (document.getElementById('result-panel').classList.contains('visible')) {
+      e.preventDefault();
+      clearResult();
+    }
+  } else if (!e.metaKey && !e.ctrlKey) {
+    if (e.key === 'e') { e.preventDefault(); exportLog(); }
+    else if (e.key === 'i') { e.preventDefault(); document.getElementById('import-input').click(); }
+    else if (e.key === 'c') { e.preventDefault(); clearLog(); }
+    else if (e.key === 'y') { e.preventDefault(); copyDailySummary(); }
+    else if (e.key === 'a') { e.preventDefault(); setTheme('auto'); }
+    else if (e.key === 'l') { e.preventDefault(); setTheme('light'); }
+    else if (e.key === 'd') { e.preventDefault(); setTheme('dark'); }
+    else if (e.key === 's' && timerInterval) { e.preventDefault(); stopTimer(); }
+    else if (e.key === 'p' && timerInterval) { e.preventDefault(); pauseActiveTimer(); }
+    else if (e.key === 'n' && document.getElementById('result-panel').classList.contains('visible')) { e.preventDefault(); clearResult(); }
+    else if (e.key === 'r' && !timerInterval && document.getElementById('input-section').style.display !== 'none') { e.preventDefault(); logPastTask(); }
+  }
+});
+
+function restoreActiveTimer() {
+  const raw = storageGet(ACTIVE_KEY);
+  if (!raw) return;
+  try {
+    const t = JSON.parse(raw);
+    if (!t || !t.task) return;
+    if (t.predictedMs !== null && !(finiteOrNull(t.predictedMs) > 0)) return;
+    activeTimer = t;
+    activeTimer.task = String(activeTimer.task);
+    activeTimer.voided = activeTimer.voided === true;
+    if (finiteOrNull(activeTimer.accumulatedMs) == null) activeTimer.accumulatedMs = 0;
+    if (finiteOrNull(activeTimer.lastResumeAt) == null) activeTimer.lastResumeAt = Date.now();
+    if (finiteOrNull(activeTimer.startTime) == null) activeTimer.startTime = Date.now() - activeTimer.accumulatedMs;
+    beginActiveTimerUI();
+  } catch (e) {
+    storageRemove(ACTIVE_KEY);
+  }
+}
+
+if (REPORT_MODE) {
+  initReportMode();
+} else {
+  renderLog();
+  restoreActiveTimer();
+  if (logs.length > 1) {
+    resizeCanvas();
+    drawBgGraph();
+    canvas.style.opacity = '0.6';
+  }
+}
+
+// ── Backup system ────────────────────────────────────────────────
+const BACKUP_KEY = 'meridian_backup_cfg';
+let backupCfg = loadJSON(BACKUP_KEY, null) || {
+  enabled: false,
+  freq: 'weekly',
+  lastBackup: null,
+  lastReminder: null,
+  useFSAPI: false
+};
+
+function saveBackupCfg() {
+  storageSet(BACKUP_KEY, JSON.stringify(backupCfg));
+}
+
+function toggleBackup() {
+  backupCfg.enabled = !backupCfg.enabled;
+  saveBackupCfg();
+  renderBackupUI();
+}
+
+function setBackupFreq(freq) {
+  backupCfg.freq = freq;
+  saveBackupCfg();
+  renderBackupUI();
+  checkBackupDue();
+}
+
+function renderBackupUI() {
+  const toggle = document.getElementById('backup-toggle');
+  const settings = document.getElementById('backup-settings');
+  const noteEl = document.getElementById('backup-note');
+  const dailyBtn = document.getElementById('freq-daily');
+  const weeklyBtn = document.getElementById('freq-weekly');
+  const statusEl = document.getElementById('backup-dir-status');
+
+  if (backupCfg.enabled) {
+    toggle.classList.add('on');
+    settings.style.display = 'block';
+  } else {
+    toggle.classList.remove('on');
+    settings.style.display = 'none';
+    return;
+  }
+
+  dailyBtn.style.color = backupCfg.freq === 'daily' ? 'var(--accent2)' : '';
+  dailyBtn.style.borderColor = backupCfg.freq === 'daily' ? 'var(--accent2-dim)' : '';
+  weeklyBtn.style.color = backupCfg.freq === 'weekly' ? 'var(--accent2)' : '';
+  weeklyBtn.style.borderColor = backupCfg.freq === 'weekly' ? 'var(--accent2-dim)' : '';
+
+  const hasFSAPI = 'showSaveFilePicker' in window;
+  const last = backupCfg.lastBackup ? new Date(backupCfg.lastBackup).toLocaleDateString() : 'never';
+  const freqLabel = backupCfg.freq === 'daily' ? 'daily' : 'weekly';
+
+  document.getElementById('backup-now-row').style.display = hasFSAPI ? '' : 'none';
+
+  if (hasFSAPI) {
+    noteEl.innerHTML = 'A timestamped CSV will be saved automatically when you open the app and a ' + freqLabel + ' backup is due.<br><br>Last backup: <span style="color:var(--text)">' + last + '</span>';
+  } else {
+    noteEl.innerHTML = 'Auto-backup requires a browser with File System Access API (e.g. Chrome). You\'ll receive an in-app reminder to export manually on a ' + freqLabel + ' basis.<br><br>Last backup: <span style="color:var(--text)">' + last + '</span>';
+  }
+  statusEl.textContent = '';
+}
+
+function isBackupDue() {
+  if (!backupCfg.enabled || !logs.length) return false;
+  if (!backupCfg.lastBackup) return true;
+  const now = Date.now();
+  const elapsed = now - backupCfg.lastBackup;
+  const threshold = backupCfg.freq === 'daily' ? 86400000 : 604800000;
+  return elapsed >= threshold;
+}
+
+function isReminderSnoozed() {
+  if (!backupCfg.lastReminder) return false;
+  return (Date.now() - backupCfg.lastReminder) < 3600000;
+}
+
+async function checkBackupDue() {
+  if (!backupCfg.enabled || !logs.length) return;
+  if (!isBackupDue()) return;
+
+  const hasFSAPI = 'showSaveFilePicker' in window;
+  if (hasFSAPI) {
+    await runBackupNow(true);
+  } else {
+    if (!isReminderSnoozed()) showReminder();
+  }
+}
+
+async function runBackupNow(silent = false) {
+  if (!logs.length) { if (!silent) alert('No entries to back up.'); return; }
+  const hasFSAPI = 'showSaveFilePicker' in window;
+  const dateStr = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const filename = 'meridian_backup_' + dateStr + '.csv';
+  const csvLines = ['Task,Predicted (min),Actual (min),Delta %,Start,End'];
+  logs.forEach(e => {
+    csvLines.push([
+      '"' + e.task.replace(/"/g, '""') + '"',
+      e.pctDiff == null ? '' : (e.predictedMs / 60000).toFixed(2),
+      (e.actualMs / 60000).toFixed(2),
+      e.pctDiff == null ? '' : e.pctDiff.toFixed(2),
+      new Date(e.startTime).toISOString(),
+      new Date(e.endTime).toISOString()
+    ].join(','));
+  });
+  const csvContent = csvLines.join('\n');
+
+  if (hasFSAPI && !silent) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: 'CSV', accept: { 'text/csv': ['.csv'] } }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(csvContent);
+      await writable.close();
+    } catch(e) { return; }
+  } else {
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+  }
+
+  backupCfg.lastBackup = Date.now();
+  saveBackupCfg();
+  hideReminder();
+  renderBackupUI();
+  const statusEl = document.getElementById('backup-dir-status');
+  statusEl.textContent = '✓ Backed up: ' + new Date().toLocaleString();
+}
+
+function showReminder() {
+  const freqLabel = backupCfg.freq === 'daily' ? 'daily' : 'weekly';
+  const last = backupCfg.lastBackup ? new Date(backupCfg.lastBackup).toLocaleDateString() : 'never';
+  document.getElementById('reminder-text').innerHTML =
+    'Your ' + freqLabel + ' backup is overdue. Last backup: ' + last + '. Export your log to keep a local copy safe.';
+  document.getElementById('backup-reminder').style.display = 'block';
+}
+
+function hideReminder() {
+  document.getElementById('backup-reminder').style.display = 'none';
+}
+
+function snoozeReminder() {
+  backupCfg.lastReminder = Date.now();
+  saveBackupCfg();
+  hideReminder();
+}
+
+function dismissReminder() {
+  backupCfg.lastBackup = Date.now();
+  saveBackupCfg();
+  hideReminder();
+  renderBackupUI();
+}
+
+// Periodic check every hour while app is open (never in a shared report view)
+if (!REPORT_MODE) {
+  setInterval(checkBackupDue, 3600000);
+  renderBackupUI();
+  checkBackupDue();
+}
+
+// ── Slack notifications ──────────────────────────────────────────
+// Posted through a Slack incoming webhook — the webhook itself is bound to
+// one channel, so no token or channel picker is needed and nothing but the
+// completed task ever leaves the device. Webhooks don't send CORS headers,
+// so requests go out no-cors and the response is opaque: delivery can't be
+// confirmed, only network failure detected. Failed sends queue in storage
+// and retry on resume/reconnect, since mobile suspend can cut a send short.
+const SLACK_KEY = 'meridian_slack_cfg';
+const SLACK_QUEUE_KEY = 'meridian_slack_queue';
+
+// dailySummarizedDay is a watermark: the latest day key whose summary has been
+// enqueued (or ruled empty after the day ended). Everything the auto-send does
+// derives from it, so days the app slept through are caught up on the next
+// wake and nothing is ever summarized twice. dailySkipDay suppresses the
+// same-day send once (enabling or rescheduling past the send time must not
+// fire a surprise post) — that day still goes out via catch-up the next
+// morning.
+function normalizeSlackCfg(raw) {
+  const cfg = Object.assign(
+    { enabled: false, webhookUrl: '', dailyEnabled: false, dailyTime: '23:30', dailySummarizedDay: '', dailySkipDay: '' },
+    raw && typeof raw === 'object' ? raw : {}
+  );
+  if (typeof cfg.webhookUrl !== 'string') cfg.webhookUrl = '';
+  if (typeof cfg.dailyTime !== 'string' || !/^\d{1,2}:\d{2}$/.test(cfg.dailyTime)) cfg.dailyTime = '23:30';
+  if (typeof cfg.dailySummarizedDay !== 'string') cfg.dailySummarizedDay = '';
+  if (typeof cfg.dailySkipDay !== 'string') cfg.dailySkipDay = '';
+  return cfg;
+}
+
+let slackCfg = normalizeSlackCfg(loadJSON(SLACK_KEY, null));
+let slackQueue = loadJSON(SLACK_QUEUE_KEY, []);
+if (!Array.isArray(slackQueue)) slackQueue = [];
+
+function saveSlackCfg() { storageSet(SLACK_KEY, JSON.stringify(slackCfg)); }
+function saveSlackQueue() { storageSet(SLACK_QUEUE_KEY, JSON.stringify(slackQueue)); }
+
+function slackWebhookValid() {
+  return slackCfg.webhookUrl.startsWith('https://hooks.slack.com/');
+}
+
+let flushingSlack = false;
+async function flushSlackQueue() {
+  if (flushingSlack || !slackQueue.length || !slackWebhookValid()) return;
+  flushingSlack = true;
+  try {
+    while (slackQueue.length) {
+      const msg = slackQueue[0];
+      await fetch(slackCfg.webhookUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({ text: msg.text }),
+      });
+      // Advance the daily watermark BEFORE dequeuing: if we die between the
+      // two writes, a stale watermark next to an empty queue would rebuild
+      // and resend the same day's summary on reload.
+      if (msg.dailyFor && msg.dailyFor > slackCfg.dailySummarizedDay) {
+        slackCfg.dailySummarizedDay = msg.dailyFor;
+        saveSlackCfg();
+      }
+      slackQueue.shift();
+      saveSlackQueue();
+    }
+  } catch (e) {
+    // network failure — leave the rest queued for the next resume/reconnect
+  } finally {
+    flushingSlack = false;
+  }
+}
+
+function postTaskToSlack(entry) {
+  if (!slackCfg.enabled || !slackWebhookValid()) return;
+  let text;
+  if (entry.voided) {
+    text = `${entry.task} — ${formatDurationHuman(entry.actualMs)} (voided est. ${formatDurationHuman(entry.predictedMs)})`;
+  } else if (entry.pctDiff == null) {
+    text = entry.tracked
+      ? `${entry.task} — ${formatDurationHuman(entry.actualMs)} (unplanned)`
+      : `${entry.task} — ~${formatDurationHuman(entry.actualMs)} (unplanned)`;
+  } else {
+    const sign = entry.pctDiff > 0 ? '+' : '';
+    text = `${entry.task} — ${formatDurationHuman(entry.actualMs)} (est. ${formatDurationHuman(entry.predictedMs)}, ${sign}${entry.pctDiff.toFixed(0)}%)`;
+  }
+  slackQueue.push({ text, ts: entry.endTime });
+  if (slackQueue.length > 20) slackQueue = slackQueue.slice(-20);
+  saveSlackQueue();
+  flushSlackQueue();
+}
+
+let slackStatusTimeout = null;
+function setSlackStatus(msg, transient) {
+  const el = document.getElementById('slack-status');
+  el.textContent = msg;
+  if (slackStatusTimeout) { clearTimeout(slackStatusTimeout); slackStatusTimeout = null; }
+  if (msg && transient) slackStatusTimeout = setTimeout(() => { el.textContent = ''; }, 4000);
+}
+
+function toggleSlack() {
+  slackCfg.enabled = !slackCfg.enabled;
+  saveSlackCfg();
+  renderSlackUI();
+}
+
+function localDayKey(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function dayKeyToDate(key) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
+  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+}
+
+function yesterdayKey(now) {
+  const y = new Date(now);
+  y.setHours(0, 0, 0, 0);
+  y.setDate(y.getDate() - 1);
+  return localDayKey(y);
+}
+
+function dailySendTimeToday(now) {
+  const [h, m] = slackCfg.dailyTime.split(':').map(Number);
+  const t = new Date(now);
+  t.setHours(h, m, 0, 0);
+  return t;
+}
+
+function toggleSlackDaily() {
+  slackCfg.dailyEnabled = !slackCfg.dailyEnabled;
+  if (slackCfg.dailyEnabled) {
+    const now = new Date();
+    // Start the watermark at yesterday so enabling never backfills old
+    // history — but never move it backwards, or re-toggling after today's
+    // send would repeat it.
+    const baseline = yesterdayKey(now);
+    if (slackCfg.dailySummarizedDay < baseline) slackCfg.dailySummarizedDay = baseline;
+    // Enabling after today's send time must not fire a surprise post now;
+    // today still goes out via catch-up tomorrow morning.
+    if (now >= dailySendTimeToday(now) && slackCfg.dailySummarizedDay < localDayKey(now)) {
+      slackCfg.dailySkipDay = localDayKey(now);
+    }
+  }
+  saveSlackCfg();
+  renderSlackUI();
+}
+
+function setSlackDailyTime(v) {
+  if (!/^\d{1,2}:\d{2}$/.test(v)) return;
+  slackCfg.dailyTime = v;
+  // Moving the time into the past shouldn't post immediately either — the
+  // day is deferred to tomorrow's catch-up instead of being skipped.
+  const now = new Date();
+  if (now >= dailySendTimeToday(now) && slackCfg.dailySummarizedDay < localDayKey(now)) {
+    slackCfg.dailySkipDay = localDayKey(now);
+  }
+  saveSlackCfg();
+}
+
+// A daily send must never start unless its bookkeeping can be durably
+// recorded: posting while localStorage is detached (mobile suspend) means a
+// later reload forgets the send ever happened and repeats it. Deferring is
+// always safe — the minute tick / resume hook retries.
+function slackStorageSettled() {
+  try {
+    localStorage.setItem('meridian_probe', '1');
+    localStorage.removeItem('meridian_probe');
+  } catch (e) { return false; }
+  return !pendingWrites.has(SLACK_KEY) && !pendingWrites.has(SLACK_QUEUE_KEY) &&
+         !failedReads.has(SLACK_KEY) && !failedReads.has(SLACK_QUEUE_KEY);
+}
+
+// The outbox entry carries the day it summarizes, so a crash between the
+// queue write and the config write can't double-enqueue on reload — the
+// rebuilt message finds its twin by day key instead of being pushed again.
+function enqueueDailySummary(text, dayKey) {
+  if (slackQueue.some(m => m.dailyFor === dayKey)) return;
+  slackQueue.push({ text, ts: Date.now(), dailyFor: dayKey });
+  if (slackQueue.length > 20) slackQueue = slackQueue.slice(-20);
+  saveSlackQueue();
+}
+
+// Runs once a minute and on resume. A serverless PWA can only send while
+// awake, so: today's summary goes out the first time the app is running at
+// or past the scheduled time, and any day that ended while the app was
+// asleep is caught up (from the watermark forward) on the next wake. Paused
+// timers are live open work — they belong in today's summary only, not in a
+// past day's catch-up.
+function checkDailySummary() {
+  if (REPORT_MODE || !slackCfg.dailyEnabled || !slackWebhookValid()) return;
+  if (!slackStorageSettled()) return;
+  const now = new Date();
+  const todayKey = localDayKey(now);
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  if (!slackCfg.dailySummarizedDay) slackCfg.dailySummarizedDay = yesterdayKey(now);
+
+  let changed = false;
+  // Catch up finished days the app slept through (bounded, in case the
+  // stored watermark is ancient).
+  let day = dayKeyToDate(slackCfg.dailySummarizedDay);
+  const floor = new Date(todayStart);
+  floor.setDate(floor.getDate() - 7);
+  if (!day || day < floor) day = new Date(floor);
+  else day.setDate(day.getDate() + 1);
+  for (; day < todayStart; day.setDate(day.getDate() + 1)) {
+    const key = localDayKey(day);
+    const text = buildDailySummaryForDay(day, !slackCfg.enabled, false);
+    if (text) enqueueDailySummary(text, key);
+    // Empty days are sealed too — the day is over, nothing can appear in it.
+    slackCfg.dailySummarizedDay = key;
+    changed = true;
+  }
+
+  // Today, at/after the scheduled time. If today is still empty the watermark
+  // stays put, so tasks finished later tonight still get sent tonight.
+  if (now >= dailySendTimeToday(now) && slackCfg.dailySummarizedDay < todayKey &&
+      slackCfg.dailySkipDay !== todayKey) {
+    const text = buildDailySummaryForDay(todayStart, !slackCfg.enabled, true);
+    if (text) {
+      enqueueDailySummary(text, todayKey);
+      slackCfg.dailySummarizedDay = todayKey;
+      changed = true;
+    }
+  }
+
+  if (changed) saveSlackCfg();
+  flushSlackQueue();
+}
+
+function setSlackWebhook(url) {
+  slackCfg.webhookUrl = url.trim();
+  saveSlackCfg();
+  if (slackCfg.webhookUrl && !slackWebhookValid()) {
+    setSlackStatus('Expected a URL starting with https://hooks.slack.com/');
+  } else {
+    setSlackStatus('');
+  }
+}
+
+async function sendSlackTest() {
+  if (!slackWebhookValid()) {
+    setSlackStatus('Paste a webhook URL first (https://hooks.slack.com/…)', true);
+    return;
+  }
+  try {
+    await fetch(slackCfg.webhookUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({ text: '👋 Meridian test — completed tasks will be posted here.' }),
+    });
+    setSlackStatus('Sent — check the channel', true);
+  } catch (e) {
+    setSlackStatus('Send failed — offline?', true);
+  }
+}
+
+function renderSlackUI() {
+  document.getElementById('slack-toggle').classList.toggle('on', slackCfg.enabled);
+  document.getElementById('slack-daily-toggle').classList.toggle('on', slackCfg.dailyEnabled);
+  document.getElementById('slack-daily-settings').style.display = slackCfg.dailyEnabled ? 'block' : 'none';
+  document.getElementById('slack-settings').style.display = slackCfg.enabled || slackCfg.dailyEnabled ? 'block' : 'none';
+  document.getElementById('slack-webhook-input').value = slackCfg.webhookUrl;
+  document.getElementById('slack-daily-time').value = slackCfg.dailyTime;
+  document.getElementById('slack-daily-note').textContent = (slackCfg.enabled
+    ? 'Tasks are already posted one-by-one, so the daily post carries only the day’s totals.'
+    : 'The daily post includes the full task list and totals — same text as the Daily Summary button.')
+    + ' It goes out the first time the app is awake at or after this time; a day the app sleeps through is sent when the app next opens.';
+}
+
+if (!REPORT_MODE) {
+  renderSlackUI();
+  window.addEventListener('online', flushSlackQueue);
+  flushSlackQueue();
+  checkDailySummary();
+  setInterval(checkDailySummary, 60 * 1000);
+}
+
+// ── Settings panel ───────────────────────────────────────────────
+function openSettings() {
+  populateReportYears();
+  document.getElementById('settings-overlay').classList.add('open');
+  document.getElementById('settings-panel').classList.add('open');
+}
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.remove('open');
+  document.getElementById('settings-panel').classList.remove('open');
+}
+
+// ── Yearly report (shareable link) ───────────────────────────────
+// The whole year's entries travel inside the URL fragment: JSON → deflate →
+// base64url. The fragment is never sent to the server, so sharing stays
+// serverless like everything else here.
+
+function b64urlEncode(bytes) {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function b64urlDecode(s) {
+  const bin = atob(s.replace(/-/g, '+').replace(/_/g, '/'));
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+async function pipeBytes(bytes, stream) {
+  const out = new Blob([bytes]).stream().pipeThrough(stream);
+  return new Uint8Array(await new Response(out).arrayBuffer());
+}
+
+function populateReportYears() {
+  const sel = document.getElementById('report-year');
+  const prev = sel.value;
+  const years = [...new Set(
+    logs.filter(e => e.startTime != null).map(e => new Date(e.startTime).getFullYear())
+  )].sort((a, b) => b - a);
+  sel.innerHTML = years.length
+    ? years.map(y => `<option value="${y}">${y}</option>`).join('')
+    : '<option value="">no data yet</option>';
+  if (years.includes(+prev)) sel.value = prev;
+}
+
+async function buildReportLink() {
+  const year = parseInt(document.getElementById('report-year').value);
+  if (!year) return null;
+  const from = new Date(year, 0, 1).getTime();
+  const to = new Date(year + 1, 0, 1).getTime();
+  const entries = logs
+    .filter(e => e.startTime != null && e.startTime >= from && e.startTime < to)
+    .sort((a, b) => a.startTime - b.startTime);
+  if (!entries.length) return null;
+  const rows = entries.map(e => [
+    e.task,
+    e.pctDiff == null ? null : +(e.predictedMs / 60000).toFixed(2),
+    +(e.actualMs / 60000).toFixed(2),
+    e.startTime,
+    e.endTime,
+  ]);
+  const bytes = new TextEncoder().encode(JSON.stringify({ v: 1, y: year, t: rows }));
+  let tag = '0', packed = bytes;
+  if (typeof CompressionStream === 'function') {
+    try {
+      packed = await pipeBytes(bytes, new CompressionStream('deflate-raw'));
+      tag = '1';
+    } catch (e) { /* fall back to uncompressed */ }
+  }
+  return location.href.split('#')[0] + '#report=' + tag + '.' + b64urlEncode(packed);
+}
+
+let reportBtnTimeout = null;
+function flashReportBtn(msg) {
+  const btn = document.getElementById('report-copy-btn');
+  btn.innerHTML = msg;
+  if (reportBtnTimeout) clearTimeout(reportBtnTimeout);
+  reportBtnTimeout = setTimeout(() => { btn.innerHTML = '⧉ Copy Share Link'; }, 1800);
+}
+
+async function copyReportLink() {
+  const link = await buildReportLink();
+  if (!link) { flashReportBtn('No tasks that year'); return; }
+  copyToClipboard(link)
+    .then(() => flashReportBtn('✓ Copied'))
+    .catch(() => flashReportBtn('Copy failed'));
+}
+
+async function openReport() {
+  const link = await buildReportLink();
+  if (!link) { flashReportBtn('No tasks that year'); return; }
+  window.open(link, '_blank');
+}
+
+async function initReportMode() {
+  document.body.classList.add('report-mode', 'graph-mode', 'has-graph');
+  try {
+    const raw = location.hash.slice('#report='.length);
+    const dot = raw.indexOf('.');
+    const tag = raw.slice(0, dot);
+    const bytes = b64urlDecode(raw.slice(dot + 1));
+    const text = new TextDecoder().decode(
+      tag === '1' ? await pipeBytes(bytes, new DecompressionStream('deflate-raw')) : bytes
+    );
+    const payload = JSON.parse(text);
+    if (!payload || payload.v !== 1 || !Array.isArray(payload.t) || !payload.t.length) throw new Error('bad payload');
+    reportLogs = sanitizeLogs(payload.t.map(r => ({
+      id: r[3],
+      task: r[0],
+      predictedMs: r[1] == null ? null : r[1] * 60000,
+      actualMs: r[2] * 60000,
+      startTime: r[3],
+      endTime: r[4],
+      pctDiff: null,
+    }))).sort((a, b) => b.startTime - a.startTime);
+    if (!reportLogs.length) throw new Error('empty payload');
+    renderReport(payload.y);
+  } catch (e) {
+    document.getElementById('report-error').style.display = 'flex';
+  }
+}
+
+function renderReport(year) {
+  const all = reportLogs;
+  const predicted = all.filter(e => e.pctDiff != null);
+
+  document.getElementById('report-title').textContent = year + ' · Yearly Report';
+  const times = all.map(e => e.startTime).filter(t => t != null);
+  document.getElementById('report-range').textContent =
+    formatDateShort(Math.min(...times)) + ' – ' + formatDateShort(Math.max(...times));
+
+  document.getElementById('rs-count').textContent = all.length;
+  document.getElementById('rs-time').textContent =
+    formatDurationHuman(all.reduce((s, e) => s + (e.actualMs || 0), 0));
+
+  const avgEl = document.getElementById('rs-avg');
+  if (predicted.length) {
+    const avgDelta = predicted.reduce((s, e) => s + e.pctDiff, 0) / predicted.length;
+    const avgMiss = predicted.reduce((s, e) => s + Math.abs(e.pctDiff), 0) / predicted.length;
+    const brier = predicted.reduce((s, e) => s + Math.pow(e.pctDiff / 100, 2), 0) / predicted.length;
+    avgEl.textContent = (avgDelta >= 0 ? '+' : '') + avgDelta.toFixed(1) + '%';
+    avgEl.className = 'rs-val ' + (Math.abs(avgDelta) < 2 ? '' : avgDelta > 0 ? 'over' : 'under');
+    document.getElementById('rs-miss').textContent = avgMiss.toFixed(1) + '%';
+    document.getElementById('rs-brier').textContent = brier.toFixed(3);
+  }
+
+  resizeCanvas();
+  drawBgGraph();
+  canvas.classList.add('active');
+}
+
+// ── Theme ─────────────────────────────────────────────────────────
+const THEME_KEY = 'meridian_theme';
+
+const systemLight = window.matchMedia('(prefers-color-scheme: light)');
+
+// The preference lives in memory so theme changes keep working (and the
+// system-scheme listener keeps working) even when localStorage is dead.
+let themePref = storageGet(THEME_KEY) || 'auto';
+
+function applyTheme(resolved) {
+  if (resolved === 'light') {
+    document.body.classList.add('light');
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f9f5d7');
+  } else {
+    document.body.classList.remove('light');
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', '#1d2021');
+  }
+  if (REPORT_MODE || logs.length > 1) drawBgGraph();
+  if (resultGraphEntry && document.getElementById('result-panel').classList.contains('visible')) drawResultGraph();
+}
+
+function updateSwitcherUI(pref) {
+  document.getElementById('theme-auto').classList.toggle('active', pref === 'auto');
+  document.getElementById('theme-light').classList.toggle('active', pref === 'light');
+  document.getElementById('theme-dark').classList.toggle('active', pref === 'dark');
+}
+
+function applyThemeFromPref() {
+  const resolved = themePref === 'auto' ? (systemLight.matches ? 'light' : 'dark') : themePref;
+  applyTheme(resolved);
+  updateSwitcherUI(themePref);
+}
+
+function setTheme(pref) {
+  themePref = pref;
+  applyThemeFromPref();
+  storageSet(THEME_KEY, pref);
+}
+
+systemLight.addEventListener('change', () => {
+  if (themePref === 'auto') applyThemeFromPref();
+});
+
+applyThemeFromPref();
+
+// ── Resume re-sync ────────────────────────────────────────────────
+// Coming back from a long background suspend on mobile can leave the app
+// visually wedged: the OS appearance-snapshot dance leaves the wrong theme
+// applied, backdrop-filter compositing layers resume unpainted (hiding the
+// whole app column while the background canvas still shows), and canvases
+// can come back blank. Re-assert everything from in-memory state, and retry
+// any writes that failed while storage was detached.
+
+// If the page itself loaded while localStorage was detached (iOS restarting
+// the web content process on resume), every read threw and the app came up
+// empty: no logs, no paused timers, theme back to auto. Once storage is
+// reachable again, pull the stored data back in and union it with anything
+// logged since. This must run BEFORE flushPendingWrites — otherwise a save
+// made against the empty in-memory log would overwrite the real history.
+function recoverFailedReads() {
+  if (failedReads.size === 0) return;
+  try { localStorage.getItem(DB_KEY); } catch (e) { return; } // still detached, retry next resume
+  const toRecover = new Set(failedReads);
+  failedReads.clear();
+  if (toRecover.has(DB_KEY)) {
+    const stored = sanitizeLogs(loadJSON(DB_KEY, []));
+    const have = new Set(logs.map(e => e.id));
+    const missing = stored.filter(e => !have.has(e.id));
+    if (missing.length) {
+      logs = missing.concat(logs);
+      saveLogs();
+      if (!REPORT_MODE && logs.length > 1) {
+        drawBgGraph();
+        canvas.style.opacity = '0.6';
+      }
+    }
+  }
+  if (toRecover.has(PAUSED_KEY)) {
+    const stored = sanitizePaused(loadJSON(PAUSED_KEY, []));
+    const have = new Set(pausedTimers.map(t => t.id));
+    const missing = stored.filter(t => !have.has(t.id));
+    if (missing.length) {
+      pausedTimers = missing.concat(pausedTimers);
+      savePaused();
+    }
+  }
+  if (toRecover.has(ACTIVE_KEY) && !activeTimer && !timerInterval) restoreActiveTimer();
+  if (toRecover.has(THEME_KEY) && !pendingWrites.has(THEME_KEY)) {
+    themePref = storageGet(THEME_KEY) || 'auto';
+  }
+  if (toRecover.has(SLACK_KEY) && !pendingWrites.has(SLACK_KEY)) {
+    const stored = loadJSON(SLACK_KEY, null);
+    if (stored) slackCfg = normalizeSlackCfg(stored);
+    if (!REPORT_MODE) renderSlackUI();
+  }
+  if (toRecover.has(SLACK_QUEUE_KEY)) {
+    const stored = loadJSON(SLACK_QUEUE_KEY, []);
+    if (Array.isArray(stored) && stored.length) {
+      const have = new Set(slackQueue.map(m => m.ts));
+      slackQueue = stored.filter(m => m && !have.has(m.ts)).concat(slackQueue);
+      saveSlackQueue();
+    }
+  }
+}
+
+// After a long suspend the compositor can be wedged in ways no in-page nudge
+// reliably fixes — the manual cure has been "kill the app and reopen it".
+// Automate that: all state lives in localStorage and is restored on load
+// (including the active timer), so when it's safe, a reload is lossless and
+// guarantees a fresh paint plus the latest deployed code.
+const LONG_SUSPEND_MS = 30 * 60 * 1000;
+let lastHiddenAt = null;
+
+function canReloadSafely() {
+  if (editingIndex !== -1) return false;
+  if (pendingWrites.size > 0 || failedReads.size > 0) return false; // storage not settled — reload would drop state
+  const taskEl = document.getElementById('task-input');
+  const estEl = document.getElementById('estimate-input');
+  if ((taskEl && taskEl.value) || (estEl && estEl.value)) return false; // unsaved draft
+  try { localStorage.getItem(DB_KEY); } catch (e) { return false; }
+  return true;
+}
+
+function resyncAfterResume() {
+  recoverFailedReads();
+  flushPendingWrites();
+  flushSlackQueue();
+  checkDailySummary();
+  const longSuspend = lastHiddenAt != null && Date.now() - lastHiddenAt > LONG_SUSPEND_MS;
+  lastHiddenAt = null;
+  if (longSuspend && !REPORT_MODE && canReloadSafely()) { location.reload(); return; }
+  applyThemeFromPref(); // also redraws the graphs
+  if (!REPORT_MODE && editingIndex === -1) renderLog();
+  const layers = document.querySelectorAll('.app, .timer-display, .result-panel, .report-bar');
+  layers.forEach(el => { el.style.backdropFilter = 'none'; });
+  requestAnimationFrame(() => {
+    layers.forEach(el => { el.style.backdropFilter = ''; });
+  });
+}
+
+window.addEventListener('pageshow', (e) => { if (e.persisted) resyncAfterResume(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { lastHiddenAt = Date.now(); flushPendingWrites(); }
+  else resyncAfterResume();
+});
+// iOS standalone apps sometimes resume without firing visibilitychange.
+window.addEventListener('focus', () => {
+  if (!document.hidden) resyncAfterResume();
+});
+</script>
+</body>
+</html>

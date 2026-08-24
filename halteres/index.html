@@ -1,0 +1,1908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1d2021">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Halteres</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 20px; }
+
+  :root {
+    --bg: #1d2021;
+    --surface: #282828;
+    --surface2: #32302f;
+    --border: #504945;
+    --text: #ebdbb2;
+    --text-dim: #d5c4a1;
+    --muted: #928374;
+    --accent: #b8bb26;
+    --accent-dim: #98971a;
+    --accent2: #fabd2f;
+    --accent2-dim: #d79921;
+    --danger: #fb4934;
+    --danger-dim: #cc241d;
+    --orange: #fe8019;
+    --info: #83a598;
+    --info-dim: #458588;
+    --mono: 'IBM Plex Mono', monospace;
+    --display: 'Cinzel', serif;
+    --data: 'Cormorant Garamond', serif;
+  }
+
+  body.light {
+    --bg: #f9f5d7;
+    --surface: #ebdbb2;
+    --surface2: #d5c4a1;
+    --border: #bdae93;
+    --text: #282828;
+    --text-dim: #3c3836;
+    --muted: #7c6f64;
+    --accent: #79740e;
+    --accent-dim: #98971a;
+    --accent2: #b57614;
+    --accent2-dim: #d79921;
+    --danger: #9d0006;
+    --danger-dim: #cc241d;
+    --orange: #d65d0e;
+    --info: #076678;
+    --info-dim: #458588;
+  }
+
+  body {
+    font-family: var(--mono);
+    font-size: 1rem;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  header h1 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.4rem;
+    letter-spacing: 0.12em;
+    color: var(--text);
+  }
+  header h1 .bell { color: var(--accent2); }
+  .header-btns { display: flex; gap: 0.5rem; }
+  .icon-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    padding: 0.25rem 0.55rem;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .icon-btn:hover { color: var(--text); border-color: var(--muted); }
+
+  /* ── Today card ─────────────────────────────────────────────── */
+  .today-card {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0.8rem 0.9rem 0.9rem;
+    margin-bottom: 1rem;
+  }
+  .today-date {
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  .today-status {
+    font-family: var(--data);
+    font-size: 1.45rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--text);
+    margin-bottom: 0.55rem;
+  }
+  .today-status.ok { color: var(--accent); }
+  .today-status.rest { color: var(--text-dim); }
+  .today-status.done { color: var(--accent2); }
+  .plan-rows { display: flex; flex-direction: column; gap: 0.25rem; }
+  .plan-row { display: flex; justify-content: space-between; gap: 0.6rem; font-size: 0.72rem; }
+  .plan-row .plan-what { color: var(--text-dim); text-align: right; }
+
+  /* ── Nudge card ─────────────────────────────────────────────── */
+  .nudge-card {
+    border: 1px solid var(--orange);
+    background: var(--surface);
+    padding: 0.8rem 0.9rem;
+    margin-bottom: 1rem;
+  }
+  .nudge-title {
+    font-family: var(--display);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 0.35rem;
+  }
+  .nudge-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-top: 0.35rem;
+    flex-wrap: wrap;
+  }
+
+  /* ── Exercise cards ─────────────────────────────────────────── */
+  .ex-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; margin-bottom: 0.6rem; }
+  .ex-card {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0.7rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  .ex-card.skipped { opacity: 0.45; }
+  .ex-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.4rem; }
+  .ex-name {
+    font-family: var(--display);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .ex-sw { color: var(--accent2); }
+  .ex-tgu { color: var(--info); }
+  .ex-skip {
+    background: none; border: none; cursor: pointer;
+    font-family: var(--mono); font-size: 0.6rem; color: var(--muted);
+    letter-spacing: 0.05em; text-transform: uppercase; padding: 0;
+  }
+  .ex-skip:hover { color: var(--text); }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .chip {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    padding: 0.35rem 0.6rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    white-space: nowrap;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  .chip:hover { border-color: var(--muted); color: var(--text); }
+  .chip.active { border-color: var(--accent-dim); color: var(--accent); }
+  .step-row { display: flex; align-items: center; gap: 0.4rem; font-size: 0.66rem; color: var(--text-dim); }
+  .step-btn {
+    font-family: var(--mono); font-size: 0.8rem;
+    width: 1.7rem; height: 1.7rem; flex: 0 0 auto;
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    cursor: pointer; touch-action: manipulation;
+  }
+  .step-btn:hover { border-color: var(--muted); }
+  .step-label { flex: 1; min-width: 0; line-height: 1.3; }
+  .step-label .hv { color: var(--accent); }
+  .step-none { font-size: 0.6rem; color: var(--muted); line-height: 1.4; }
+
+  .test-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.6rem; }
+  .test-toggle {
+    font-family: var(--mono); font-size: 0.72rem;
+    padding: 0.45rem 0.7rem;
+    background: var(--surface); border: 1px solid var(--border); color: var(--text-dim);
+    cursor: pointer; touch-action: manipulation;
+  }
+  .test-toggle:hover { border-color: var(--muted); }
+  .test-toggle.active { border-color: var(--info-dim); color: var(--info); }
+  .test-row input {
+    font-family: var(--mono); font-size: 1rem; /* ≥16px prevents iOS zoom-on-focus */
+    width: 6.2rem;
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    padding: 0.4rem 0.5rem;
+  }
+  .test-row input:focus { outline: none; border-color: var(--info-dim); }
+  .test-row input::placeholder { color: var(--muted); font-size: 0.72rem; }
+
+  .log-session-btn {
+    width: 100%;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    line-height: 1.4;
+    padding: 0.7rem 0.6rem;
+    background: var(--surface);
+    border: 1px solid var(--accent-dim);
+    color: var(--accent);
+    cursor: pointer;
+    touch-action: manipulation;
+    margin-bottom: 0.6rem;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .log-session-btn:hover { background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+  .log-session-btn:disabled { border-color: var(--border); color: var(--muted); cursor: default; background: var(--surface); }
+
+  .note-form { margin-bottom: 1rem; }
+  .note-form input {
+    width: 100%;
+    font-family: var(--mono);
+    font-size: 1rem; /* ≥16px prevents iOS zoom-on-focus */
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.55rem 0.7rem;
+  }
+  .note-form input:focus { outline: none; border-color: var(--accent-dim); }
+  .note-form input::placeholder { color: var(--muted); }
+
+  /* ── Progression cards ──────────────────────────────────────── */
+  .prog-card {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0.7rem 0.8rem;
+    margin-bottom: 0.7rem;
+  }
+  .prog-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; margin-bottom: 0.35rem; }
+  .prog-head .ex-name { font-size: 0.7rem; }
+  .prog-goal { font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .prog-goal.met { color: var(--accent); }
+  .prog-line { font-family: var(--data); font-size: 1.2rem; font-weight: 700; line-height: 1.2; margin-bottom: 0.4rem; }
+  .prog-line .next { color: var(--muted); font-weight: 400; }
+  .prog-bar { height: 6px; background: var(--surface2); border: 1px solid var(--border); margin-bottom: 0.4rem; }
+  .prog-bar > div { height: 100%; background: var(--accent-dim); transition: width 0.3s; }
+  .prog-sub { font-size: 0.62rem; color: var(--muted); line-height: 1.5; }
+  .prog-sub .pass { color: var(--accent); }
+  .prog-sub .fail { color: var(--orange); }
+  .std-banner {
+    border: 1px solid var(--accent-dim);
+    background: var(--surface);
+    color: var(--accent);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 0.55rem 0.8rem;
+    margin-bottom: 0.7rem;
+  }
+
+  /* ── Horizon strip ──────────────────────────────────────────── */
+  .horizon { display: flex; gap: 3px; margin-bottom: 0.3rem; }
+  .day-cell {
+    flex: 1;
+    aspect-ratio: 1;
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+  }
+  .day-cell.prac { background: var(--accent); border-color: var(--accent-dim); }
+  .day-cell.part { background: color-mix(in srgb, var(--accent) 40%, var(--surface)); border-color: var(--accent-dim); }
+  .day-cell.test { background: var(--info); border-color: var(--info-dim); }
+  .day-cell.today { outline: 2px solid var(--text-dim); outline-offset: 1px; }
+  .horizon-legend {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.58rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 1.5rem;
+  }
+
+  /* ── Stat strip ─────────────────────────────────────────────── */
+  .stats-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+  .stat-cell { background: var(--surface); padding: 0.6rem 0.5rem; text-align: center; }
+  .stat-cell .stat-val {
+    font-family: var(--data);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--text);
+  }
+  .stat-cell .stat-val.accent { color: var(--accent); }
+  .stat-cell .stat-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.2rem;
+  }
+
+  /* ── Sections ───────────────────────────────────────────────── */
+  .section-title {
+    font-family: var(--display);
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    margin: 1.5rem 0 0.6rem;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  /* ── Log list ───────────────────────────────────────────────── */
+  .log-list { border: 1px solid var(--border); }
+  .log-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.72rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+    flex-wrap: wrap;
+  }
+  .log-row:last-child { border-bottom: none; }
+  .log-row:hover { background: var(--surface2); }
+  .log-row .l-day { color: var(--muted); flex: 0 0 auto; font-size: 0.62rem; letter-spacing: 0.05em; text-transform: uppercase; }
+  .log-row .l-work { color: var(--text); flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+  .log-row .l-work .w-sw { color: var(--accent2); }
+  .log-row .l-work .w-tgu { color: var(--info); }
+  .log-row .l-note { color: var(--muted); flex: 1 1 100%; min-width: 0; overflow-wrap: anywhere; font-style: italic; }
+  .test-badge {
+    flex: 0 0 auto;
+    font-size: 0.56rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--info);
+    border: 1px solid var(--info-dim);
+    border-radius: 2px;
+    padding: 0.1rem 0.35rem;
+    white-space: nowrap;
+  }
+  .test-badge.pass { color: var(--accent); border-color: var(--accent-dim); }
+  .log-row .l-del {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-family: var(--mono); font-size: 0.75rem; padding: 0 0.2rem; flex: 0 0 auto;
+  }
+  .log-row .l-del:hover { color: var(--danger); }
+  .log-empty { padding: 0.8rem; font-size: 0.72rem; color: var(--muted); text-align: center; background: var(--surface); }
+  .show-more {
+    width: 100%; font-family: var(--mono); font-size: 0.68rem;
+    background: var(--surface); border: none; border-top: 1px solid var(--border);
+    color: var(--muted); padding: 0.5rem; cursor: pointer;
+  }
+  .show-more:hover { color: var(--text); }
+
+  /* ── Buttons ────────────────────────────────────────────────── */
+  .btn {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    padding: 0.7rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { border-color: var(--accent-dim); color: var(--accent); }
+  .btn.danger { border-color: var(--danger-dim); color: var(--danger); }
+  .btn-tiny { font-size: 0.7rem; padding: 0.35rem 0.6rem; }
+
+  /* ── Overlays ───────────────────────────────────────────────── */
+  .overlay {
+    position: fixed; inset: 0;
+    background: color-mix(in srgb, var(--bg) 70%, transparent);
+    backdrop-filter: blur(4px);
+    display: none;
+    z-index: 20;
+    overflow-y: auto;
+  }
+  .overlay.visible { display: block; }
+  .panel {
+    max-width: 26rem;
+    margin: 3rem auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.2rem 1.4rem 1.6rem;
+  }
+  .panel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem; }
+  .panel-head h2 { font-family: var(--display); font-size: 0.95rem; letter-spacing: 0.12em; }
+  .settings-section-title {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted); margin: 1.2rem 0 0.5rem; padding-top: 0.9rem;
+    border-top: 1px solid var(--border);
+  }
+  .settings-section-title:first-of-type { margin-top: 0; border-top: none; padding-top: 0; }
+  .settings-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.55rem; flex-wrap: wrap; }
+  .settings-row label { font-size: 0.72rem; color: var(--text-dim); flex: 1 1 100%; }
+  .settings-row input[type="text"], .settings-row input[type="number"],
+  .settings-row input[type="datetime-local"], .settings-row select {
+    font-family: var(--mono); font-size: 0.8rem;
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    padding: 0.4rem 0.5rem; flex: 1 1 100%; min-width: 0;
+  }
+  .settings-row input.half { flex: 1 1 40%; }
+  .settings-row input:focus, .settings-row select:focus { outline: none; border-color: var(--accent-dim); }
+  .settings-note { font-size: 0.62rem; color: var(--muted); line-height: 1.5; margin-bottom: 0.5rem; }
+  .btn-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .btn-group .btn.sel { border-color: var(--accent-dim); color: var(--accent); }
+  .edit-actions { display: flex; gap: 0.5rem; margin-top: 1.1rem; }
+  .edit-actions .primary { flex: 1; }
+  .settings-row .chk { display: flex; align-items: center; gap: 0.4rem; font-size: 0.72rem; color: var(--text-dim); flex: 1 1 100%; }
+
+  /* ── Backup reminder ────────────────────────────────────────── */
+  #backup-reminder {
+    display: none; margin-bottom: 1.25rem; padding: 0.75rem 1rem;
+    border: 1px solid var(--accent2-dim);
+    background: color-mix(in srgb, var(--accent2) 8%, transparent);
+  }
+  #backup-reminder .br-title { font-family: var(--mono); font-size: 0.62rem; color: var(--accent2); letter-spacing: 0.1em; margin-bottom: 0.4rem; }
+  #backup-reminder .br-text { font-size: 0.62rem; color: var(--text-dim); line-height: 1.5; margin-bottom: 0.75rem; }
+
+  footer { margin-top: auto; padding-top: 2rem; font-size: 0.6rem; color: var(--muted); text-align: center; letter-spacing: 0.05em; }
+
+  @media (max-width: 480px) {
+    html { font-size: 17px; }
+    .today-status { font-size: 1.25rem; }
+    .horizon { gap: 2px; }
+    .ex-cards { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>H<span class="bell">A</span>LTERES</h1>
+    <div class="header-btns">
+      <button class="icon-btn" onclick="toggleThemeQuick()" title="Theme">◐</button>
+      <button class="icon-btn" onclick="openSettings()" title="Settings [S]">⚙</button>
+    </div>
+  </header>
+
+  <div class="today-card">
+    <div class="today-date" id="today-date"></div>
+    <div class="today-status" id="today-status"></div>
+    <div class="plan-rows" id="plan-rows"></div>
+  </div>
+
+  <div class="nudge-card" id="nudge-card" style="display:none"></div>
+
+  <div class="ex-cards">
+    <div class="ex-card" id="card-sw">
+      <div class="ex-head">
+        <span class="ex-name ex-sw">Swings · 10×10</span>
+        <button class="ex-skip" id="skip-sw" onclick="toggleInclude('sw')"></button>
+      </div>
+      <div class="chips" id="chips-sw"></div>
+      <div id="step-sw"></div>
+    </div>
+    <div class="ex-card" id="card-tgu">
+      <div class="ex-head">
+        <span class="ex-name ex-tgu">Get-ups · 10×1</span>
+        <button class="ex-skip" id="skip-tgu" onclick="toggleInclude('tgu')"></button>
+      </div>
+      <div class="chips" id="chips-tgu"></div>
+      <div id="step-tgu"></div>
+    </div>
+  </div>
+
+  <div class="test-row">
+    <button class="test-toggle" id="test-toggle" onclick="toggleTest()">⏱ timed test [T]</button>
+    <input type="text" id="test-sw-time" placeholder="swings m:ss" autocomplete="off" inputmode="numeric" style="display:none">
+    <input type="text" id="test-tgu-time" placeholder="get-ups m:ss" autocomplete="off" inputmode="numeric" style="display:none">
+  </div>
+
+  <button class="log-session-btn" id="log-session-btn" onclick="logSession()"></button>
+
+  <div class="note-form">
+    <input type="text" id="note-input" placeholder="note (optional) [N]" autocomplete="off" enterkeyhint="done">
+  </div>
+
+  <div class="section-title">Progression</div>
+  <div id="std-banner"></div>
+  <div id="prog-cards"></div>
+
+  <div class="section-title">Horizon</div>
+  <div class="horizon" id="horizon"></div>
+  <div class="horizon-legend"><span id="horizon-from"></span><span>today ▲</span><span>practice ■ · test ■</span></div>
+
+  <div class="stats-strip">
+    <div class="stat-cell"><div class="stat-val accent" id="stat-week">0</div><div class="stat-label">This Week</div></div>
+    <div class="stat-cell"><div class="stat-val" id="stat-avg">0</div><div class="stat-label">Ø / Week</div></div>
+    <div class="stat-cell"><div class="stat-val" id="stat-total">0</div><div class="stat-label">Sessions</div></div>
+    <div class="stat-cell"><div class="stat-val" id="stat-tonnage">0</div><div class="stat-label">Tonnes</div></div>
+  </div>
+
+  <div id="backup-reminder">
+    <div class="br-title">BACKUP REMINDER</div>
+    <div class="br-text" id="backup-reminder-text"></div>
+    <div class="btn-group">
+      <button class="btn btn-tiny" onclick="runBackupNow()">↓ Backup Now</button>
+      <button class="btn btn-tiny" onclick="snoozeReminder()">Remind Later</button>
+      <button class="btn btn-tiny" onclick="dismissReminder()">Dismiss</button>
+    </div>
+  </div>
+
+  <div class="section-title">Log</div>
+  <div class="log-list" id="log-list"></div>
+
+  <footer>halteres · the weights the ancients trained with · data lives in your browser</footer>
+</div>
+
+<div class="overlay" id="settings-overlay" onclick="if(event.target===this) closeSettings()">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>SETTINGS</h2>
+      <button class="icon-btn" onclick="closeSettings()">✕</button>
+    </div>
+
+    <div class="settings-section-title">The practice</div>
+    <div class="settings-note">
+      Simple &amp; Sinister: 100 one-hand swings (10 sets of 10) and 10 Turkish
+      get-ups (5 per side), most days, without the clock. Progress by
+      step-loading in pairs — move two sets at a time to the next bell (2,
+      then 4, then 6…) until all ten are there, then it becomes your bell.
+      After four weeks at the same load with at least 70% of days practiced,
+      the app nudges you to add the next pair. Test rarely: 100 swings in
+      5:00 and 10 get-ups in 10:00, same bell, is the standard.
+    </div>
+
+    <div class="settings-section-title">Bells (kg)</div>
+    <div class="settings-row">
+      <label for="bells-input">Your kettlebells — comma-separated, ascending</label>
+      <input type="text" id="bells-input" autocomplete="off" onchange="bellsChanged()">
+    </div>
+
+    <div class="settings-section-title">Goal</div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" id="goal-simple" onclick="setGoalPreset('simple')">Simple 32/32</button>
+      <button class="btn btn-tiny" id="goal-sinister" onclick="setGoalPreset('sinister')">Sinister 48/48</button>
+    </div>
+    <div class="settings-row">
+      <label>Custom — swings kg / get-ups kg</label>
+      <input type="number" class="half" id="goal-sw" min="1" step="any" onchange="goalChanged()">
+      <input type="number" class="half" id="goal-tgu" min="1" step="any" onchange="goalChanged()">
+    </div>
+
+    <div class="settings-section-title">Beeminder</div>
+    <div class="settings-note">
+      Posts a datapoint per logged session, straight from this browser to
+      beeminder.com — edits re-post it, deletes zero it out, offline sessions
+      queue until you're back. Get your token at
+      beeminder.com/api/v1/auth_token.json (it stays in this browser only).
+      Leave any field empty to disable.
+    </div>
+    <div class="settings-row">
+      <label>Username / goal slug</label>
+      <input type="text" class="half" id="bee-user" autocomplete="off" placeholder="username" onchange="beeChanged()">
+      <input type="text" class="half" id="bee-slug" autocomplete="off" placeholder="goal" onchange="beeChanged()">
+    </div>
+    <div class="settings-row">
+      <label for="bee-token">Auth token</label>
+      <input type="text" id="bee-token" autocomplete="off" onchange="beeChanged()">
+    </div>
+    <div class="settings-row">
+      <label for="bee-metric">Datapoint value</label>
+      <select id="bee-metric" onchange="beeChanged()">
+        <option value="session">1 per session</option>
+        <option value="swings">swing reps</option>
+        <option value="tonnage">tonnage (kg)</option>
+      </select>
+    </div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" onclick="syncBee()">⇄ Sync now</button>
+      <span class="settings-note" id="bee-status" style="margin:0"></span>
+    </div>
+
+    <div class="settings-section-title">Data</div>
+    <div class="settings-note">Everything is stored in this browser only.</div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" onclick="exportCSV()">↓ Export CSV [E]</button>
+      <button class="btn btn-tiny" onclick="importCSV()">↑ Import CSV [I]</button>
+      <button class="btn btn-tiny danger" onclick="clearAll()">✕ Clear All</button>
+    </div>
+    <input type="file" id="import-file" accept=".csv,text/csv" style="display:none" onchange="handleImportFile(this.files[0])">
+
+    <div class="settings-section-title">Backup</div>
+    <div class="settings-note" id="backup-note"></div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" id="backup-off" onclick="setBackupFreq('off')">Off</button>
+      <button class="btn btn-tiny" id="backup-daily" onclick="setBackupFreq('daily')">Daily</button>
+      <button class="btn btn-tiny" id="backup-weekly" onclick="setBackupFreq('weekly')">Weekly</button>
+      <button class="btn btn-tiny" onclick="runBackupNow()">↓ Backup Now</button>
+    </div>
+
+    <div class="settings-section-title">Theme</div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" id="theme-auto" onclick="setTheme('auto')">Auto</button>
+      <button class="btn btn-tiny" id="theme-dark" onclick="setTheme('dark')">Dark</button>
+      <button class="btn btn-tiny" id="theme-light" onclick="setTheme('light')">Light</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="edit-overlay" onclick="if(event.target===this) closeEdit()">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>EDIT SESSION</h2>
+      <button class="icon-btn" onclick="closeEdit()">✕</button>
+    </div>
+    <div class="settings-row">
+      <label>Time</label>
+      <input type="datetime-local" id="edit-time" step="1">
+    </div>
+    <div class="settings-row">
+      <label>Swings — weight×sets, e.g. 24x8+28x2 (empty = none)</label>
+      <input type="text" id="edit-sw" autocomplete="off">
+    </div>
+    <div class="settings-row">
+      <label>Get-ups — weight×reps, e.g. 24x10</label>
+      <input type="text" id="edit-tgu" autocomplete="off">
+    </div>
+    <div class="settings-row">
+      <span class="chk"><input type="checkbox" id="edit-test"> timed test</span>
+    </div>
+    <div class="settings-row">
+      <label>Times — swings m:ss / get-ups m:ss</label>
+      <input type="text" class="half" id="edit-sw-time" autocomplete="off" placeholder="5:00">
+      <input type="text" class="half" id="edit-tgu-time" autocomplete="off" placeholder="10:00">
+    </div>
+    <div class="settings-row">
+      <label>Note</label>
+      <input type="text" id="edit-note" autocomplete="off">
+    </div>
+    <div class="edit-actions">
+      <button class="btn primary" onclick="saveEdit()">✓ Save</button>
+      <button class="btn danger" onclick="deleteEdit()">✕ Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const DB_KEY = 'halteres_sessions';
+const CFG_KEY = 'halteres_config';
+const THEME_KEY = 'halteres_theme';
+const BEE_KEY = 'halteres_beeminder';
+const BEEQ_KEY = 'halteres_beeledger';
+const BEE_METRICS = ['session', 'swings', 'tonnage'];
+
+const EX_IDS = ['sw', 'tgu'];
+const EX = {
+  sw:  { name: 'swings',  cls: 'ex-sw',  total: 10, unit: 'sets', repsPer: 10, testLimit: 300 },
+  tgu: { name: 'get-ups', cls: 'ex-tgu', total: 10, unit: 'reps', repsPer: 1,  testLimit: 600 },
+};
+const GOAL_PRESETS = { simple: { sw: 32, tgu: 32 }, sinister: { sw: 48, tgu: 48 } };
+
+// Step-loading moves in pairs: 2 sets/reps at the heavier bell, then 4, 6…
+const STEP = 2;
+// Nudge to move up after this many days at the same load, provided
+// attendance over the window was at least this fraction of days.
+const NUDGE_WINDOW = 28;
+const NUDGE_ADHERENCE = 0.7;
+
+// ── Storage (meridian-style) ─────────────────────────────────────
+// Mobile WebKit can detach localStorage while the app is suspended in the
+// background — every read/write then throws until the process is killed.
+// All storage goes through these helpers so a dead backend degrades to
+// in-memory state (retried on resume) instead of killing whatever handler
+// touched storage first.
+const pendingWrites = new Map();
+// Keys whose reads threw — the value we're holding for them is a fallback,
+// not the truth, so re-read them once storage comes back.
+const failedReads = new Set();
+
+function storageGet(key) {
+  try { const v = localStorage.getItem(key); failedReads.delete(key); return v; }
+  catch (e) {
+    failedReads.add(key);
+    return pendingWrites.has(key) ? pendingWrites.get(key) : null;
+  }
+}
+
+function storageSet(key, val) {
+  pendingWrites.set(key, val);
+  try { localStorage.setItem(key, val); pendingWrites.delete(key); } catch (e) {}
+}
+
+function flushPendingWrites() {
+  for (const [key, val] of [...pendingWrites]) {
+    try {
+      if (val == null) localStorage.removeItem(key);
+      else localStorage.setItem(key, val);
+      pendingWrites.delete(key);
+    } catch (e) { break; }
+  }
+}
+
+function loadJSON(key, fallback) {
+  const raw = storageGet(key);
+  if (raw == null) return fallback;
+  try { return JSON.parse(raw); }
+  catch (e) {
+    // keep the unreadable raw value around for manual recovery instead of silently losing it
+    storageSet(key + '_corrupt', raw);
+    return fallback;
+  }
+}
+
+function finiteOrNull(v) {
+  return typeof v === 'number' && isFinite(v) ? v : null;
+}
+
+// ── Sanitizing ───────────────────────────────────────────────────
+// Work = [{w, n}] — n sets (swings) or reps (get-ups) at w kg.
+function sanitizeWork(raw) {
+  if (!Array.isArray(raw)) return [];
+  const byW = new Map();
+  for (const p of raw) {
+    if (!p || typeof p !== 'object') continue;
+    const w = finiteOrNull(p.w), n = finiteOrNull(p.n);
+    if (w == null || w <= 0 || n == null || n <= 0) continue;
+    byW.set(w, (byW.get(w) || 0) + Math.min(99, Math.round(n)));
+  }
+  return [...byW].map(([w, n]) => ({ w, n })).sort((a, b) => a.w - b.w).slice(0, 6);
+}
+
+function posSecsOrNull(v) {
+  const n = finiteOrNull(v);
+  return n != null && n > 0 ? Math.round(n) : null;
+}
+
+// A malformed entry must never take down the whole log — repair what's
+// recoverable, drop only garbage. Also the validation gate for CSV import.
+function sanitizeSessions(raw) {
+  if (!Array.isArray(raw)) return [];
+  const clean = [];
+  for (const e of raw) {
+    if (!e || typeof e !== 'object') continue;
+    const t = finiteOrNull(e.t);
+    if (t == null) continue;
+    const sw = sanitizeWork(e.sw), tgu = sanitizeWork(e.tgu);
+    if (!sw.length && !tgu.length) continue;
+    clean.push({
+      id: finiteOrNull(e.id) ?? t, t, sw, tgu,
+      test: !!e.test,
+      swT: posSecsOrNull(e.swT), tguT: posSecsOrNull(e.tguT),
+      note: typeof e.note === 'string' ? e.note.trim() : '',
+    });
+  }
+  clean.sort((a, b) => a.t - b.t);
+  return clean;
+}
+
+function sanitizeCfg(raw) {
+  const bellsRaw = raw && Array.isArray(raw.bells)
+    ? raw.bells.filter(v => typeof v === 'number' && isFinite(v) && v > 0)
+    : [];
+  const bells = [...new Set(bellsRaw)].slice(0, 8).sort((a, b) => a - b);
+  const goal = {};
+  for (const x of EX_IDS) {
+    const g = raw && raw.goal ? finiteOrNull(raw.goal[x]) : null;
+    goal[x] = g != null && g > 0 ? g : 32;
+  }
+  return { bells: bells.length ? bells : [16, 24, 32], goal };
+}
+
+function sanitizeBee(raw) {
+  const str = v => typeof v === 'string' ? v.trim() : '';
+  return {
+    user: str(raw && raw.user),
+    token: str(raw && raw.token),
+    slug: str(raw && raw.slug),
+    metric: raw && BEE_METRICS.includes(raw.metric) ? raw.metric : 'session',
+  };
+}
+
+// The Beeminder ledger: one item per session ever posted (or queued), keyed
+// by requestid. `synced: false` means it still needs a POST — Beeminder
+// upserts by requestid, so re-posting after an edit updates the datapoint
+// instead of duplicating it.
+function sanitizeBeeLedger(raw) {
+  if (!Array.isArray(raw)) return [];
+  const byRid = new Map();
+  for (const d of raw) {
+    if (!d || typeof d !== 'object' || typeof d.rid !== 'string' || !d.rid) continue;
+    const value = finiteOrNull(d.value), ts = finiteOrNull(d.ts);
+    if (value == null || ts == null) continue;
+    byRid.set(d.rid, {
+      rid: d.rid, value, ts,
+      comment: typeof d.comment === 'string' ? d.comment : '',
+      synced: !!d.synced,
+    });
+  }
+  return [...byRid.values()];
+}
+
+let sessions = sanitizeSessions(loadJSON(DB_KEY, []));
+let cfg = sanitizeCfg(loadJSON(CFG_KEY, null));
+let bee = sanitizeBee(loadJSON(BEE_KEY, null));
+let beeLedger = sanitizeBeeLedger(loadJSON(BEEQ_KEY, []));
+
+function saveSessions() {
+  sessions.sort((a, b) => a.t - b.t);
+  storageSet(DB_KEY, JSON.stringify(sessions));
+}
+function saveCfg() {
+  storageSet(CFG_KEY, JSON.stringify(cfg));
+}
+function saveBee() {
+  storageSet(BEE_KEY, JSON.stringify(bee));
+}
+function saveBeeLedger() {
+  storageSet(BEEQ_KEY, JSON.stringify(beeLedger));
+}
+
+// ── Time helpers ─────────────────────────────────────────────────
+function dayKey(t) {
+  const d = new Date(t);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+// Day arithmetic is anchored to local noon so DST's 23h/25h days round away
+// instead of shifting a whole day.
+function keyToNoon(key) {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d, 12).getTime();
+}
+function dayDiff(keyA, keyB) { return Math.round((keyToNoon(keyB) - keyToNoon(keyA)) / 86400000); }
+function addDays(key, n) { return dayKey(keyToNoon(key) + n * 86400000); }
+
+function fmtClock(t) {
+  const d = new Date(t);
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
+function fmtDayLabel(key) {
+  const today = dayKey(Date.now());
+  if (key === today) return 'Today';
+  if (key === addDays(today, -1)) return 'Yesterday';
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function fmtSecs(s) {
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+
+// "5:42" → 342; a bare number is minutes ("6" → 360).
+function parseTime(str) {
+  const v = String(str).trim();
+  if (!v) return null;
+  const m = v.match(/^(\d+):([0-5]?\d)$/);
+  if (m) return Number(m[1]) * 60 + Number(m[2]);
+  const n = Number(v);
+  return isFinite(n) && n > 0 ? Math.round(n * 60) : null;
+}
+
+// ── Work formatting ──────────────────────────────────────────────
+function fmtWork(ex, parts) {
+  if (!parts.length) return '—';
+  if (ex === 'sw') return parts.map(p => p.n + '×10 @' + p.w + 'kg').join(' + ');
+  return parts.map(p => p.n + ' @' + p.w + 'kg').join(' + ');
+}
+
+// Canonical compact form for CSV and the edit overlay: "24x8+28x2".
+function workToStr(parts) {
+  return parts.map(p => p.w + 'x' + p.n).join('+');
+}
+function parseWorkStr(str) {
+  const out = [];
+  for (const part of String(str).split('+')) {
+    const m = part.trim().match(/^(\d+(?:\.\d+)?)\s*[x×]\s*(\d+)$/i);
+    if (m) out.push({ w: Number(m[1]), n: Number(m[2]) });
+  }
+  return sanitizeWork(out);
+}
+
+function workTotal(parts) { return parts.reduce((s, p) => s + p.n, 0); }
+function workMinW(parts) { return parts.length ? Math.min(...parts.map(p => p.w)) : null; }
+function workTonnage(ex, parts) { return parts.reduce((s, p) => s + p.w * p.n * EX[ex].repsPer, 0); }
+
+// ── Progression engine ───────────────────────────────────────────
+function nextBell(w) {
+  return cfg.bells.find(b => b > w) ?? null;
+}
+function nearestBellAtOrBelow(w) {
+  let best = null;
+  for (const b of cfg.bells) if (b <= w) best = b;
+  return best ?? cfg.bells[0];
+}
+
+// The plan for the next session = what the last session did. Progression is
+// simply bumping the heavy-set counter when you're ready — one set at a time
+// migrates to the next bell (step-loading), and at 10/10 the next bell
+// becomes your bell.
+function planFromHistory(ex) {
+  for (let i = sessions.length - 1; i >= 0; i--) {
+    const parts = sessions[i][ex];
+    if (!parts || !parts.length) continue;
+    const base = nearestBellAtOrBelow(workMinW(parts));
+    const nb = nextBell(base);
+    let heavy = 0;
+    if (nb != null) for (const p of parts) if (p.w >= nb) heavy += p.n;
+    heavy = Math.min(heavy, EX[ex].total);
+    return { base, heavy: heavy - (heavy % STEP) }; // snap to the pair grid
+  }
+  return { base: cfg.bells[0], heavy: 0 };
+}
+
+// Plan → the work it produces. 10/10 heavy sets means the whole session is
+// at the next bell — graduation happens by itself.
+function planToWork(ex, plan) {
+  const total = EX[ex].total;
+  const nb = nextBell(plan.base);
+  if (plan.heavy > 0 && nb != null) {
+    if (plan.heavy >= total) return [{ w: nb, n: total }];
+    return [{ w: plan.base, n: total - plan.heavy }, { w: nb, n: plan.heavy }];
+  }
+  return [{ w: plan.base, n: total }];
+}
+
+// Heaviest bell at which a complete session of this exercise was ever done —
+// mixed-weight sessions count at their lightest bell.
+function ownedWeight(ex) {
+  let best = null;
+  for (const s of sessions) {
+    if (workTotal(s[ex]) < EX[ex].total) continue;
+    const w = workMinW(s[ex]);
+    if (best == null || w > best) best = w;
+  }
+  return best;
+}
+
+// Did this test session meet the standard for ex at weight goalW?
+function testPassed(s, ex, goalW) {
+  const time = ex === 'sw' ? s.swT : s.tguT;
+  return s.test && time != null && time <= EX[ex].testLimit
+    && workTotal(s[ex]) >= EX[ex].total && workMinW(s[ex]) >= goalW;
+}
+
+function goalAchievedDay(ex) {
+  for (const s of sessions) if (testPassed(s, ex, cfg.goal[ex])) return dayKey(s.t);
+  return null;
+}
+
+function lastTest(ex) {
+  for (let i = sessions.length - 1; i >= 0; i--) {
+    const s = sessions[i];
+    const time = ex === 'sw' ? s.swT : s.tguT;
+    if (s.test && time != null && s[ex].length) return s;
+  }
+  return null;
+}
+
+function goalName(w) {
+  if (w === GOAL_PRESETS.sinister.sw) return 'sinister';
+  if (w === GOAL_PRESETS.simple.sw) return 'simple';
+  return 'goal';
+}
+
+// ── Session form state ───────────────────────────────────────────
+let sel = { sw: null, tgu: null }; // {base, heavy} per exercise
+let incl = { sw: true, tgu: true };
+let testMode = false;
+
+function reseedPlans() {
+  for (const x of EX_IDS) sel[x] = planFromHistory(x);
+}
+reseedPlans();
+
+function toggleInclude(ex) {
+  incl[ex] = !incl[ex];
+  renderForm();
+}
+
+function toggleTest() {
+  testMode = !testMode;
+  document.getElementById('test-sw-time').style.display = testMode ? '' : 'none';
+  document.getElementById('test-tgu-time').style.display = testMode ? '' : 'none';
+  document.getElementById('test-toggle').classList.toggle('active', testMode);
+  renderForm();
+}
+
+function logSession() {
+  if (!incl.sw && !incl.tgu) return;
+  const t = Date.now();
+  const noteEl = document.getElementById('note-input');
+  const entry = {
+    id: t + Math.random(), t,
+    sw: incl.sw ? planToWork('sw', sel.sw) : [],
+    tgu: incl.tgu ? planToWork('tgu', sel.tgu) : [],
+    test: testMode,
+    swT: testMode && incl.sw ? parseTime(document.getElementById('test-sw-time').value) : null,
+    tguT: testMode && incl.tgu ? parseTime(document.getElementById('test-tgu-time').value) : null,
+    note: noteEl.value.trim(),
+  };
+  sessions.push(entry);
+  noteEl.value = '';
+  noteEl.blur(); // drop the mobile keyboard — logging is done
+  document.getElementById('test-sw-time').value = '';
+  document.getElementById('test-tgu-time').value = '';
+  if (testMode) toggleTest();
+  saveSessions();
+  queueBeeUpsert(entry);
+  reseedPlans();
+  renderAll();
+}
+
+// ── Beeminder sync ───────────────────────────────────────────────
+// One-way: sessions become datapoints. The requestid is derived from the
+// session id, so a session maps to exactly one datapoint for life — edits
+// re-post (upsert), deletes re-post with value 0. Unsent items wait in the
+// ledger until the network and Beeminder cooperate.
+function beeConfigured() { return !!(bee.user && bee.token && bee.slug); }
+
+function beeRid(s) { return 'hal' + String(s.id).replace(/\D/g, '').slice(0, 30); }
+
+function beeValue(s) {
+  if (bee.metric === 'swings') return s.sw.reduce((sum, p) => sum + p.n * EX.sw.repsPer, 0);
+  if (bee.metric === 'tonnage') return EX_IDS.reduce((sum, x) => sum + workTonnage(x, s[x]), 0);
+  return 1;
+}
+
+function beeComment(s) {
+  const bits = [];
+  for (const x of EX_IDS) if (s[x].length) bits.push(EX[x].name + ' ' + fmtWork(x, s[x]));
+  if (s.test) {
+    const times = [];
+    if (s.swT != null) times.push(fmtSecs(s.swT));
+    if (s.tguT != null) times.push(fmtSecs(s.tguT));
+    bits.push('test ' + (times.join(' · ') || ''));
+  }
+  if (s.note) bits.push(s.note);
+  return 'halteres: ' + bits.join(' · ');
+}
+
+function queueBeeUpsert(s) {
+  if (!beeConfigured()) return;
+  const item = { rid: beeRid(s), value: beeValue(s), ts: Math.floor(s.t / 1000), comment: beeComment(s), synced: false };
+  beeLedger = beeLedger.filter(x => x.rid !== item.rid).concat(item);
+  saveBeeLedger();
+  syncBee();
+}
+
+function queueBeeDelete(s) {
+  const rid = beeRid(s);
+  const item = beeLedger.find(x => x.rid === rid);
+  if (!item) return;
+  if (!item.synced) {
+    // never reached Beeminder — just forget it
+    beeLedger = beeLedger.filter(x => x.rid !== rid);
+  } else {
+    item.value = 0;
+    item.comment = 'halteres: session deleted';
+    item.synced = false;
+  }
+  saveBeeLedger();
+  syncBee();
+}
+
+let beeSyncing = false;
+let beeStatus = '';
+
+function renderBeeStatus() {
+  const el = document.getElementById('bee-status');
+  if (!el) return;
+  if (!beeConfigured()) { el.textContent = 'not configured'; return; }
+  const pending = beeLedger.filter(x => !x.synced).length;
+  el.textContent = (pending ? pending + ' pending · ' : '') + (beeStatus || 'idle');
+}
+
+async function syncBee() {
+  renderBeeStatus();
+  if (beeSyncing || !beeConfigured() || !navigator.onLine) return;
+  const pending = beeLedger.filter(x => !x.synced);
+  if (!pending.length) return;
+  beeSyncing = true;
+  beeStatus = 'syncing…';
+  renderBeeStatus();
+  try {
+    for (const item of pending) {
+      const res = await fetch('https://www.beeminder.com/api/v1/users/' + encodeURIComponent(bee.user) +
+        '/goals/' + encodeURIComponent(bee.slug) + '/datapoints.json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          auth_token: bee.token,
+          value: String(item.value),
+          comment: item.comment,
+          timestamp: String(item.ts),
+          requestid: item.rid,
+        }),
+      });
+      if (!res.ok) {
+        beeStatus = res.status === 401 ? '✕ bad auth token'
+          : res.status === 404 ? '✕ user or goal not found'
+          : '✕ HTTP ' + res.status + ' — will retry';
+        beeSyncing = false;
+        renderBeeStatus();
+        return;
+      }
+      item.synced = true;
+      saveBeeLedger();
+    }
+    beeStatus = '✓ synced';
+  } catch (e) {
+    beeStatus = '✕ unreachable — will retry';
+  }
+  beeSyncing = false;
+  renderBeeStatus();
+}
+
+window.addEventListener('online', syncBee);
+
+// ── Rendering ────────────────────────────────────────────────────
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+function renderToday() {
+  const todayK = dayKey(Date.now());
+  document.getElementById('today-date').textContent =
+    new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+
+  const todaySessions = sessions.filter(s => dayKey(s.t) === todayK);
+  const status = document.getElementById('today-status');
+  status.className = 'today-status';
+  let planHtml = '';
+  if (todaySessions.length) {
+    status.textContent = 'practiced today';
+    status.classList.add('done');
+    for (const s of todaySessions) {
+      for (const x of EX_IDS) {
+        if (!s[x].length) continue;
+        planHtml += '<div class="plan-row"><span class="' + EX[x].cls + '">' + EX[x].name + '</span>' +
+          '<span class="plan-what">' + esc(fmtWork(x, s[x])) + '</span></div>';
+      }
+    }
+  } else {
+    const lastDay = sessions.length ? dayKey(sessions[sessions.length - 1].t) : null;
+    const gap = lastDay == null ? null : dayDiff(lastDay, todayK);
+    status.textContent = gap == null ? 'ready for the first session'
+      : gap === 1 ? 'ready — practiced yesterday'
+      : 'ready — ' + gap + ' days since last session';
+    status.classList.add(gap != null && gap > 3 ? 'rest' : 'ok');
+    for (const x of EX_IDS) {
+      planHtml += '<div class="plan-row"><span class="' + EX[x].cls + '">' + EX[x].name + '</span>' +
+        '<span class="plan-what">' + esc(fmtWork(x, planToWork(x, sel[x]))) + '</span></div>';
+    }
+  }
+  document.getElementById('plan-rows').innerHTML = planHtml;
+}
+
+// ── Move-up nudge ────────────────────────────────────────────────
+// Four weeks at the same load with ≥70% attendance means the load is stale —
+// time to move the next pair of sets to the heavier bell. "Same load" is
+// detected from the log itself: any change in an exercise's logged work
+// (a pair added, a bell graduated, even a step back) resets its clock.
+function lastWorkSig(ex) {
+  for (let i = sessions.length - 1; i >= 0; i--) {
+    if (sessions[i][ex].length) return workToStr(sessions[i][ex]);
+  }
+  return null;
+}
+
+function lastChangeDay(ex) {
+  let prevSig = null, changeDay = null;
+  for (const s of sessions) {
+    if (!s[ex].length) continue;
+    const sig = workToStr(s[ex]);
+    if (prevSig == null || sig !== prevSig) changeDay = dayKey(s.t);
+    prevSig = sig;
+  }
+  return changeDay;
+}
+
+function adherence(todayK) {
+  const daySet = new Set(sessions.map(s => dayKey(s.t)));
+  let recent = 0;
+  for (const dk of daySet) {
+    const d = dayDiff(dk, todayK);
+    if (d >= 0 && d < NUDGE_WINDOW) recent++;
+  }
+  return recent / NUDGE_WINDOW;
+}
+
+function applyNudge(ex) {
+  sel[ex].heavy = Math.min(EX[ex].total, sel[ex].heavy + STEP);
+  renderForm();
+  renderToday();
+  renderNudge();
+}
+
+function renderNudge() {
+  const card = document.getElementById('nudge-card');
+  const todayK = dayKey(Date.now());
+  const adh = adherence(todayK);
+  let lines = '';
+  if (adh >= NUDGE_ADHERENCE) {
+    for (const x of EX_IDS) {
+      const chg = lastChangeDay(x);
+      if (chg == null || dayDiff(chg, todayK) < NUDGE_WINDOW) continue;
+      const nb = nextBell(sel[x].base);
+      if (nb == null) continue;
+      // already bumped in the form (or nudge applied) — nothing to nag about
+      const sig = lastWorkSig(x);
+      if (sig == null || workToStr(planToWork(x, sel[x])) !== sig) continue;
+      const wks = Math.floor(dayDiff(chg, todayK) / 7);
+      lines += '<div class="nudge-line"><span><span class="' + EX[x].cls + '">' + EX[x].name + '</span> — ' +
+        wks + ' weeks at ' + esc(fmtWork(x, planToWork(x, sel[x]))) + '</span>' +
+        '<button class="btn btn-tiny" onclick="applyNudge(\'' + x + '\')">＋' + STEP + ' @' + nb + 'kg</button></div>';
+    }
+  }
+  if (lines) {
+    card.style.display = '';
+    card.innerHTML = '<div class="nudge-title">Time to load — ' + Math.round(adh * 100) +
+      '% of the last 4 weeks</div>' + lines;
+  } else {
+    card.style.display = 'none';
+  }
+}
+
+function renderForm() {
+  for (const x of EX_IDS) {
+    document.getElementById('card-' + x).classList.toggle('skipped', !incl[x]);
+    document.getElementById('skip-' + x).textContent = incl[x] ? 'skip ✕' : 'skipped — include ✓';
+
+    if (!cfg.bells.includes(sel[x].base)) sel[x] = { base: nearestBellAtOrBelow(sel[x].base), heavy: 0 };
+    const chipsEl = document.getElementById('chips-' + x);
+    chipsEl.innerHTML = '';
+    for (const b of cfg.bells) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chip' + (b === sel[x].base ? ' active' : '');
+      btn.textContent = b + 'kg';
+      btn.onclick = () => { sel[x] = { base: b, heavy: 0 }; renderForm(); renderToday(); };
+      chipsEl.appendChild(btn);
+    }
+
+    const stepEl = document.getElementById('step-' + x);
+    const nb = nextBell(sel[x].base);
+    stepEl.innerHTML = '';
+    if (nb == null) {
+      stepEl.innerHTML = '<div class="step-none">heaviest bell — add the next one in settings to step-load</div>';
+    } else {
+      const row = document.createElement('div');
+      row.className = 'step-row';
+      const minus = document.createElement('button');
+      minus.type = 'button'; minus.className = 'step-btn'; minus.textContent = '−';
+      minus.onclick = () => { sel[x].heavy = Math.max(0, sel[x].heavy - STEP); renderForm(); renderToday(); renderNudge(); };
+      const plus = document.createElement('button');
+      plus.type = 'button'; plus.className = 'step-btn'; plus.textContent = '＋';
+      plus.onclick = () => { sel[x].heavy = Math.min(EX[x].total, sel[x].heavy + STEP); renderForm(); renderToday(); renderNudge(); };
+      const label = document.createElement('span');
+      label.className = 'step-label';
+      label.innerHTML = (sel[x].heavy > 0 ? '<span class="hv">' + sel[x].heavy + '</span>' : '0') +
+        '/' + EX[x].total + ' ' + EX[x].unit + ' @' + nb + 'kg';
+      row.append(minus, label, plus);
+      stepEl.appendChild(row);
+    }
+  }
+
+  const btn = document.getElementById('log-session-btn');
+  const parts = [];
+  for (const x of EX_IDS) if (incl[x]) parts.push(EX[x].name + ' ' + fmtWork(x, planToWork(x, sel[x])));
+  btn.disabled = !parts.length;
+  btn.textContent = parts.length
+    ? '＋ log ' + (testMode ? 'test' : 'session') + ' — ' + parts.join(' · ')
+    : 'nothing to log — both exercises skipped';
+}
+
+function renderProgress() {
+  const el = document.getElementById('prog-cards');
+  let html = '';
+  const achievedBoth = EX_IDS.map(x => goalAchievedDay(x));
+  const banner = document.getElementById('std-banner');
+  if (achievedBoth.every(d => d != null)) {
+    const name = goalName(cfg.goal.sw);
+    banner.innerHTML = '<div class="std-banner">✦ ' + esc(name) + ' standard achieved · ' +
+      esc(fmtDayLabel(achievedBoth.sort()[achievedBoth.length - 1]).toLowerCase()) + '</div>';
+  } else {
+    banner.innerHTML = '';
+  }
+
+  for (const x of EX_IDS) {
+    const plan = sel[x];
+    const nb = nextBell(plan.base);
+    const owned = ownedWeight(x);
+    const goalW = cfg.goal[x];
+    const achieved = goalAchievedDay(x) != null;
+    const pct = nb == null ? 0 : Math.round(100 * plan.heavy / EX[x].total);
+
+    let line;
+    if (nb == null) line = plan.base + 'kg';
+    else if (plan.heavy > 0) line = plan.base + 'kg <span class="next">→ ' + nb + 'kg · ' + plan.heavy + '/' + EX[x].total + ' ' + EX[x].unit + '</span>';
+    else line = plan.base + 'kg <span class="next">→ ' + nb + 'kg next</span>';
+
+    const subBits = [];
+    subBits.push(owned != null ? 'best full session ' + owned + 'kg' : 'no full session yet');
+    const lt = lastTest(x);
+    if (lt) {
+      const time = x === 'sw' ? lt.swT : lt.tguT;
+      const ok = time <= EX[x].testLimit;
+      subBits.push('last test <span class="' + (ok ? 'pass' : 'fail') + '">' + fmtSecs(time) + '</span> @' + workMinW(lt[x]) + 'kg');
+    }
+    subBits.push('standard ≤' + fmtSecs(EX[x].testLimit) + ' @' + goalW + 'kg');
+
+    html += '<div class="prog-card">' +
+      '<div class="prog-head"><span class="ex-name ' + EX[x].cls + '">' + EX[x].name + '</span>' +
+      '<span class="prog-goal' + (achieved ? ' met' : '') + '">' + (achieved ? '✦ ' : '') +
+      esc(goalName(goalW)) + ' · ' + goalW + 'kg</span></div>' +
+      '<div class="prog-line">' + line + '</div>' +
+      (nb != null ? '<div class="prog-bar"><div style="width:' + pct + '%"></div></div>' : '') +
+      '<div class="prog-sub">' + subBits.join(' · ') + '</div></div>';
+  }
+  el.innerHTML = html;
+}
+
+function renderHorizon() {
+  const el = document.getElementById('horizon');
+  const todayK = dayKey(Date.now());
+  const byDay = new Map(); // dayKey -> {test, full, any}
+  for (const s of sessions) {
+    const dk = dayKey(s.t);
+    const cur = byDay.get(dk) || { test: false, full: false, sum: [] };
+    if (s.test) cur.test = true;
+    if (EX_IDS.every(x => !s[x].length || workTotal(s[x]) >= EX[x].total)) cur.full = true;
+    for (const x of EX_IDS) if (s[x].length) cur.sum.push(EX[x].name + ' ' + fmtWork(x, s[x]));
+    byDay.set(dk, cur);
+  }
+  let html = '';
+  for (let off = -27; off <= 0; off++) {
+    const key = addDays(todayK, off);
+    let cls = 'day-cell';
+    let title = fmtDayLabel(key);
+    const d = byDay.get(key);
+    if (d) {
+      cls += d.test ? ' test' : (d.full ? ' prac' : ' part');
+      title += ': ' + d.sum.join(' · ') + (d.test ? ' ⏱ test' : '');
+    } else {
+      title += ': rest';
+    }
+    if (key === todayK) cls += ' today';
+    html += '<div class="' + cls + '" title="' + esc(title) + '"></div>';
+  }
+  el.innerHTML = html;
+  document.getElementById('horizon-from').textContent = '−27d';
+}
+
+function renderStats() {
+  const todayK = dayKey(Date.now());
+  const days = [...new Set(sessions.map(s => dayKey(s.t)))];
+  const week = days.filter(dk => dayDiff(dk, todayK) < 7).length;
+  const month = days.filter(dk => dayDiff(dk, todayK) < 28).length;
+  let tonnage = 0;
+  for (const s of sessions) for (const x of EX_IDS) tonnage += workTonnage(x, s[x]);
+  document.getElementById('stat-week').textContent = week;
+  document.getElementById('stat-avg').textContent = (month / 4).toFixed(1);
+  document.getElementById('stat-total').textContent = sessions.length;
+  document.getElementById('stat-tonnage').textContent = (tonnage / 1000).toFixed(1);
+}
+
+let logShowAll = false;
+
+function renderLog() {
+  const el = document.getElementById('log-list');
+  el.innerHTML = '';
+  if (sessions.length === 0) {
+    el.innerHTML = '<div class="log-empty">no sessions yet — pick your bell and log the first one</div>';
+    return;
+  }
+  const LIMIT = 30;
+  const shown = logShowAll ? sessions.slice() : sessions.slice(-LIMIT);
+  const hidden = sessions.length - shown.length;
+  const frag = document.createDocumentFragment();
+  for (const s of shown.slice().reverse()) {
+    const row = document.createElement('div');
+    row.className = 'log-row';
+    const workBits = [];
+    for (const x of EX_IDS) {
+      if (!s[x].length) continue;
+      workBits.push('<span class="w-' + x + '">' + (x === 'sw' ? 'sw' : 'tgu') + '</span> ' + esc(fmtWork(x, s[x])));
+    }
+    let badge = '';
+    if (s.test) {
+      const times = [];
+      if (s.swT != null) times.push(fmtSecs(s.swT));
+      if (s.tguT != null) times.push(fmtSecs(s.tguT));
+      const passed = EX_IDS.every(x => !s[x].length || testPassed(s, x, workMinW(s[x])));
+      badge = '<span class="test-badge' + (passed ? ' pass' : '') + '">⏱ ' + (times.join(' · ') || 'test') + '</span>';
+    }
+    row.innerHTML =
+      '<span class="l-day">' + esc(fmtDayLabel(dayKey(s.t))) + ' ' + fmtClock(s.t) + '</span>' +
+      '<span class="l-work">' + workBits.join(' · ') + '</span>' +
+      badge +
+      '<button class="l-del" title="delete">✕</button>' +
+      (s.note ? '<span class="l-note">' + esc(s.note) + '</span>' : '');
+    row.querySelector('.l-del').onclick = (ev) => {
+      ev.stopPropagation();
+      if (!confirm('Delete this session?')) return;
+      queueBeeDelete(s);
+      sessions = sessions.filter(x => x.id !== s.id);
+      saveSessions();
+      reseedPlans();
+      renderAll();
+    };
+    row.onclick = () => openEdit(s.id);
+    frag.appendChild(row);
+  }
+  el.appendChild(frag);
+  if (hidden > 0) {
+    const more = document.createElement('button');
+    more.className = 'show-more';
+    more.textContent = '▾ show ' + hidden + ' older sessions';
+    more.onclick = () => { logShowAll = true; renderLog(); };
+    el.appendChild(more);
+  }
+}
+
+function renderAll() {
+  renderToday();
+  renderNudge();
+  renderForm();
+  renderProgress();
+  renderHorizon();
+  renderStats();
+  renderLog();
+}
+
+// Midnight rollover + backgrounded-tab catch-up.
+setInterval(renderAll, 60000);
+
+// ── Resume handling (meridian-style) ─────────────────────────────
+// If the page loaded while localStorage was detached, the app came up empty.
+// Once storage is reachable again, union stored data with anything logged
+// since. Must run BEFORE flushPendingWrites — otherwise a save made against
+// the empty in-memory log would overwrite the real history.
+function recoverFailedReads() {
+  if (failedReads.size === 0) return;
+  try { localStorage.getItem(DB_KEY); } catch (e) { return; } // still detached, retry next resume
+  const toRecover = new Set(failedReads);
+  failedReads.clear();
+  if (toRecover.has(DB_KEY)) {
+    const stored = sanitizeSessions(loadJSON(DB_KEY, []));
+    const have = new Set(sessions.map(e => e.id));
+    const missing = stored.filter(e => !have.has(e.id));
+    if (missing.length) {
+      sessions = sanitizeSessions(sessions.concat(missing));
+      saveSessions();
+      reseedPlans();
+    }
+  }
+  if (toRecover.has(CFG_KEY) && !pendingWrites.has(CFG_KEY)) {
+    cfg = sanitizeCfg(loadJSON(CFG_KEY, null));
+  }
+  if (toRecover.has(BEE_KEY) && !pendingWrites.has(BEE_KEY)) {
+    bee = sanitizeBee(loadJSON(BEE_KEY, null));
+  }
+  if (toRecover.has(BEEQ_KEY)) {
+    // union stored ledger with in-memory items; in-memory wins per rid
+    // (it holds anything queued since load, including fresher edits)
+    const stored = sanitizeBeeLedger(loadJSON(BEEQ_KEY, []));
+    const have = new Set(beeLedger.map(x => x.rid));
+    const missing = stored.filter(x => !have.has(x.rid));
+    if (missing.length) {
+      beeLedger = beeLedger.concat(missing);
+      saveBeeLedger();
+    }
+  }
+  if (toRecover.has(THEME_KEY) && !pendingWrites.has(THEME_KEY)) {
+    setTheme(storageGet(THEME_KEY) || 'auto');
+  }
+}
+
+function resyncAfterResume() {
+  recoverFailedReads();
+  flushPendingWrites();
+  renderAll();
+  syncBee();
+}
+window.addEventListener('pageshow', (e) => { if (e.persisted) resyncAfterResume(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) flushPendingWrites();
+  else resyncAfterResume();
+});
+
+// ── Edit overlay ─────────────────────────────────────────────────
+let editId = null;
+
+function toLocalInput(t) {
+  const d = new Date(t - new Date(t).getTimezoneOffset() * 60000);
+  return d.toISOString().slice(0, 19);
+}
+
+function openEdit(id) {
+  const s = sessions.find(x => x.id === id);
+  if (!s) return;
+  editId = id;
+  document.getElementById('edit-time').value = toLocalInput(s.t);
+  document.getElementById('edit-sw').value = workToStr(s.sw);
+  document.getElementById('edit-tgu').value = workToStr(s.tgu);
+  document.getElementById('edit-test').checked = s.test;
+  document.getElementById('edit-sw-time').value = s.swT != null ? fmtSecs(s.swT) : '';
+  document.getElementById('edit-tgu-time').value = s.tguT != null ? fmtSecs(s.tguT) : '';
+  document.getElementById('edit-note').value = s.note;
+  document.getElementById('edit-overlay').classList.add('visible');
+}
+
+function closeEdit() {
+  editId = null;
+  document.getElementById('edit-overlay').classList.remove('visible');
+}
+
+function saveEdit() {
+  const s = sessions.find(x => x.id === editId);
+  if (!s) { closeEdit(); return; }
+  const t = new Date(document.getElementById('edit-time').value).getTime();
+  if (isFinite(t)) s.t = Math.min(t, Date.now());
+  const sw = parseWorkStr(document.getElementById('edit-sw').value);
+  const tgu = parseWorkStr(document.getElementById('edit-tgu').value);
+  if (sw.length || tgu.length) { s.sw = sw; s.tgu = tgu; }
+  s.test = document.getElementById('edit-test').checked;
+  s.swT = s.test ? parseTime(document.getElementById('edit-sw-time').value) : null;
+  s.tguT = s.test ? parseTime(document.getElementById('edit-tgu-time').value) : null;
+  s.note = document.getElementById('edit-note').value.trim();
+  saveSessions();
+  queueBeeUpsert(s);
+  closeEdit();
+  reseedPlans();
+  renderAll();
+}
+
+function deleteEdit() {
+  if (!confirm('Delete this session?')) return;
+  const s = sessions.find(x => x.id === editId);
+  if (s) queueBeeDelete(s);
+  sessions = sessions.filter(x => x.id !== editId);
+  saveSessions();
+  closeEdit();
+  reseedPlans();
+  renderAll();
+}
+
+// ── Settings ─────────────────────────────────────────────────────
+function openSettings() {
+  document.getElementById('bells-input').value = cfg.bells.join(', ');
+  document.getElementById('goal-sw').value = cfg.goal.sw;
+  document.getElementById('goal-tgu').value = cfg.goal.tgu;
+  markGoalButtons();
+  document.getElementById('bee-user').value = bee.user;
+  document.getElementById('bee-slug').value = bee.slug;
+  document.getElementById('bee-token').value = bee.token;
+  document.getElementById('bee-metric').value = bee.metric;
+  renderBeeStatus();
+  document.getElementById('settings-overlay').classList.add('visible');
+}
+
+function beeChanged() {
+  bee = sanitizeBee({
+    user: document.getElementById('bee-user').value,
+    slug: document.getElementById('bee-slug').value,
+    token: document.getElementById('bee-token').value,
+    metric: document.getElementById('bee-metric').value,
+  });
+  saveBee();
+  syncBee();
+}
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.remove('visible');
+}
+
+function markGoalButtons() {
+  for (const name of ['simple', 'sinister']) {
+    const p = GOAL_PRESETS[name];
+    document.getElementById('goal-' + name).classList.toggle('sel',
+      cfg.goal.sw === p.sw && cfg.goal.tgu === p.tgu);
+  }
+}
+
+function bellsChanged() {
+  const el = document.getElementById('bells-input');
+  const nums = el.value.split(',').map(v => Number(v.trim())).filter(v => isFinite(v) && v > 0);
+  cfg = sanitizeCfg({ ...cfg, bells: nums });
+  saveCfg();
+  el.value = cfg.bells.join(', ');
+  reseedPlans();
+  renderAll();
+}
+
+function setGoalPreset(name) {
+  cfg.goal = { ...GOAL_PRESETS[name] };
+  saveCfg();
+  document.getElementById('goal-sw').value = cfg.goal.sw;
+  document.getElementById('goal-tgu').value = cfg.goal.tgu;
+  markGoalButtons();
+  renderAll();
+}
+
+function goalChanged() {
+  const sw = Number(document.getElementById('goal-sw').value);
+  const tgu = Number(document.getElementById('goal-tgu').value);
+  cfg = sanitizeCfg({ ...cfg, goal: { sw, tgu } });
+  saveCfg();
+  document.getElementById('goal-sw').value = cfg.goal.sw;
+  document.getElementById('goal-tgu').value = cfg.goal.tgu;
+  markGoalButtons();
+  renderAll();
+}
+
+// ── CSV export / import ──────────────────────────────────────────
+const CSV_HEADER = 'id,timestamp,iso,swings,getups,test,swings_time,getups_time,note';
+const csvQuote = s => '"' + String(s).replace(/"/g, '""') + '"';
+
+function buildCSV() {
+  const rows = [CSV_HEADER];
+  for (const s of sessions) {
+    rows.push([
+      s.id, s.t, new Date(s.t).toISOString(),
+      workToStr(s.sw), workToStr(s.tgu),
+      s.test ? 1 : 0, s.swT ?? '', s.tguT ?? '',
+      csvQuote(s.note),
+    ].join(','));
+  }
+  return rows.join('\n') + '\n';
+}
+
+function downloadCSV(csv, filename) {
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function exportCSV() {
+  downloadCSV(buildCSV(), 'halteres-' + dayKey(Date.now()) + '.csv');
+}
+
+function importCSV() {
+  document.getElementById('import-file').click();
+}
+
+// Minimal CSV line parser that honors quoted fields with embedded commas/quotes.
+function parseCSVLine(line) {
+  const out = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQ) {
+      if (c === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i++; }
+        else inQ = false;
+      } else cur += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ',') { out.push(cur); cur = ''; }
+    else cur += c;
+  }
+  out.push(cur);
+  return out;
+}
+
+function handleImportFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const lines = String(reader.result).split(/\r?\n/).filter(l => l.trim());
+    const imported = [];
+    for (const line of lines) {
+      if (line.startsWith('id,')) continue;
+      const f = parseCSVLine(line);
+      if (f.length < 9) continue;
+      imported.push({
+        id: Number(f[0]), t: Number(f[1]),
+        sw: parseWorkStr(f[3]), tgu: parseWorkStr(f[4]),
+        test: f[5] === '1' || f[5].toLowerCase() === 'true',
+        swT: f[6] === '' ? null : Number(f[6]),
+        tguT: f[7] === '' ? null : Number(f[7]),
+        note: f[8],
+      });
+    }
+    const existing = new Set(sessions.map(e => e.id));
+    const added = imported.filter(e => isFinite(e.id) && !existing.has(e.id));
+    sessions = sanitizeSessions(sessions.concat(added));
+    saveSessions();
+    reseedPlans();
+    renderAll();
+    alert('Imported ' + added.length + ' new session' + (added.length === 1 ? '' : 's') + ' (' + (imported.length - added.length) + ' duplicates skipped).');
+  };
+  reader.readAsText(file);
+  document.getElementById('import-file').value = '';
+}
+
+function clearAll() {
+  if (!confirm('Delete ALL ' + sessions.length + ' sessions? Export first if you want a backup. (Datapoints already on Beeminder are left alone.)')) return;
+  sessions = [];
+  beeLedger = [];
+  saveSessions();
+  saveBeeLedger();
+  reseedPlans();
+  renderAll();
+}
+
+// ── Backup (meridian-style) ──────────────────────────────────────
+// When a backup is due on open: browsers with the File System Access API
+// (desktop Chrome) get a silent auto-download; everywhere else an in-app
+// reminder — an unprompted download on mobile is worse than a nudge.
+const BACKUP_KEY = 'halteres_backup_cfg';
+
+function sanitizeBackupCfg(raw) {
+  const c = raw && typeof raw === 'object' ? raw : {};
+  return {
+    freq: c.freq === 'daily' || c.freq === 'weekly' ? c.freq : 'off',
+    lastBackup: finiteOrNull(c.lastBackup),
+    lastReminder: finiteOrNull(c.lastReminder),
+  };
+}
+let backupCfg = sanitizeBackupCfg(loadJSON(BACKUP_KEY, null));
+
+function saveBackupCfg() {
+  storageSet(BACKUP_KEY, JSON.stringify(backupCfg));
+}
+
+function setBackupFreq(freq) {
+  backupCfg.freq = freq;
+  saveBackupCfg();
+  renderBackupUI();
+  checkBackupDue();
+}
+
+function renderBackupUI() {
+  for (const f of ['off', 'daily', 'weekly']) {
+    document.getElementById('backup-' + f).classList.toggle('sel', backupCfg.freq === f);
+  }
+  const last = backupCfg.lastBackup ? new Date(backupCfg.lastBackup).toLocaleDateString() : 'never';
+  const noteEl = document.getElementById('backup-note');
+  if (backupCfg.freq === 'off') {
+    noteEl.textContent = 'Periodic timestamped CSV backups of your log. Last backup: ' + last + '.';
+  } else if ('showSaveFilePicker' in window) {
+    noteEl.textContent = 'A timestamped CSV downloads automatically when you open the app and a ' + backupCfg.freq + ' backup is due. Last backup: ' + last + '.';
+  } else {
+    noteEl.textContent = 'This browser can\'t save files unprompted, so you\'ll get an in-app reminder to back up on a ' + backupCfg.freq + ' basis. Last backup: ' + last + '.';
+  }
+}
+
+function isBackupDue() {
+  if (backupCfg.freq === 'off' || !sessions.length) return false;
+  if (!backupCfg.lastBackup) return true;
+  const threshold = backupCfg.freq === 'daily' ? 86400000 : 604800000;
+  return Date.now() - backupCfg.lastBackup >= threshold;
+}
+
+function isReminderSnoozed() {
+  return backupCfg.lastReminder != null && Date.now() - backupCfg.lastReminder < 3600000;
+}
+
+function checkBackupDue() {
+  if (!isBackupDue()) return;
+  if ('showSaveFilePicker' in window) runBackupNow(true);
+  else if (!isReminderSnoozed()) showBackupReminder();
+}
+
+async function runBackupNow(silent = false) {
+  if (!sessions.length) { if (!silent) alert('No sessions to back up.'); return; }
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const filename = 'halteres-backup-' + stamp + '.csv';
+  const csv = buildCSV();
+  if (!silent && 'showSaveFilePicker' in window) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: 'CSV', accept: { 'text/csv': ['.csv'] } }],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(csv);
+      await writable.close();
+    } catch (e) { return; } // user cancelled the picker
+  } else {
+    downloadCSV(csv, filename);
+  }
+  backupCfg.lastBackup = Date.now();
+  saveBackupCfg();
+  hideBackupReminder();
+  renderBackupUI();
+}
+
+function showBackupReminder() {
+  const last = backupCfg.lastBackup ? new Date(backupCfg.lastBackup).toLocaleDateString() : 'never';
+  document.getElementById('backup-reminder-text').textContent =
+    'Your ' + backupCfg.freq + ' backup is overdue (last: ' + last + '). Export a CSV to keep a local copy safe.';
+  document.getElementById('backup-reminder').style.display = 'block';
+}
+
+function hideBackupReminder() {
+  document.getElementById('backup-reminder').style.display = 'none';
+}
+
+function snoozeReminder() {
+  backupCfg.lastReminder = Date.now();
+  saveBackupCfg();
+  hideBackupReminder();
+}
+
+function dismissReminder() {
+  backupCfg.lastBackup = Date.now();
+  saveBackupCfg();
+  hideBackupReminder();
+  renderBackupUI();
+}
+
+// ── Theme (auto / dark / light) ──────────────────────────────────
+function setTheme(pref) {
+  storageSet(THEME_KEY, pref);
+  applyTheme(pref);
+  for (const p of ['auto', 'dark', 'light']) {
+    document.getElementById('theme-' + p).classList.toggle('sel', p === pref);
+  }
+}
+function applyTheme(pref) {
+  const dark = pref === 'dark' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.body.classList.toggle('light', !dark);
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if ((storageGet(THEME_KEY) || 'auto') === 'auto') applyTheme('auto');
+});
+function toggleThemeQuick() {
+  const dark = !document.body.classList.contains('light');
+  setTheme(dark ? 'light' : 'dark');
+}
+
+// ── Keyboard ─────────────────────────────────────────────────────
+document.addEventListener('keydown', (ev) => {
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+    if (ev.key === 'Escape') document.activeElement.blur();
+    return;
+  }
+  const k = ev.key.toLowerCase();
+  if (k === 'escape') { closeSettings(); closeEdit(); }
+  else if (k === 'l') logSession();
+  else if (k === 't') toggleTest();
+  else if (k === 'n') { document.getElementById('note-input').focus(); ev.preventDefault(); }
+  else if (k === 's') openSettings();
+  else if (k === 'e') exportCSV();
+  else if (k === 'i') importCSV();
+});
+
+// ── Service worker (PWA install + offline) ───────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+setTheme(storageGet(THEME_KEY) || 'auto');
+renderAll();
+syncBee();
+renderBackupUI();
+checkBackupDue();
+setInterval(checkBackupDue, 3600000);
+</script>
+</body>
+</html>

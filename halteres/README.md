@@ -19,7 +19,7 @@ Progress happens by **step-loading in pairs**: move two sets at a time from your
 
 And when you've been at the same load for **four weeks with at least 70% of days practiced**, a notice appears telling you it's time to move up — with a one-tap button that adds the next pair to today's plan. Any change in your logged work (a pair added, a bell graduated, even a step back) resets that clock.
 
-Test rarely. The standard is 100 swings in 5:00 and 10 get-ups in 10:00 with the goal bell — **Simple** at 32 kg, **Sinister** at 48 kg (both configurable, so the women's standards or any custom goal work too).
+Test rarely. The standard is 100 swings in 5:00, one minute of rest, then 10 get-ups in 10:00 with the goal bell — **Simple** at 32 kg, **Sinister** at 48 kg (both configurable, so the women's standards or any custom goal work too).
 
 ## Features
 

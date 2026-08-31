@@ -248,12 +248,19 @@
   .day-cell.future-ok { border-color: var(--accent-dim); border-style: solid; background: color-mix(in srgb, var(--accent) 14%, var(--bg)); }
   .day-cell.today { outline: 2px solid var(--text-dim); outline-offset: 1px; }
   .horizon-legend {
+    position: relative;
     display: flex;
     justify-content: space-between;
     font-size: 0.58rem;
     color: var(--muted);
     letter-spacing: 0.05em;
     margin-bottom: 1.5rem;
+  }
+  /* strip spans days -14..+7 (22 cells); today's cell center is 14.5/22 in */
+  .horizon-legend .today-marker {
+    position: absolute;
+    left: calc(100% * 14.5 / 22);
+    transform: translateX(-50%);
   }
 
   /* ── Stat strip ─────────────────────────────────────────────── */
@@ -469,7 +476,7 @@
 
   <div class="section-title">Horizon</div>
   <div class="horizon" id="horizon"></div>
-  <div class="horizon-legend"><span id="horizon-from"></span><span>today ▲</span><span id="horizon-to"></span></div>
+  <div class="horizon-legend"><span id="horizon-from"></span><span class="today-marker">today ▲</span><span id="horizon-to"></span></div>
 
   <div class="stats-strip">
     <div class="stat-cell"><div class="stat-val accent" id="stat-streak">0</div><div class="stat-label">Clean Days</div></div>

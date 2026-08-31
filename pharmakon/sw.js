@@ -1,4 +1,4 @@
-const CACHE = 'pharmakon-v2';
+const CACHE = 'pharmakon-v3';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {

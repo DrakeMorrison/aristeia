@@ -17,6 +17,8 @@ Pavel Tsatsouline's Simple & Sinister, done most days without a clock:
 
 Progress happens by **step-loading in pairs**: move two sets at a time from your bell to the next bell up — 2, then 4, then 6… When all ten sets are at the heavier bell, it *is* your bell, and the counter starts again toward the next one. The app's session form is exactly that — a bell picker plus a "sets at the next bell" counter, prefilled from your last session so the default action is *do what you did last time*, and progression is one tap on `+` (which adds a pair).
 
+**Every second or third day**, the book says, swap the one-hand swings for two-hand swings with the same bell — active rest for the grip and back. Pick the cadence in settings (default every 3rd day, or off) and the swings card defaults to two-hand on the day it comes due, counted in practice days so a week off doesn't spend the rest. Two-hand days are tracked in the log and horizon but don't drive progression: the plan, "best full session", the move-up clock, and the test all read one-hand work only.
+
 And when you've been at the same load for **four weeks with at least 70% of days practiced**, a notice appears telling you it's time to move up — with a one-tap button that adds the next pair to today's plan. Any change in your logged work (a pair added, a bell graduated, even a step back) resets that clock.
 
 Test rarely. The standard is 100 swings in 5:00, one minute of rest, then 10 get-ups in 10:00 with the goal bell — **Simple** at 32 kg, **Sinister** at 48 kg (both configurable, so the women's standards or any custom goal work too).
@@ -25,9 +27,10 @@ Test rarely. The standard is 100 swings in 5:00, one minute of rest, then 10 get
 
 - **Today card** — practiced or ready, days since the last session, and the plan for today's session
 - **Move-up nudge** — after 4 weeks at the same load with ≥70% attendance, a notice with a one-tap "+2 @next bell" button
+- **Two-hand days** — a one-hand / two-hand toggle on the swings card that flips to two-hand when it's due, with a countdown in the today card
 - **One-tap logging** — bell chips per exercise, a step-load counter, an optional timed-test mode with m:ss entries, and a note
 - **Progression cards** — current bell → next bell with a 10-set progress bar, best full session, last test time, and the goal standard; a banner when both standards are met
-- **Horizon strip** — the last 28 days at a glance: full sessions, partial sessions, and test days
+- **Horizon strip** — the last 28 days at a glance: one-hand sessions, partial sessions, two-hand days, and test days
 - **Stats** — sessions this week, 4-week average per week, total sessions, total tonnage
 - **Honest log** — reverse-chronological sessions with test badges (green when the time standard was met); tap to edit time/work/times or delete
 - **Beeminder** — optionally posts a datapoint per session (1, swing reps, or tonnage) straight from the browser; edits re-post, deletes zero out, offline sessions queue until you're back
@@ -42,6 +45,6 @@ Open `index.html` (or serve the directory), set your bells in settings (default 
 
 ## Data
 
-Everything stays in your browser via `localStorage`. Nothing is sent anywhere — unless you configure the Beeminder integration in settings, in which case session datapoints (and your auth token, stored locally) go directly from your browser to `beeminder.com` via its CORS-enabled API. Each session maps to one datapoint by `requestid`, so editing a session updates its datapoint and deleting one zeroes it out. Use Export CSV to back up or move your data — columns are `id,timestamp,iso,swings,getups,test,swings_time,getups_time,note`, with work encoded as `weight×count` terms (`24x8+28x2` = 8 sets at 24 kg and 2 at 28 kg) and test times in seconds.
+Everything stays in your browser via `localStorage`. Nothing is sent anywhere — unless you configure the Beeminder integration in settings, in which case session datapoints (and your auth token, stored locally) go directly from your browser to `beeminder.com` via its CORS-enabled API. Each session maps to one datapoint by `requestid`, so editing a session updates its datapoint and deleting one zeroes it out. Use Export CSV to back up or move your data — columns are `id,timestamp,iso,swings,getups,test,swings_time,getups_time,note,two_hand`, with work encoded as `weight×count` terms (`24x8+28x2` = 8 sets at 24 kg and 2 at 28 kg) test times in seconds, and `two_hand` as 0/1 (older exports without the column import fine).
 
 *This is a personal logging tool, not coaching or medical advice.*

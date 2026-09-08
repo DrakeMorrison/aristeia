@@ -131,6 +131,8 @@
   .plan-rows { display: flex; flex-direction: column; gap: 0.25rem; }
   .plan-row { display: flex; justify-content: space-between; gap: 0.6rem; font-size: 0.72rem; }
   .plan-row .plan-what { color: var(--text-dim); text-align: right; }
+  .plan-hint { font-size: 0.62rem; color: var(--muted); line-height: 1.5; margin-top: 0.4rem; }
+  .plan-hint .two { color: var(--accent2); }
 
   /* ── Nudge card ─────────────────────────────────────────────── */
   .nudge-card {
@@ -201,6 +203,10 @@
   }
   .chip:hover { border-color: var(--muted); color: var(--text); }
   .chip.active { border-color: var(--accent-dim); color: var(--accent); }
+  .chip.due::after { content: ' ✦'; color: var(--accent2); }
+  .style-chips { margin-top: -0.15rem; }
+  .style-chips .chip { font-size: 0.62rem; padding: 0.25rem 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .style-chips .chip.active { border-color: var(--accent2-dim); color: var(--accent2); }
   .step-row { display: flex; align-items: center; gap: 0.4rem; font-size: 0.66rem; color: var(--text-dim); }
   .step-btn {
     font-family: var(--mono); font-size: 0.8rem;
@@ -303,6 +309,7 @@
   }
   .day-cell.prac { background: var(--accent); border-color: var(--accent-dim); }
   .day-cell.part { background: color-mix(in srgb, var(--accent) 40%, var(--surface)); border-color: var(--accent-dim); }
+  .day-cell.two { background: var(--accent2); border-color: var(--accent2-dim); }
   .day-cell.test { background: var(--info); border-color: var(--info-dim); }
   .day-cell.today { outline: 2px solid var(--text-dim); outline-offset: 1px; }
   .horizon-legend {
@@ -313,6 +320,9 @@
     letter-spacing: 0.05em;
     margin-bottom: 1.5rem;
   }
+  .horizon-legend .lg-prac { color: var(--accent); }
+  .horizon-legend .lg-two { color: var(--accent2); }
+  .horizon-legend .lg-test { color: var(--info); }
 
   /* ── Stat strip ─────────────────────────────────────────────── */
   .stats-strip {
@@ -501,6 +511,7 @@
         <button class="ex-skip" id="skip-sw" onclick="toggleInclude('sw')"></button>
       </div>
       <div class="chips" id="chips-sw"></div>
+      <div class="chips style-chips" id="style-sw"></div>
       <div id="step-sw"></div>
     </div>
     <div class="ex-card" id="card-tgu">
@@ -531,7 +542,7 @@
 
   <div class="section-title">Horizon</div>
   <div class="horizon" id="horizon"></div>
-  <div class="horizon-legend"><span id="horizon-from"></span><span>practice ■ · test ■</span><span>today ▲</span></div>
+  <div class="horizon-legend"><span id="horizon-from"></span><span><span class="lg-prac">■</span> one-hand · <span class="lg-two">■</span> two-hand · <span class="lg-test">■</span> test</span><span>today ▲</span></div>
 
   <div class="stats-strip">
     <div class="stat-cell"><div class="stat-val accent" id="stat-week">0</div><div class="stat-label">This Week</div></div>
@@ -570,9 +581,23 @@
       step-loading in pairs — move two sets at a time to the next bell (2,
       then 4, then 6…) until all ten are there, then it becomes your bell.
       After four weeks at the same load with at least 70% of days practiced,
-      the app nudges you to add the next pair. Test rarely: 100 swings in
+      the app nudges you to add the next pair. Every second or third day,
+      replace the one-hand swings with two-hand swings with the same bell —
+      active rest for the grip and back. Test rarely: 100 swings in
       5:00, one minute of rest, then 10 get-ups in 10:00, same bell, is
       the standard.
+    </div>
+
+    <div class="settings-section-title">Two-hand days</div>
+    <div class="settings-note">
+      The book says every second or third day. Pick the cadence and the
+      swings card will default to two-hand on the day it comes due —
+      counted in practice days, so a week off doesn't spend the rest.
+    </div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" id="two-hand-0" onclick="setTwoHandEvery(0)">Off</button>
+      <button class="btn btn-tiny" id="two-hand-2" onclick="setTwoHandEvery(2)">Every 2nd day</button>
+      <button class="btn btn-tiny" id="two-hand-3" onclick="setTwoHandEvery(3)">Every 3rd day</button>
     </div>
 
     <div class="settings-section-title">Stretching</div>
@@ -674,6 +699,9 @@
       <input type="text" id="edit-tgu" autocomplete="off">
     </div>
     <div class="settings-row">
+      <span class="chk"><input type="checkbox" id="edit-sw2"> two-hand swings</span>
+    </div>
+    <div class="settings-row">
       <span class="chk"><input type="checkbox" id="edit-test"> timed test</span>
     </div>
     <div class="settings-row">
@@ -714,6 +742,11 @@ const STEP = 2;
 // attendance over the window was at least this fraction of days.
 const NUDGE_WINDOW = 28;
 const NUDGE_ADHERENCE = 0.7;
+// S&S: "every second or third day, replace one-arm swings with two-arm
+// swings with the same bell" — active rest for the grip and back. Cadence
+// is configurable (0 = off); counted in practice days with swings.
+const TWO_HAND_OPTIONS = [0, 2, 3];
+const TWO_HAND_DEFAULT = 3;
 
 // ── Storage (meridian-style) ─────────────────────────────────────
 // Mobile WebKit can detach localStorage while the app is suspended in the
@@ -796,6 +829,7 @@ function sanitizeSessions(raw) {
     if (!sw.length && !tgu.length) continue;
     clean.push({
       id: finiteOrNull(e.id) ?? t, t, sw, tgu,
+      sw2: !!e.sw2 && sw.length > 0,
       test: !!e.test,
       swT: posSecsOrNull(e.swT), tguT: posSecsOrNull(e.tguT),
       note: typeof e.note === 'string' ? e.note.trim() : '',
@@ -815,7 +849,9 @@ function sanitizeCfg(raw) {
     const g = raw && raw.goal ? finiteOrNull(raw.goal[x]) : null;
     goal[x] = g != null && g > 0 ? g : 32;
   }
-  return { bells: bells.length ? bells : [16, 24, 32], goal };
+  const the = raw ? finiteOrNull(raw.twoHandEvery) : null;
+  const twoHandEvery = TWO_HAND_OPTIONS.includes(the) ? the : TWO_HAND_DEFAULT;
+  return { bells: bells.length ? bells : [16, 24, 32], goal, twoHandEvery };
 }
 
 function sanitizeBee(raw) {
@@ -934,6 +970,14 @@ function workMinW(parts) { return parts.length ? Math.min(...parts.map(p => p.w)
 function workTonnage(ex, parts) { return parts.reduce((s, p) => s + p.w * p.n * EX[ex].repsPer, 0); }
 
 // ── Progression engine ───────────────────────────────────────────
+// Two-hand swing days are active rest, not progression: they don't set the
+// plan, don't count as a full session at a bell, and can't pass the test
+// (which is one-hand). Everything that reasons about "where am I" reads
+// swing work through this.
+function progWork(s, ex) {
+  return ex === 'sw' && s.sw2 ? [] : s[ex];
+}
+
 function nextBell(w) {
   return cfg.bells.find(b => b > w) ?? null;
 }
@@ -949,7 +993,7 @@ function nearestBellAtOrBelow(w) {
 // becomes your bell.
 function planFromHistory(ex) {
   for (let i = sessions.length - 1; i >= 0; i--) {
-    const parts = sessions[i][ex];
+    const parts = progWork(sessions[i], ex);
     if (!parts || !parts.length) continue;
     const base = nearestBellAtOrBelow(workMinW(parts));
     const nb = nextBell(base);
@@ -978,8 +1022,9 @@ function planToWork(ex, plan) {
 function ownedWeight(ex) {
   let best = null;
   for (const s of sessions) {
-    if (workTotal(s[ex]) < EX[ex].total) continue;
-    const w = workMinW(s[ex]);
+    const parts = progWork(s, ex);
+    if (workTotal(parts) < EX[ex].total) continue;
+    const w = workMinW(parts);
     if (best == null || w > best) best = w;
   }
   return best;
@@ -988,8 +1033,9 @@ function ownedWeight(ex) {
 // Did this test session meet the standard for ex at weight goalW?
 function testPassed(s, ex, goalW) {
   const time = ex === 'sw' ? s.swT : s.tguT;
+  const parts = progWork(s, ex);
   return s.test && time != null && time <= EX[ex].testLimit
-    && workTotal(s[ex]) >= EX[ex].total && workMinW(s[ex]) >= goalW;
+    && workTotal(parts) >= EX[ex].total && workMinW(parts) >= goalW;
 }
 
 function goalAchievedDay(ex) {
@@ -1001,7 +1047,7 @@ function lastTest(ex) {
   for (let i = sessions.length - 1; i >= 0; i--) {
     const s = sessions[i];
     const time = ex === 'sw' ? s.swT : s.tguT;
-    if (s.test && time != null && s[ex].length) return s;
+    if (s.test && time != null && progWork(s, ex).length) return s;
   }
   return null;
 }
@@ -1012,13 +1058,46 @@ function goalName(w) {
   return 'goal';
 }
 
+// ── Two-hand days ────────────────────────────────────────────────
+// Distinct practice days with one-hand swings since the last two-hand day
+// (all of history if there never was one).
+function oneHandDaysSinceTwoHand() {
+  const days = new Set();
+  for (let i = sessions.length - 1; i >= 0; i--) {
+    const s = sessions[i];
+    if (!s.sw.length) continue;
+    if (s.sw2) break;
+    days.add(dayKey(s.t));
+  }
+  return days.size;
+}
+
+// "Every Nth day" = N−1 one-hand days, then a two-hand one.
+function twoHandDue() {
+  return cfg.twoHandEvery > 0 && oneHandDaysSinceTwoHand() >= cfg.twoHandEvery - 1;
+}
+
+function fmtSessionWork(s, ex) {
+  return (ex === 'sw' && s.sw2 ? '2H ' : '') + fmtWork(ex, s[ex]);
+}
+function fmtPlanWork(ex) {
+  return (ex === 'sw' && sel.sw.twoHand ? '2H ' : '') + fmtWork(ex, planToWork(ex, sel[ex]));
+}
+
 // ── Session form state ───────────────────────────────────────────
-let sel = { sw: null, tgu: null }; // {base, heavy} per exercise
+let sel = { sw: null, tgu: null }; // {base, heavy, twoHand (sw only)} per exercise
 let incl = { sw: true, tgu: true };
 let testMode = false;
 
 function reseedPlans() {
   for (const x of EX_IDS) sel[x] = planFromHistory(x);
+  sel.sw.twoHand = twoHandDue();
+}
+
+function setSwingStyle(twoHand) {
+  sel.sw.twoHand = twoHand;
+  renderForm();
+  renderToday();
 }
 reseedPlans();
 
@@ -1043,6 +1122,7 @@ function logSession() {
     id: t + Math.random(), t,
     sw: incl.sw ? planToWork('sw', sel.sw) : [],
     tgu: incl.tgu ? planToWork('tgu', sel.tgu) : [],
+    sw2: incl.sw && !!sel.sw.twoHand,
     test: testMode,
     swT: testMode && incl.sw ? parseTime(document.getElementById('test-sw-time').value) : null,
     tguT: testMode && incl.tgu ? parseTime(document.getElementById('test-tgu-time').value) : null,
@@ -1077,7 +1157,7 @@ function beeValue(s) {
 
 function beeComment(s) {
   const bits = [];
-  for (const x of EX_IDS) if (s[x].length) bits.push(EX[x].name + ' ' + fmtWork(x, s[x]));
+  for (const x of EX_IDS) if (s[x].length) bits.push(EX[x].name + ' ' + fmtSessionWork(s, x));
   if (s.test) {
     const times = [];
     if (s.swT != null) times.push(fmtSecs(s.swT));
@@ -1185,7 +1265,7 @@ function renderToday() {
       for (const x of EX_IDS) {
         if (!s[x].length) continue;
         planHtml += '<div class="plan-row"><span class="' + EX[x].cls + '">' + EX[x].name + '</span>' +
-          '<span class="plan-what">' + esc(fmtWork(x, s[x])) + '</span></div>';
+          '<span class="plan-what">' + esc(fmtSessionWork(s, x)) + '</span></div>';
       }
     }
   } else {
@@ -1197,7 +1277,20 @@ function renderToday() {
     status.classList.add(gap != null && gap > 3 ? 'rest' : 'ok');
     for (const x of EX_IDS) {
       planHtml += '<div class="plan-row"><span class="' + EX[x].cls + '">' + EX[x].name + '</span>' +
-        '<span class="plan-what">' + esc(fmtWork(x, planToWork(x, sel[x]))) + '</span></div>';
+        '<span class="plan-what">' + esc(fmtPlanWork(x)) + '</span></div>';
+    }
+    if (cfg.twoHandEvery > 0) {
+      const n = oneHandDaysSinceTwoHand();
+      const dayWord = k => k + (k === 1 ? ' day' : ' days');
+      if (sel.sw.twoHand) {
+        planHtml += '<div class="plan-hint"><span class="two">two-hand day</span> — ' +
+          (n ? dayWord(n) + ' of one-hand swings since the last' : 'first one') +
+          ' · same bell, active rest for the grip and back</div>';
+      } else {
+        const left = cfg.twoHandEvery - 1 - n;
+        planHtml += '<div class="plan-hint">two-hand day ' +
+          (left > 0 ? 'in ' + dayWord(left) : 'due — switched off for today') + '</div>';
+      }
     }
   }
   document.getElementById('plan-rows').innerHTML = planHtml;
@@ -1210,7 +1303,8 @@ function renderToday() {
 // (a pair added, a bell graduated, even a step back) resets its clock.
 function lastWorkSig(ex) {
   for (let i = sessions.length - 1; i >= 0; i--) {
-    if (sessions[i][ex].length) return workToStr(sessions[i][ex]);
+    const parts = progWork(sessions[i], ex);
+    if (parts.length) return workToStr(parts);
   }
   return null;
 }
@@ -1218,8 +1312,9 @@ function lastWorkSig(ex) {
 function lastChangeDay(ex) {
   let prevSig = null, changeDay = null;
   for (const s of sessions) {
-    if (!s[ex].length) continue;
-    const sig = workToStr(s[ex]);
+    const parts = progWork(s, ex);
+    if (!parts.length) continue;
+    const sig = workToStr(parts);
     if (prevSig == null || sig !== prevSig) changeDay = dayKey(s.t);
     prevSig = sig;
   }
@@ -1277,7 +1372,7 @@ function renderForm() {
     document.getElementById('card-' + x).classList.toggle('skipped', !incl[x]);
     document.getElementById('skip-' + x).textContent = incl[x] ? 'skip ✕' : 'skipped — include ✓';
 
-    if (!cfg.bells.includes(sel[x].base)) sel[x] = { base: nearestBellAtOrBelow(sel[x].base), heavy: 0 };
+    if (!cfg.bells.includes(sel[x].base)) sel[x] = { ...sel[x], base: nearestBellAtOrBelow(sel[x].base), heavy: 0 };
     const chipsEl = document.getElementById('chips-' + x);
     chipsEl.innerHTML = '';
     for (const b of cfg.bells) {
@@ -1285,8 +1380,24 @@ function renderForm() {
       btn.type = 'button';
       btn.className = 'chip' + (b === sel[x].base ? ' active' : '');
       btn.textContent = b + 'kg';
-      btn.onclick = () => { sel[x] = { base: b, heavy: 0 }; renderForm(); renderToday(); };
+      btn.onclick = () => { sel[x] = { ...sel[x], base: b, heavy: 0 }; renderForm(); renderToday(); };
       chipsEl.appendChild(btn);
+    }
+
+    if (x === 'sw') {
+      const styleEl = document.getElementById('style-sw');
+      styleEl.innerHTML = '';
+      const due = twoHandDue();
+      for (const [twoHand, label] of [[false, 'one-hand'], [true, 'two-hand']]) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chip' + (!!sel.sw.twoHand === twoHand ? ' active' : '') +
+          (twoHand && due && cfg.twoHandEvery > 0 ? ' due' : '');
+        btn.textContent = label;
+        btn.title = twoHand ? 'two-hand swings — same bell, active rest' + (due ? ' · due today' : '') : 'one-hand swings';
+        btn.onclick = () => setSwingStyle(twoHand);
+        styleEl.appendChild(btn);
+      }
     }
 
     const stepEl = document.getElementById('step-' + x);
@@ -1314,7 +1425,7 @@ function renderForm() {
 
   const btn = document.getElementById('log-session-btn');
   const parts = [];
-  for (const x of EX_IDS) if (incl[x]) parts.push(EX[x].name + ' ' + fmtWork(x, planToWork(x, sel[x])));
+  for (const x of EX_IDS) if (incl[x]) parts.push(EX[x].name + ' ' + fmtPlanWork(x));
   btn.disabled = !parts.length;
   btn.textContent = parts.length
     ? '＋ log ' + (testMode ? 'test' : 'session') + ' — ' + parts.join(' · ')
@@ -1374,10 +1485,11 @@ function renderHorizon() {
   const byDay = new Map(); // dayKey -> {test, full, any}
   for (const s of sessions) {
     const dk = dayKey(s.t);
-    const cur = byDay.get(dk) || { test: false, full: false, sum: [] };
+    const cur = byDay.get(dk) || { test: false, full: false, two: false, sum: [] };
     if (s.test) cur.test = true;
+    if (s.sw2) cur.two = true;
     if (EX_IDS.every(x => !s[x].length || workTotal(s[x]) >= EX[x].total)) cur.full = true;
-    for (const x of EX_IDS) if (s[x].length) cur.sum.push(EX[x].name + ' ' + fmtWork(x, s[x]));
+    for (const x of EX_IDS) if (s[x].length) cur.sum.push(EX[x].name + ' ' + fmtSessionWork(s, x));
     byDay.set(dk, cur);
   }
   let html = '';
@@ -1387,7 +1499,7 @@ function renderHorizon() {
     let title = fmtDayLabel(key);
     const d = byDay.get(key);
     if (d) {
-      cls += d.test ? ' test' : (d.full ? ' prac' : ' part');
+      cls += d.test ? ' test' : d.two ? ' two' : (d.full ? ' prac' : ' part');
       title += ': ' + d.sum.join(' · ') + (d.test ? ' ⏱ test' : '');
     } else {
       title += ': rest';
@@ -1431,7 +1543,7 @@ function renderLog() {
     const workBits = [];
     for (const x of EX_IDS) {
       if (!s[x].length) continue;
-      workBits.push('<span class="w-' + x + '">' + (x === 'sw' ? 'sw' : 'tgu') + '</span> ' + esc(fmtWork(x, s[x])));
+      workBits.push('<span class="w-' + x + '">' + (x === 'sw' ? 'sw' : 'tgu') + '</span> ' + esc(fmtSessionWork(s, x)));
     }
     let badge = '';
     if (s.test) {
@@ -1551,6 +1663,7 @@ function openEdit(id) {
   document.getElementById('edit-time').value = toLocalInput(s.t);
   document.getElementById('edit-sw').value = workToStr(s.sw);
   document.getElementById('edit-tgu').value = workToStr(s.tgu);
+  document.getElementById('edit-sw2').checked = s.sw2;
   document.getElementById('edit-test').checked = s.test;
   document.getElementById('edit-sw-time').value = s.swT != null ? fmtSecs(s.swT) : '';
   document.getElementById('edit-tgu-time').value = s.tguT != null ? fmtSecs(s.tguT) : '';
@@ -1571,6 +1684,7 @@ function saveEdit() {
   const sw = parseWorkStr(document.getElementById('edit-sw').value);
   const tgu = parseWorkStr(document.getElementById('edit-tgu').value);
   if (sw.length || tgu.length) { s.sw = sw; s.tgu = tgu; }
+  s.sw2 = document.getElementById('edit-sw2').checked && s.sw.length > 0;
   s.test = document.getElementById('edit-test').checked;
   s.swT = s.test ? parseTime(document.getElementById('edit-sw-time').value) : null;
   s.tguT = s.test ? parseTime(document.getElementById('edit-tgu-time').value) : null;
@@ -1599,6 +1713,7 @@ function openSettings() {
   document.getElementById('goal-sw').value = cfg.goal.sw;
   document.getElementById('goal-tgu').value = cfg.goal.tgu;
   markGoalButtons();
+  markTwoHandButtons();
   document.getElementById('bee-user').value = bee.user;
   document.getElementById('bee-slug').value = bee.slug;
   document.getElementById('bee-token').value = bee.token;
@@ -1627,6 +1742,20 @@ function markGoalButtons() {
     document.getElementById('goal-' + name).classList.toggle('sel',
       cfg.goal.sw === p.sw && cfg.goal.tgu === p.tgu);
   }
+}
+
+function markTwoHandButtons() {
+  for (const n of TWO_HAND_OPTIONS) {
+    document.getElementById('two-hand-' + n).classList.toggle('sel', cfg.twoHandEvery === n);
+  }
+}
+
+function setTwoHandEvery(n) {
+  cfg = sanitizeCfg({ ...cfg, twoHandEvery: n });
+  saveCfg();
+  markTwoHandButtons();
+  reseedPlans();
+  renderAll();
 }
 
 function bellsChanged() {
@@ -1660,7 +1789,7 @@ function goalChanged() {
 }
 
 // ── CSV export / import ──────────────────────────────────────────
-const CSV_HEADER = 'id,timestamp,iso,swings,getups,test,swings_time,getups_time,note';
+const CSV_HEADER = 'id,timestamp,iso,swings,getups,test,swings_time,getups_time,note,two_hand';
 const csvQuote = s => '"' + String(s).replace(/"/g, '""') + '"';
 
 function buildCSV() {
@@ -1671,6 +1800,7 @@ function buildCSV() {
       workToStr(s.sw), workToStr(s.tgu),
       s.test ? 1 : 0, s.swT ?? '', s.tguT ?? '',
       csvQuote(s.note),
+      s.sw2 ? 1 : 0,
     ].join(','));
   }
   return rows.join('\n') + '\n';
@@ -1729,6 +1859,7 @@ function handleImportFile(file) {
         swT: f[6] === '' ? null : Number(f[6]),
         tguT: f[7] === '' ? null : Number(f[7]),
         note: f[8],
+        sw2: f[9] === '1' || (f[9] || '').toLowerCase() === 'true', // absent in pre-two-hand exports
       });
     }
     const existing = new Set(sessions.map(e => e.id));

@@ -1,0 +1,2288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1d2021">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Peira</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 20px; }
+
+  :root {
+    --bg: #1d2021;
+    --surface: #282828;
+    --surface2: #32302f;
+    --border: #504945;
+    --text: #ebdbb2;
+    --text-dim: #d5c4a1;
+    --muted: #928374;
+    --accent: #b8bb26;
+    --accent-dim: #98971a;
+    --accent2: #fabd2f;
+    --accent2-dim: #d79921;
+    --danger: #fb4934;
+    --danger-dim: #cc241d;
+    --orange: #fe8019;
+    --info: #83a598;
+    --info-dim: #458588;
+    --mono: 'IBM Plex Mono', monospace;
+    --display: 'Cinzel', serif;
+    --data: 'Cormorant Garamond', serif;
+  }
+
+  body.light {
+    --bg: #f9f5d7;
+    --surface: #ebdbb2;
+    --surface2: #d5c4a1;
+    --border: #bdae93;
+    --text: #282828;
+    --text-dim: #3c3836;
+    --muted: #7c6f64;
+    --accent: #79740e;
+    --accent-dim: #98971a;
+    --accent2: #b57614;
+    --accent2-dim: #d79921;
+    --danger: #9d0006;
+    --danger-dim: #cc241d;
+    --orange: #d65d0e;
+    --info: #076678;
+    --info-dim: #458588;
+  }
+
+  body {
+    font-family: var(--mono);
+    font-size: 1rem;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 1.2rem;
+  }
+  header h1 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.4rem;
+    letter-spacing: 0.12em;
+    color: var(--text);
+  }
+  header h1 .lot { color: var(--accent2); }
+  .header-btns { display: flex; gap: 0.5rem; }
+  .icon-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    padding: 0.25rem 0.55rem;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .icon-btn:hover { color: var(--text); border-color: var(--muted); }
+
+  /* ── Experiment switcher ────────────────────────────────────── */
+  .exp-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+  .exp-bar select {
+    flex: 1; min-width: 0;
+    font-family: var(--mono); font-size: 0.8rem;
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    padding: 0.45rem 0.6rem;
+  }
+  .exp-bar select:focus { outline: none; border-color: var(--accent-dim); }
+
+  /* ── Cards ──────────────────────────────────────────────────── */
+  .card {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0.8rem 0.9rem 0.9rem;
+    margin-bottom: 1rem;
+  }
+  .card-kicker {
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  .card-title {
+    font-family: var(--data);
+    font-variant-numeric: lining-nums;
+    font-size: 1.45rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--text);
+    margin-bottom: 0.55rem;
+  }
+  .card-title.ok { color: var(--accent); }
+  .card-title.rest { color: var(--text-dim); }
+  .card-title.warn { color: var(--orange); }
+  .card-text { font-size: 0.7rem; line-height: 1.55; color: var(--text-dim); }
+  .card-text + .card-text { margin-top: 0.4rem; }
+  .card-text em { font-family: var(--data); font-size: 0.9rem; font-style: italic; color: var(--text); }
+  .arm0 { color: var(--accent2); }
+  .arm1 { color: var(--info); }
+  .kv { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.4rem; }
+  .kv-row { display: flex; justify-content: space-between; gap: 0.6rem; font-size: 0.68rem; }
+  .kv-row .k { color: var(--muted); flex: 0 0 auto; }
+  .kv-row .v { text-align: right; color: var(--text-dim); overflow-wrap: anywhere; }
+  ol.steps { margin: 0.4rem 0 0 1.1rem; font-size: 0.7rem; line-height: 1.55; color: var(--text-dim); }
+  ol.steps li { margin-bottom: 0.3rem; }
+  ol.steps li::marker { color: var(--accent2); }
+  .card-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.7rem; }
+
+  /* ── Today form ─────────────────────────────────────────────── */
+  .take-row { display: flex; gap: 0.5rem; margin-bottom: 0.7rem; }
+  .take-btn {
+    flex: 1;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    padding: 0.65rem 0.5rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .take-btn:hover { border-color: var(--muted); }
+  .take-btn.on { border-color: var(--accent-dim); color: var(--accent); }
+  .take-btn.skip { flex: 0 0 auto; font-size: 0.72rem; }
+  .take-btn.skip.on { border-color: var(--danger-dim); color: var(--danger); }
+  .measure-row { margin-bottom: 0.6rem; }
+  .measure-label { font-size: 0.66rem; color: var(--text-dim); margin-bottom: 0.3rem; display: flex; justify-content: space-between; }
+  .measure-label .unit { color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .chip {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    padding: 0.35rem 0.55rem;
+    min-width: 2.1rem;
+    text-align: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    white-space: nowrap;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  .chip:hover { border-color: var(--muted); color: var(--text); }
+  .chip.active { border-color: var(--accent-dim); color: var(--accent); }
+  .chip.arm0.active { border-color: var(--accent2-dim); color: var(--accent2); }
+  .chip.arm1.active { border-color: var(--info-dim); color: var(--info); }
+  .num-input, .note-input {
+    width: 100%;
+    font-family: var(--mono);
+    font-size: 1rem; /* ≥16px prevents iOS zoom-on-focus */
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.5rem 0.7rem;
+  }
+  .num-input { max-width: 10rem; }
+  .num-input:focus, .note-input:focus { outline: none; border-color: var(--accent-dim); }
+  .note-input::placeholder { color: var(--muted); }
+  .form-actions { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.7rem; }
+  .form-actions .saved { font-size: 0.66rem; color: var(--accent); }
+  .nudge {
+    border: 1px solid var(--accent2-dim);
+    background: color-mix(in srgb, var(--accent2) 8%, transparent);
+    font-size: 0.66rem; color: var(--text-dim);
+    padding: 0.5rem 0.8rem; margin-bottom: 1rem; cursor: pointer;
+  }
+  .nudge:hover { border-color: var(--accent2); }
+
+  /* ── Horizon strip ──────────────────────────────────────────── */
+  .horizon { display: flex; flex-wrap: wrap; gap: 0.45rem 0.6rem; margin-bottom: 0.3rem; }
+  .period { display: flex; gap: 3px; }
+  .day-cell {
+    position: relative;
+    width: 1rem; height: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  .day-cell.a0 { background: var(--accent2); border-color: var(--accent2-dim); }
+  .day-cell.a1 { background: var(--info); border-color: var(--info-dim); }
+  .day-cell.future { background: var(--bg); border-style: dashed; cursor: default; }
+  .day-cell.wash::before {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(135deg, transparent 0 2px, var(--bg) 2px 4px);
+    opacity: 0.7;
+  }
+  .day-cell.logged::after {
+    content: ''; position: absolute; left: 50%; top: 50%;
+    width: 4px; height: 4px; border-radius: 50%;
+    background: var(--bg); transform: translate(-50%, -50%);
+  }
+  .day-cell.skipped { opacity: 0.35; }
+  .day-cell.today { outline: 2px solid var(--text-dim); outline-offset: 1px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; font-size: 0.58rem; color: var(--muted); letter-spacing: 0.05em; margin-bottom: 1.5rem; }
+  .legend .sw { display: inline-block; width: 0.6rem; height: 0.6rem; vertical-align: -1px; margin-right: 0.25rem; border-radius: 2px; border: 1px solid var(--border); }
+  .legend .sw.a0 { background: var(--accent2); }
+  .legend .sw.a1 { background: var(--info); }
+  .legend .sw.wash { background: repeating-linear-gradient(135deg, var(--muted) 0 2px, var(--bg) 2px 4px); }
+
+  /* ── Stat strip ─────────────────────────────────────────────── */
+  .stats-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+  .stat-cell { background: var(--surface); padding: 0.6rem 0.4rem; text-align: center; }
+  .stat-cell .stat-val {
+    font-family: var(--data);
+    font-variant-numeric: lining-nums;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--text);
+  }
+  .stat-cell .stat-val.accent { color: var(--accent); }
+  .stat-cell .stat-val.danger { color: var(--danger); }
+  .stat-cell .stat-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.2rem;
+  }
+
+  /* ── Sections ───────────────────────────────────────────────── */
+  .section-title {
+    font-family: var(--display);
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    margin: 1.5rem 0 0.6rem;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+
+  /* ── Results ────────────────────────────────────────────────── */
+  .result-card { border: 1px solid var(--border); background: var(--surface); padding: 0.8rem 0.9rem 0.9rem; margin-bottom: 1rem; }
+  .result-name { font-family: var(--data); font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .hero-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); margin-bottom: 0.7rem; }
+  .hero { background: var(--surface2); padding: 0.55rem 0.4rem; text-align: center; }
+  .hero .h-val { font-family: var(--data); font-variant-numeric: lining-nums; font-size: 1.45rem; font-weight: 700; line-height: 1.1; }
+  .hero .h-val.accent { color: var(--accent); }
+  .hero .h-val.warn { color: var(--orange); }
+  .hero .h-lbl { font-size: 0.56rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-top: 0.2rem; }
+  .hero .h-sub { font-size: 0.6rem; color: var(--text-dim); margin-top: 0.15rem; }
+  .verdict { font-family: var(--data); font-size: 1.05rem; font-style: italic; color: var(--text); margin-bottom: 0.5rem; line-height: 1.25; }
+  .result-line { font-size: 0.66rem; color: var(--text-dim); line-height: 1.55; margin-bottom: 0.35rem; }
+  .result-line b { color: var(--text); font-weight: 400; }
+  .chart-title { font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0.7rem 0 0.25rem; }
+  svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
+  svg.chart text { font-family: var(--mono); font-size: 9px; fill: var(--muted); }
+  svg.chart .axis { stroke: var(--border); stroke-width: 1; }
+  svg.chart .grid { stroke: var(--border); stroke-width: 1; stroke-dasharray: 2 3; }
+  svg.chart .line { fill: none; stroke: var(--text-dim); stroke-width: 2; stroke-linejoin: round; }
+  svg.chart .mean0 { stroke: var(--accent2); stroke-width: 1.5; stroke-dasharray: 4 3; }
+  svg.chart .mean1 { stroke: var(--info); stroke-width: 1.5; stroke-dasharray: 4 3; }
+  svg.chart .pt0 { fill: var(--accent2); stroke: var(--surface); stroke-width: 1.5; }
+  svg.chart .pt1 { fill: var(--surface); stroke: var(--info); stroke-width: 2; }
+  svg.chart .pt0.faint, svg.chart .pt1.faint { opacity: 0.45; }
+  svg.chart .lbl0 { fill: var(--accent2); }
+  svg.chart .lbl1 { fill: var(--info); }
+  svg.chart .zero { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+  svg.chart .peak { fill: var(--accent); stroke: var(--surface); stroke-width: 1.5; }
+  svg.chart .support { fill: var(--accent); opacity: 0.12; }
+  svg.chart .lbl-acc { fill: var(--accent); }
+  svg.chart .lbl-text { fill: var(--text-dim); }
+  .chart-legend { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; font-size: 0.58rem; color: var(--muted); margin-top: 0.25rem; }
+  .chart-legend .m0::before { content: '●'; color: var(--accent2); margin-right: 0.25rem; }
+  .chart-legend .m1::before { content: '○'; color: var(--info); margin-right: 0.25rem; font-weight: 700; }
+
+  /* ── Log list ───────────────────────────────────────────────── */
+  .log-list { border: 1px solid var(--border); }
+  .log-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 0.55rem;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.72rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+  }
+  .log-row:last-child { border-bottom: none; }
+  .log-row:hover { background: var(--surface2); }
+  .log-row.dim .l-vals { color: var(--muted); font-style: italic; }
+  .log-row .l-day { color: var(--muted); flex: 0 0 auto; min-width: 5.6em; font-size: 0.62rem; white-space: nowrap; }
+  .log-row .l-arm { flex: 0 0 auto; font-weight: 700; font-size: 0.62rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  .log-row .l-vals { flex: 1 1 14em; min-width: 0; overflow-wrap: anywhere; }
+  .log-row .l-tags { flex: 0 0 auto; margin-left: auto; display: flex; gap: 0.35rem; }
+  .log-row .l-note { color: var(--muted); font-style: italic; }
+  .log-row .l-tag { flex: 0 0 auto; font-size: 0.56rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--border); border-radius: 2px; padding: 0.1rem 0.35rem; white-space: nowrap; }
+  .log-row .l-tag.skip { color: var(--danger); border-color: var(--danger-dim); }
+  .log-row .l-tag.wash { color: var(--muted); }
+  .log-empty { padding: 0.8rem; font-size: 0.72rem; color: var(--muted); text-align: center; background: var(--surface); }
+  .show-more {
+    width: 100%; font-family: var(--mono); font-size: 0.68rem;
+    background: var(--surface); border: none; border-top: 1px solid var(--border);
+    color: var(--muted); padding: 0.5rem; cursor: pointer;
+  }
+  .show-more:hover { color: var(--text); }
+
+  /* ── Buttons ────────────────────────────────────────────────── */
+  .btn {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    padding: 0.7rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { border-color: var(--accent-dim); color: var(--accent); }
+  .btn.danger { border-color: var(--danger-dim); color: var(--danger); }
+  .btn.warn { border-color: var(--orange); color: var(--orange); }
+  .btn-tiny { font-size: 0.7rem; padding: 0.35rem 0.6rem; }
+  .btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* ── Overlays ───────────────────────────────────────────────── */
+  .overlay {
+    position: fixed; inset: 0;
+    background: color-mix(in srgb, var(--bg) 70%, transparent);
+    backdrop-filter: blur(4px);
+    display: none;
+    z-index: 20;
+    overflow-y: auto;
+  }
+  .overlay.visible { display: block; }
+  .panel {
+    max-width: 28rem;
+    margin: 3rem auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.2rem 1.4rem 1.6rem;
+  }
+  .panel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem; }
+  .panel-head h2 { font-family: var(--display); font-size: 0.95rem; letter-spacing: 0.12em; }
+  .settings-section-title {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted); margin: 1.2rem 0 0.5rem; padding-top: 0.9rem;
+    border-top: 1px solid var(--border);
+  }
+  .settings-section-title:first-of-type { margin-top: 0; border-top: none; padding-top: 0; }
+  .settings-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.55rem; flex-wrap: wrap; }
+  .settings-row label { font-size: 0.72rem; color: var(--text-dim); flex: 1 1 100%; }
+  .settings-row input[type="text"], .settings-row input[type="number"],
+  .settings-row input[type="date"], .settings-row input[type="datetime-local"], .settings-row select {
+    font-family: var(--mono); font-size: 0.8rem;
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    padding: 0.4rem 0.5rem; flex: 1 1 100%; min-width: 0;
+  }
+  .settings-row input:focus, .settings-row select:focus { outline: none; border-color: var(--accent-dim); }
+  .settings-row input:disabled, .settings-row select:disabled { opacity: 0.5; }
+  .settings-row.half > input, .settings-row.half > select { flex: 1 1 40%; }
+  .settings-row.half label { flex: 1 1 100%; }
+  .settings-note { font-size: 0.62rem; color: var(--muted); line-height: 1.5; margin-bottom: 0.5rem; }
+  .btn-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .btn-group .btn.sel { border-color: var(--accent-dim); color: var(--accent); }
+  .edit-actions { display: flex; gap: 0.5rem; margin-top: 1.1rem; }
+  .edit-actions .primary { flex: 1; }
+  .measure-def { border: 1px solid var(--border); padding: 0.5rem 0.6rem; margin-bottom: 0.5rem; background: var(--bg); }
+  .measure-def .settings-row { margin-bottom: 0.4rem; }
+  .measure-def .settings-row input, .measure-def .settings-row select { background: var(--surface); }
+  .measure-def .m-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.62rem; color: var(--muted); margin-bottom: 0.3rem; }
+
+  /* ── Backup reminder ────────────────────────────────────────── */
+  #backup-reminder {
+    display: none; margin-bottom: 1.25rem; padding: 0.75rem 1rem;
+    border: 1px solid var(--accent2-dim);
+    background: color-mix(in srgb, var(--accent2) 8%, transparent);
+  }
+  #backup-reminder .br-title { font-family: var(--mono); font-size: 0.62rem; color: var(--accent2); letter-spacing: 0.1em; margin-bottom: 0.4rem; }
+  #backup-reminder .br-text { font-size: 0.62rem; color: var(--text-dim); line-height: 1.5; margin-bottom: 0.75rem; }
+
+  footer { margin-top: auto; padding-top: 2rem; font-size: 0.6rem; color: var(--muted); text-align: center; letter-spacing: 0.05em; }
+
+  @media (max-width: 480px) {
+    html { font-size: 17px; }
+    .card-title { font-size: 1.25rem; }
+    .hero .h-val { font-size: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>PE<span class="lot">I</span>RA</h1>
+    <div class="header-btns">
+      <button class="icon-btn" onclick="toggleThemeQuick()" title="Theme">◐</button>
+      <button class="icon-btn" onclick="openSettings()" title="Settings [S]">⚙</button>
+    </div>
+  </header>
+
+  <div class="exp-bar" id="exp-bar">
+    <select id="exp-select" onchange="selectExperiment(this.value)"></select>
+    <button class="btn btn-tiny" onclick="openDesign(null)" title="New experiment [N]">＋ new</button>
+  </div>
+
+  <div id="backup-reminder">
+    <div class="br-title">BACKUP REMINDER</div>
+    <div class="br-text" id="backup-reminder-text"></div>
+    <div class="btn-group">
+      <button class="btn btn-tiny" onclick="runBackupNow()">↓ Backup Now</button>
+      <button class="btn btn-tiny" onclick="snoozeReminder()">Remind Later</button>
+      <button class="btn btn-tiny" onclick="dismissReminder()">Dismiss</button>
+    </div>
+  </div>
+
+  <div id="main"></div>
+
+  <footer>peira · the lot decides, the slip reveals · data lives in your browser</footer>
+</div>
+
+<div class="overlay" id="settings-overlay" onclick="if(event.target===this) closeSettings()">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>SETTINGS</h2>
+      <button class="icon-btn" onclick="closeSettings()">✕</button>
+    </div>
+
+    <div class="settings-section-title">Analysis</div>
+    <div class="settings-note">
+      Bayes factors use the JZS default: a Cauchy prior on the standardised
+      effect size. The scale sets how large an effect you expect a priori;
+      medium (0.707) is the conventional default.
+    </div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" id="prior-0.5" onclick="setPrior(0.5)">Narrow 0.5</button>
+      <button class="btn btn-tiny" id="prior-0.707" onclick="setPrior(0.707)">Medium 0.707</button>
+      <button class="btn btn-tiny" id="prior-1" onclick="setPrior(1)">Wide 1.0</button>
+    </div>
+    <div class="settings-note" style="margin-top:0.6rem">
+      Blinded interim evidence shows how strongly the two arms differ while an
+      experiment runs — never which way. Hide it if you'd rather see nothing
+      until unblinding.
+    </div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" id="interim-on" onclick="setInterim(true)">Show interim</button>
+      <button class="btn btn-tiny" id="interim-off" onclick="setInterim(false)">Hide interim</button>
+    </div>
+
+    <div class="settings-section-title">Data</div>
+    <div class="settings-note">Everything is stored in this browser only. JSON holds every experiment (schedules stay encoded); CSV exports one experiment's day table for analysis elsewhere.</div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" onclick="exportJSON()">↓ Export JSON</button>
+      <button class="btn btn-tiny" onclick="importJSON()">↑ Import JSON [I]</button>
+      <button class="btn btn-tiny" onclick="exportCSV()">↓ Export CSV [E]</button>
+      <button class="btn btn-tiny danger" onclick="clearAll()">✕ Clear All</button>
+    </div>
+    <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="handleImportFile(this.files[0])">
+
+    <div class="settings-section-title">Backup</div>
+    <div class="settings-note" id="backup-note"></div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" id="backup-off" onclick="setBackupFreq('off')">Off</button>
+      <button class="btn btn-tiny" id="backup-daily" onclick="setBackupFreq('daily')">Daily</button>
+      <button class="btn btn-tiny" id="backup-weekly" onclick="setBackupFreq('weekly')">Weekly</button>
+      <button class="btn btn-tiny" onclick="runBackupNow()">↓ Backup Now</button>
+    </div>
+
+    <div class="settings-section-title">Theme</div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" id="theme-auto" onclick="setTheme('auto')">Auto</button>
+      <button class="btn btn-tiny" id="theme-dark" onclick="setTheme('dark')">Dark</button>
+      <button class="btn btn-tiny" id="theme-light" onclick="setTheme('light')">Light</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="design-overlay" onclick="if(event.target===this) closeDesign()">
+  <div class="panel">
+    <div class="panel-head">
+      <h2 id="design-title">NEW EXPERIMENT</h2>
+      <button class="icon-btn" onclick="closeDesign()">✕</button>
+    </div>
+
+    <div class="settings-section-title">Question</div>
+    <div class="settings-row">
+      <label for="d-name">Name</label>
+      <input type="text" id="d-name" autocomplete="off" placeholder="e.g. L-theanine and focus">
+    </div>
+    <div class="settings-row">
+      <label for="d-hyp">Hypothesis (optional)</label>
+      <input type="text" id="d-hyp" autocomplete="off" placeholder="e.g. 200 mg with coffee improves afternoon focus">
+    </div>
+    <div class="settings-row half">
+      <label>Intervention vs control</label>
+      <input type="text" id="d-int" autocomplete="off" placeholder="L-theanine 200 mg">
+      <input type="text" id="d-ctl" autocomplete="off" placeholder="placebo">
+    </div>
+    <div class="settings-row">
+      <label for="d-label">What holds each arm? (the blinded labels become “1” and “2”)</label>
+      <input type="text" id="d-label" autocomplete="off" placeholder="jar">
+    </div>
+
+    <div class="settings-section-title">Outcomes</div>
+    <div id="d-measures"></div>
+    <button class="btn btn-tiny" onclick="addMeasureDef()">＋ add outcome</button>
+
+    <div class="settings-section-title">Schedule</div>
+    <div class="settings-note" id="d-sched-note">
+      Each period is drawn by lot. A 1-day period is the classic daily coin
+      flip; longer periods suit slow-acting interventions. Set periods to 0 to
+      run open-ended and stop when the evidence is strong enough.
+    </div>
+    <div class="settings-row half">
+      <label>Period length (days) · number of periods (0 = open-ended)</label>
+      <input type="number" id="d-pdays" min="1" max="30" step="1">
+      <input type="number" id="d-periods" min="0" max="365" step="1">
+    </div>
+    <div class="settings-row half">
+      <label>Washout days at the start of each period (excluded from analysis) · randomisation</label>
+      <input type="number" id="d-wash" min="0" max="29" step="1">
+      <select id="d-design">
+        <option value="pairs">balanced pairs (AB or BA)</option>
+        <option value="random">simple coin flip</option>
+      </select>
+    </div>
+    <div class="settings-row">
+      <label for="d-start">Start date</label>
+      <input type="date" id="d-start">
+    </div>
+
+    <div class="edit-actions">
+      <button class="btn primary" onclick="saveDesign()">✓ Save</button>
+      <button class="btn danger" id="d-delete" onclick="deleteDesign()">✕ Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="day-overlay" onclick="if(event.target===this) closeDay()">
+  <div class="panel">
+    <div class="panel-head">
+      <h2 id="day-title">DAY</h2>
+      <button class="icon-btn" onclick="closeDay()">✕</button>
+    </div>
+    <div id="day-form"></div>
+  </div>
+</div>
+
+<div class="overlay" id="unblind-overlay" onclick="if(event.target===this) closeUnblind()">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>UNBLIND</h2>
+      <button class="icon-btn" onclick="closeUnblind()">✕</button>
+    </div>
+    <div class="settings-note" id="unblind-note"></div>
+    <div class="settings-row">
+      <label id="unblind-q">Which condition is in 1?</label>
+      <select id="unblind-sel">
+        <option value="0"></option>
+        <option value="1"></option>
+      </select>
+    </div>
+    <div class="settings-note" id="unblind-echo"></div>
+    <div class="edit-actions">
+      <button class="btn warn" onclick="confirmUnblind()">⚑ Reveal</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const DB_KEY = 'peira_experiments';
+const CFG_KEY = 'peira_cfg';
+const SEL_KEY = 'peira_selected';
+const THEME_KEY = 'peira_theme';
+const BACKUP_KEY = 'peira_backup_cfg';
+
+const MEASURE_TYPES = ['scale', 'number', 'bool'];
+const DESIGNS = ['pairs', 'random'];
+const STATUSES = ['draft', 'running', 'unblinded'];
+const PRIOR_SCALES = [0.5, 0.707, 1];
+
+// ── Storage (meridian-style) ─────────────────────────────────────
+// Mobile WebKit can detach localStorage while the app is suspended in the
+// background — every read/write then throws until the process is killed.
+// All storage goes through these helpers so a dead backend degrades to
+// in-memory state (retried on resume) instead of killing whatever handler
+// touched storage first.
+const pendingWrites = new Map();
+const failedReads = new Set();
+
+function storageGet(key) {
+  try { const v = localStorage.getItem(key); failedReads.delete(key); return v; }
+  catch (e) {
+    failedReads.add(key);
+    return pendingWrites.has(key) ? pendingWrites.get(key) : null;
+  }
+}
+
+function storageSet(key, val) {
+  pendingWrites.set(key, val);
+  try { localStorage.setItem(key, val); pendingWrites.delete(key); } catch (e) {}
+}
+
+function flushPendingWrites() {
+  for (const [key, val] of [...pendingWrites]) {
+    try {
+      if (val == null) localStorage.removeItem(key);
+      else localStorage.setItem(key, val);
+      pendingWrites.delete(key);
+    } catch (e) { break; }
+  }
+}
+
+function loadJSON(key, fallback) {
+  const raw = storageGet(key);
+  if (raw == null) return fallback;
+  try { return JSON.parse(raw); }
+  catch (e) {
+    // keep the unreadable raw value around for manual recovery instead of silently losing it
+    storageSet(key + '_corrupt', raw);
+    return fallback;
+  }
+}
+
+function finiteOrNull(v) { return typeof v === 'number' && isFinite(v) ? v : null; }
+function intOr(v, fallback, min, max) {
+  const n = finiteOrNull(v);
+  if (n == null) return fallback;
+  return Math.min(max, Math.max(min, Math.round(n)));
+}
+function str(v, fallback = '') { return typeof v === 'string' ? v.trim() : fallback; }
+const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+// ── Time helpers ─────────────────────────────────────────────────
+function dayKey(t) {
+  const d = new Date(t);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+// Day arithmetic is anchored to local noon so DST's 23h/25h days round away
+// instead of shifting a whole day.
+function keyToNoon(key) {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d, 12).getTime();
+}
+function dayDiff(keyA, keyB) { return Math.round((keyToNoon(keyB) - keyToNoon(keyA)) / 86400000); }
+function addDays(key, n) { return dayKey(keyToNoon(key) + n * 86400000); }
+function fmtClock(t) {
+  const d = new Date(t);
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+function fmtDayLabel(key, withYear = false) {
+  const today = dayKey(Date.now());
+  if (key === today) return 'Today';
+  if (key === addDays(today, -1)) return 'Yesterday';
+  if (key === addDays(today, 1)) return 'Tomorrow';
+  const [y, m, d] = key.split('-').map(Number);
+  const opts = { weekday: 'short', month: 'short', day: 'numeric' };
+  if (withYear || y !== new Date().getFullYear()) opts.year = 'numeric';
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, opts);
+}
+// Relative labels read naturally mid-sentence in lowercase; dates keep their case.
+function fmtDayLabelLc(key, withYear = false) {
+  const l = fmtDayLabel(key, withYear);
+  return /^(Today|Tomorrow|Yesterday)$/.test(l) ? l.toLowerCase() : l;
+}
+function fmtShortDay(key) {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+// ── Schedule encoding ────────────────────────────────────────────
+// The allocation is stored base64-encoded: not encryption, just enough that
+// a glance at localStorage or a backup file doesn't unblind you by accident.
+function encodeSched(arr) { return btoa(JSON.stringify(arr)); }
+function decodeSched(s) {
+  if (typeof s !== 'string' || !s) return [];
+  try {
+    const arr = JSON.parse(atob(s));
+    return Array.isArray(arr) ? arr.map(v => (v === 1 ? 1 : 0)) : [];
+  } catch (e) { return []; }
+}
+function randomBit() {
+  const b = new Uint8Array(1);
+  crypto.getRandomValues(b);
+  return b[0] & 1;
+}
+
+// ── Sanitizers ───────────────────────────────────────────────────
+// A malformed experiment must never take down the whole app — repair what's
+// recoverable, drop only garbage. Also the validation gate for JSON import.
+function sanitizeMeasure(raw, idx) {
+  if (!raw || typeof raw !== 'object') raw = {};
+  const type = MEASURE_TYPES.includes(raw.type) ? raw.type : 'scale';
+  let min = intOr(raw.min, 1, -1000000, 1000000);
+  let max = intOr(raw.max, 10, -1000000, 1000000);
+  if (max <= min) { min = 1; max = 10; }
+  return {
+    id: str(raw.id) || ('m' + idx + '_' + Date.now()),
+    name: str(raw.name) || ('outcome ' + (idx + 1)),
+    type,
+    min: type === 'scale' ? min : 0,
+    max: type === 'scale' ? max : 0,
+    unit: type === 'number' ? str(raw.unit).slice(0, 20) : '',
+  };
+}
+
+function sanitizeEntry(raw, measures) {
+  if (!raw || typeof raw !== 'object') return null;
+  const values = {};
+  if (raw.values && typeof raw.values === 'object') {
+    for (const m of measures) {
+      const v = finiteOrNull(raw.values[m.id]);
+      if (v != null) values[m.id] = m.type === 'bool' ? (v ? 1 : 0) : v;
+    }
+  }
+  const guess = raw.guess === 0 || raw.guess === 1 ? raw.guess : null;
+  const e = {
+    taken: finiteOrNull(raw.taken),
+    skipped: raw.skipped === true,
+    values,
+    guess,
+    note: str(raw.note).slice(0, 500),
+  };
+  if (e.taken == null && !e.skipped && !Object.keys(values).length && guess == null && !e.note) return null;
+  return e;
+}
+
+function sanitizeExperiment(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const id = finiteOrNull(raw.id);
+  if (id == null) return null;
+  const measuresRaw = Array.isArray(raw.measures) ? raw.measures : [];
+  let measures = measuresRaw.map(sanitizeMeasure).filter(Boolean).slice(0, 6);
+  const seen = new Set();
+  measures = measures.filter(m => !seen.has(m.id) && seen.add(m.id));
+  if (!measures.length) measures = [sanitizeMeasure({ name: 'outcome' }, 0)];
+  const periodDays = intOr(raw.periodDays, 1, 1, 30);
+  const status = STATUSES.includes(raw.status) ? raw.status : 'draft';
+  const startDay = DAY_RE.test(raw.startDay) && isFinite(keyToNoon(raw.startDay)) ? raw.startDay : null;
+  const entries = {};
+  if (raw.entries && typeof raw.entries === 'object') {
+    for (const k of Object.keys(raw.entries)) {
+      if (!DAY_RE.test(k)) continue;
+      const e = sanitizeEntry(raw.entries[k], measures);
+      if (e) entries[k] = e;
+    }
+  }
+  let mapping = null;
+  if (Array.isArray(raw.mapping) && raw.mapping.length === 2 &&
+      ((raw.mapping[0] === 0 && raw.mapping[1] === 1) || (raw.mapping[0] === 1 && raw.mapping[1] === 0))) {
+    mapping = [raw.mapping[0], raw.mapping[1]];
+  }
+  const exp = {
+    id,
+    name: str(raw.name).slice(0, 80) || 'untitled experiment',
+    hypothesis: str(raw.hypothesis).slice(0, 300),
+    intervention: str(raw.intervention).slice(0, 60) || 'intervention',
+    control: str(raw.control).slice(0, 60) || 'placebo',
+    labelWord: str(raw.labelWord).slice(0, 20) || 'jar',
+    measures,
+    periodDays,
+    periods: intOr(raw.periods, 0, 0, 365),
+    washout: intOr(raw.washout, 0, 0, periodDays - 1),
+    design: DESIGNS.includes(raw.design) ? raw.design : 'pairs',
+    startDay: startDay || (status === 'draft' ? null : dayKey(Date.now())),
+    sched: decodeSched(raw.sched),
+    status,
+    entries,
+    mapping: status === 'unblinded' ? (mapping || [0, 1]) : null,
+    unblindedAt: finiteOrNull(raw.unblindedAt),
+    endIdx: status === 'unblinded' ? intOr(raw.endIdx, -1, -1, 100000) : null,
+    created: finiteOrNull(raw.created) ?? id,
+  };
+  if (exp.status !== 'draft' && !exp.startDay) exp.startDay = dayKey(Date.now());
+  return exp;
+}
+
+function sanitizeExperiments(raw) {
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  const seen = new Set();
+  for (const r of raw) {
+    const e = sanitizeExperiment(r);
+    if (e && !seen.has(e.id)) { seen.add(e.id); out.push(e); }
+  }
+  out.sort((a, b) => a.created - b.created);
+  return out;
+}
+
+function sanitizeCfg(raw) {
+  const c = raw && typeof raw === 'object' ? raw : {};
+  return {
+    prior: PRIOR_SCALES.includes(c.prior) ? c.prior : 0.707,
+    interim: c.interim !== false,
+  };
+}
+
+let experiments = sanitizeExperiments(loadJSON(DB_KEY, []));
+let cfg = sanitizeCfg(loadJSON(CFG_KEY, null));
+let selectedId = finiteOrNull(loadJSON(SEL_KEY, null));
+
+function serializeExperiment(e) {
+  return { ...e, sched: encodeSched(e.sched) };
+}
+function saveExperiments() {
+  experiments.sort((a, b) => a.created - b.created);
+  storageSet(DB_KEY, JSON.stringify(experiments.map(serializeExperiment)));
+}
+function saveCfg() { storageSet(CFG_KEY, JSON.stringify(cfg)); }
+function saveSelected() { storageSet(SEL_KEY, JSON.stringify(selectedId)); }
+
+function currentExperiment() {
+  let e = experiments.find(x => x.id === selectedId);
+  if (!e && experiments.length) {
+    // prefer the running one, then the newest
+    e = experiments.find(x => x.status === 'running') || experiments[experiments.length - 1];
+    selectedId = e.id;
+    saveSelected();
+  }
+  return e || null;
+}
+
+// ── Schedule engine ──────────────────────────────────────────────
+function totalDays(exp) { return exp.periods ? exp.periods * exp.periodDays : null; }
+function todayIdx(exp) { return exp.startDay ? dayDiff(exp.startDay, dayKey(Date.now())) : -1; }
+function periodOf(exp, idx) { return Math.floor(idx / exp.periodDays); }
+function isWashout(exp, idx) { return (idx % exp.periodDays) < exp.washout; }
+function dayKeyOf(exp, idx) { return addDays(exp.startDay, idx); }
+
+// Draw lots for periods up to `upto`, persisting as we go. Balanced pairs
+// draw two at a time (AB or BA) so any even prefix is balanced; a fixed
+// design is drawn in full at start so nothing about it is decided later.
+function ensureSched(exp, upto) {
+  let changed = false;
+  while (exp.sched.length <= upto) {
+    const b = randomBit();
+    if (exp.design === 'pairs') exp.sched.push(b, 1 - b);
+    else exp.sched.push(b);
+    changed = true;
+  }
+  if (exp.periods && exp.sched.length > exp.periods) { exp.sched.length = exp.periods; changed = true; }
+  if (changed) saveExperiments();
+}
+
+function armOf(exp, idx) {
+  const p = periodOf(exp, idx);
+  if (exp.periods && p >= exp.periods) return null;
+  if (p >= exp.sched.length) {
+    if (exp.status !== 'running') return null;
+    ensureSched(exp, p);
+  }
+  return exp.sched[p] ?? null;
+}
+
+// Last scheduled day index that has happened (inclusive), or -1.
+function lastIdx(exp) {
+  if (exp.status === 'unblinded') return exp.endIdx;
+  const t = todayIdx(exp);
+  const N = totalDays(exp);
+  return N == null ? t : Math.min(t, N - 1);
+}
+
+// 'pending' (not started), 'active', or 'complete' (fixed length, all days done)
+function phase(exp) {
+  const t = todayIdx(exp);
+  if (t < 0) return 'pending';
+  const N = totalDays(exp);
+  if (N != null && t >= N) return 'complete';
+  return 'active';
+}
+
+function armLabel(exp, arm) { return exp.labelWord + ' ' + (arm + 1); }
+function condName(exp, c) { return c === 0 ? exp.intervention : exp.control; }
+function condOfArm(exp, arm) { return exp.mapping ? exp.mapping[arm] : null; }
+
+// ── Bayesian analysis ────────────────────────────────────────────
+// Two-group comparison of one outcome. Unit of analysis: the day when
+// periods are one day long, else the period mean (the period is what was
+// randomised, so it is the honest unit).
+//
+//   • Posterior for the mean difference Δ under flat priors on the means and
+//     Jeffreys' prior on σ: a t distribution centred on the observed
+//     difference — gives P(Δ > 0), its odds, and a 95% credible interval.
+//   • JZS Bayes factor (Rouder et al. 2009): Cauchy prior on the standardised
+//     effect, evidence for "there is an effect" vs "there is none".
+//   • Profile likelihood ratio curve LR(δ) = L(δ)/L(0) with σ maximised out,
+//     plus the 1/8 likelihood interval.
+
+function lgamma(x) {
+  // Lanczos approximation, g = 7
+  const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313,
+    -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lgamma(1 - x);
+  x -= 1;
+  let a = c[0];
+  const t = x + 7.5;
+  for (let i = 1; i < 9; i++) a += c[i] / (x + i);
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+
+// Regularized incomplete beta I_x(a, b) via continued fraction (NR betacf).
+function betacf(a, b, x) {
+  const MAXIT = 300, EPS = 3e-14, FPMIN = 1e-300;
+  const qab = a + b, qap = a + 1, qam = a - 1;
+  let c = 1, d = 1 - qab * x / qap;
+  if (Math.abs(d) < FPMIN) d = FPMIN;
+  d = 1 / d;
+  let h = d;
+  for (let m = 1; m <= MAXIT; m++) {
+    const m2 = 2 * m;
+    let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+    d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1 / d; h *= d * c;
+    aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+    d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1 / d;
+    const del = d * c;
+    h *= del;
+    if (Math.abs(del - 1) < EPS) break;
+  }
+  return h;
+}
+function ibeta(a, b, x) {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  const bt = Math.exp(lgamma(a + b) - lgamma(a) - lgamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+  if (x < (a + 1) / (a + b + 2)) return bt * betacf(a, b, x) / a;
+  return 1 - bt * betacf(b, a, 1 - x) / b;
+}
+function tcdf(t, nu) {
+  const x = nu / (nu + t * t);
+  const tail = 0.5 * ibeta(nu / 2, 0.5, x);
+  return t >= 0 ? 1 - tail : tail;
+}
+function tquantile(p, nu) {
+  let lo = 0, hi = 1000;
+  for (let i = 0; i < 200; i++) {
+    const mid = (lo + hi) / 2;
+    if (tcdf(mid, nu) < p) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+// JZS Bayes factor BF10 for a two-sample t statistic (Rouder et al. 2009).
+// Integrates over g = ln-scale with Simpson's rule; the prior on g is
+// InvGamma(1/2, r²/2), which makes the effect-size prior Cauchy(0, r).
+function jzsBF(t, n1, n2, r) {
+  const N = n1 * n2 / (n1 + n2);
+  const nu = n1 + n2 - 2;
+  const t2 = t * t;
+  const logNull = -(nu + 1) / 2 * Math.log(1 + t2 / nu);
+  const f = (u) => {
+    const g = Math.exp(u);
+    const logLik = -0.5 * Math.log(1 + N * g) - (nu + 1) / 2 * Math.log(1 + t2 / ((1 + N * g) * nu));
+    const logPrior = Math.log(r) - 0.5 * Math.log(2 * Math.PI) - 1.5 * u - r * r / (2 * g);
+    return Math.exp(logLik - logNull + logPrior + u); // + u: dg = g du
+  };
+  const a = -40, b = 40, n = 4000, h = (b - a) / n;
+  let s = f(a) + f(b);
+  for (let i = 1; i < n; i++) s += f(a + i * h) * (i % 2 ? 4 : 2);
+  return s * h / 3;
+}
+
+function mean(xs) { return xs.reduce((a, b) => a + b, 0) / xs.length; }
+function variance(xs) {
+  const m = mean(xs);
+  return xs.reduce((a, x) => a + (x - m) * (x - m), 0) / (xs.length - 1);
+}
+
+// Full comparison of group a (intervention or arm 1) vs group b.
+function compare(a, b, r) {
+  const nA = a.length, nB = b.length;
+  if (nA < 2 || nB < 2) return { ok: false, reason: 'need at least 2 observations per arm', nA, nB };
+  const mA = mean(a), mB = mean(b);
+  const df = nA + nB - 2;
+  const sp2 = ((nA - 1) * variance(a) + (nB - 1) * variance(b)) / df;
+  const diff = mA - mB;
+  if (!(sp2 > 0)) {
+    return { ok: false, reason: diff === 0 ? 'no variation in the data yet' : 'no within-arm variation yet', nA, nB, mA, mB, diff };
+  }
+  const se = Math.sqrt(sp2 * (1 / nA + 1 / nB));
+  const t = diff / se;
+  const pPos = tcdf(t, df);
+  const q = tquantile(0.975, df);
+  const bf10 = jzsBF(t, nA, nB, r);
+  // profile likelihood ratio over a grid of effect sizes
+  const all = a.concat(b);
+  const x = a.map(() => 1).concat(b.map(() => 0));
+  const n = all.length;
+  const rss = (d) => {
+    const adj = all.map((y, i) => y - d * x[i]);
+    const m = mean(adj);
+    return adj.reduce((s, y) => s + (y - m) * (y - m), 0);
+  };
+  const rss0 = rss(0);
+  const lr = (d) => Math.pow(rss0 / rss(d), n / 2);
+  const maxLR = lr(diff);
+  const halfW = 3.5 * se;
+  const lo = Math.min(diff - halfW, -0.25 * halfW), hi = Math.max(diff + halfW, 0.25 * halfW);
+  const curve = [];
+  const steps = 120;
+  for (let i = 0; i <= steps; i++) {
+    const d = lo + (hi - lo) * i / steps;
+    curve.push([d, lr(d)]);
+  }
+  // 1/8 likelihood interval: effects at least 1/8 as well supported as the best
+  let sLo = diff, sHi = diff;
+  const thr = maxLR / 8;
+  const stepD = se / 50;
+  while (lr(sLo - stepD) >= thr && diff - sLo < 20 * se) sLo -= stepD;
+  while (lr(sHi + stepD) >= thr && sHi - diff < 20 * se) sHi += stepD;
+  return {
+    ok: true, nA, nB, mA, mB, sdA: Math.sqrt(variance(a)), sdB: Math.sqrt(variance(b)),
+    diff, se, df, t, pPos, ciLo: diff - q * se, ciHi: diff + q * se,
+    bf10, maxLR, curve, supLo: sLo, supHi: sHi,
+    dEff: diff / Math.sqrt(sp2),
+  };
+}
+
+function bfLabel(bf) {
+  const v = bf >= 1 ? bf : 1 / bf;
+  const dir = bf >= 1 ? 'for an effect' : 'for no effect';
+  let s;
+  if (v >= 100) s = 'extreme evidence';
+  else if (v >= 30) s = 'very strong evidence';
+  else if (v >= 10) s = 'strong evidence';
+  else if (v >= 3) s = 'moderate evidence';
+  else s = 'anecdotal evidence';
+  return s + ' ' + dir;
+}
+function fmtBF(bf) {
+  if (!isFinite(bf)) return '∞';
+  if (bf >= 1000) return '> 1000';
+  if (bf >= 100) return bf.toFixed(0);
+  if (bf >= 10) return bf.toFixed(1);
+  return bf.toFixed(2);
+}
+function fmtOdds(p) {
+  const o = p / (1 - p);
+  if (o >= 999) return '> 999 : 1';
+  if (o <= 1 / 999) return '1 : > 999';
+  if (o >= 1) return (o >= 10 ? o.toFixed(0) : o.toFixed(1)) + ' : 1';
+  const inv = 1 / o;
+  return '1 : ' + (inv >= 10 ? inv.toFixed(0) : inv.toFixed(1));
+}
+function fmtNum(v, digits = 2) {
+  if (!isFinite(v)) return '—';
+  const a = Math.abs(v);
+  if (a >= 100) return v.toFixed(0);
+  if (a >= 10) return v.toFixed(1);
+  return v.toFixed(digits);
+}
+function fmtSigned(v, digits = 2) { return (v > 0 ? '+' : v < 0 ? '−' : '') + fmtNum(Math.abs(v), digits); }
+function fmtPct(p) { return (p * 100).toFixed(p * 100 >= 99.5 || p * 100 < 0.5 ? 1 : 0) + '%'; }
+function fmtVal(m, v) {
+  if (m.type === 'bool') return v ? 'yes' : 'no';
+  const s = Number.isInteger(v) ? String(v) : String(Number(v.toFixed(2)));
+  return s + (m.unit ? ' ' + m.unit : '');
+}
+
+// Gather the analysis groups for one measure. byCondition=true maps arms
+// through the unblinding mapping (group A = intervention); false compares
+// arm 1 vs arm 2 directly (the blinded interim view).
+function collectGroups(exp, measure, byCondition) {
+  const last = lastIdx(exp);
+  const perPeriod = new Map(); // period -> { arm, vals: [] }
+  let nDays = 0;
+  for (let i = 0; i <= last; i++) {
+    if (isWashout(exp, i)) continue;
+    const arm = exp.sched[periodOf(exp, i)];
+    if (arm == null) continue;
+    const e = exp.entries[dayKeyOf(exp, i)];
+    if (!e || e.skipped) continue;
+    const v = e.values[measure.id];
+    if (v == null) continue;
+    const p = periodOf(exp, i);
+    const cur = perPeriod.get(p) || { arm, vals: [] };
+    cur.vals.push(v);
+    perPeriod.set(p, cur);
+    nDays++;
+  }
+  const groups = [[], []];
+  for (const { arm, vals } of perPeriod.values()) {
+    const key = byCondition ? condOfArm(exp, arm) : arm;
+    if (key == null) continue;
+    if (exp.periodDays === 1) groups[key].push(vals[0]);
+    else groups[key].push(mean(vals));
+  }
+  return { a: groups[0], b: groups[1], unit: exp.periodDays === 1 ? 'day' : 'period', nDays };
+}
+
+// Was the blinding intact? Compare each day's guess to the revealed condition.
+function blindingCheck(exp) {
+  let k = 0, n = 0;
+  const last = lastIdx(exp);
+  for (let i = 0; i <= last; i++) {
+    const e = exp.entries[dayKeyOf(exp, i)];
+    if (!e || e.guess == null) continue;
+    const arm = exp.sched[periodOf(exp, i)];
+    if (arm == null) continue;
+    n++;
+    if (condOfArm(exp, arm) === e.guess) k++;
+  }
+  // Beta(1+k, 1+n−k) posterior on the hit rate; P(rate > ½)
+  const pAbove = n ? 1 - ibeta(1 + k, 1 + n - k, 0.5) : null;
+  return { k, n, pAbove };
+}
+
+// ── Rendering ────────────────────────────────────────────────────
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+function el(tag, cls, html) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (html != null) n.innerHTML = html;
+  return n;
+}
+function btn(cls, text, onclick) {
+  const b = el('button', cls, text);
+  b.type = 'button';
+  b.onclick = onclick;
+  return b;
+}
+
+function renderSwitcher() {
+  const sel = document.getElementById('exp-select');
+  sel.innerHTML = '';
+  if (!experiments.length) {
+    const o = el('option', null, 'no experiments yet');
+    o.value = '';
+    sel.appendChild(o);
+    sel.disabled = true;
+    return;
+  }
+  sel.disabled = false;
+  const glyph = { draft: '○', running: '◐', unblinded: '●' };
+  for (const e of experiments.slice().reverse()) {
+    const o = document.createElement('option');
+    o.value = e.id;
+    o.textContent = glyph[e.status] + ' ' + e.name;
+    sel.appendChild(o);
+  }
+  sel.value = String(selectedId);
+}
+
+function selectExperiment(id) {
+  selectedId = Number(id);
+  saveSelected();
+  logShowAll = false;
+  renderAll();
+}
+
+function renderAll() {
+  renderSwitcher();
+  const main = document.getElementById('main');
+  main.innerHTML = '';
+  const exp = currentExperiment();
+  if (!exp) { renderEmpty(main); return; }
+  if (exp.status === 'draft') renderDraft(main, exp);
+  else if (exp.status === 'running') renderRunning(main, exp);
+  else renderUnblinded(main, exp);
+  lastRenderDay = dayKey(Date.now());
+}
+
+function renderEmpty(main) {
+  const c = el('div', 'card');
+  c.innerHTML =
+    '<div class="card-kicker">Blinded N-of-1</div>' +
+    '<div class="card-title">Does it actually work — for you?</div>' +
+    '<div class="card-text">Peira runs a randomised, blinded experiment with a sample size of one. ' +
+    'You prepare two identical <em>jars</em> — one holds the intervention, one the control — and shuffle ' +
+    'them so you don\'t know which is which. Each day the app draws a lot and tells you which jar to use; ' +
+    'you record the outcome. When you stop, you open the jars\' slips and the app reports the evidence ' +
+    'as Bayes factors, odds, and likelihood ratios — no p-values.</div>';
+  const acts = el('div', 'card-actions');
+  acts.appendChild(btn('btn primary', '＋ design your first experiment', () => openDesign(null)));
+  c.appendChild(acts);
+  main.appendChild(c);
+}
+
+function designSummaryRows(exp) {
+  const N = totalDays(exp);
+  const rows = [
+    ['compares', esc(exp.intervention) + ' vs ' + esc(exp.control)],
+    ['outcomes', exp.measures.map(m => esc(m.name) + (m.type === 'scale' ? ' (' + m.min + '–' + m.max + ')' : m.type === 'bool' ? ' (yes/no)' : m.unit ? ' (' + esc(m.unit) + ')' : '')).join(' · ')],
+    ['schedule', (exp.periods ? exp.periods + ' periods' : 'open-ended') + ' × ' + exp.periodDays + ' day' + (exp.periodDays > 1 ? 's' : '') +
+      (N ? ' = ' + N + ' days' : '') + (exp.washout ? ' · ' + exp.washout + ' washout' : '')],
+    ['lots', exp.design === 'pairs' ? 'balanced pairs' : 'simple coin flip'],
+    ['starts', exp.startDay ? esc(fmtDayLabel(exp.startDay, true)) : '—'],
+  ];
+  return '<div class="kv">' + rows.map(([k, v]) => '<div class="kv-row"><span class="k">' + k + '</span><span class="v">' + v + '</span></div>').join('') + '</div>';
+}
+
+function renderDraft(main, exp) {
+  const c = el('div', 'card');
+  c.innerHTML =
+    '<div class="card-kicker">Draft · not started</div>' +
+    '<div class="card-title">' + esc(exp.name) + '</div>' +
+    (exp.hypothesis ? '<div class="card-text"><em>' + esc(exp.hypothesis) + '</em></div>' : '') +
+    designSummaryRows(exp);
+  const acts = el('div', 'card-actions');
+  acts.appendChild(btn('btn primary', '▶ start', () => startExperiment(exp)));
+  acts.appendChild(btn('btn', '✎ edit design', () => openDesign(exp.id)));
+  c.appendChild(acts);
+  main.appendChild(c);
+
+  const w = esc(exp.labelWord), ws = w + 's';
+  const N = totalDays(exp);
+  const prep = el('div', 'card');
+  prep.innerHTML =
+    '<div class="card-kicker">Before you start · blinding procedure</div>' +
+    '<ol class="steps">' +
+    '<li>Make <b>' + esc(exp.intervention) + '</b> and <b>' + esc(exp.control) + '</b> indistinguishable: same capsules or containers, same look, weight, taste and smell.</li>' +
+    '<li>Put one in each of two identical ' + ws + '. ' +
+      (N ? 'Over ' + N + ' days each ' + w + ' will be drawn about ' + Math.ceil(N / 2) + ' times — stock both generously.'
+         : 'This experiment is open-ended — stock both equally and top them up equally.') + '</li>' +
+    '<li>Hide a slip inside each ' + w + ' (taped under the lid, folded, face down) naming what it holds. You won\'t look again until the end.</li>' +
+    '<li>Shuffle the ' + ws + ' until you have lost track — eyes closed, spin them, walk away, come back.</li>' +
+    '<li>Stick the labels <b class="arm0">1</b> and <b class="arm1">2</b> on them. From here on the app speaks only in ' + w + ' numbers.</li>' +
+    '<li>Each ' + (exp.periodDays > 1 ? 'period' : 'day') + ' the app draws a lot and tells you which ' + w + ' to use. Press <b>start</b> once the ' + ws + ' are ready' +
+      (exp.startDay && todayIdx(exp) < 0 ? ' — the first lot is drawn ' + esc(fmtDayLabelLc(exp.startDay)) : '') + '.</li>' +
+    '</ol>';
+  main.appendChild(prep);
+}
+
+function startExperiment(exp) {
+  if (!exp.startDay) exp.startDay = dayKey(Date.now());
+  exp.status = 'running';
+  exp.sched = [];
+  if (exp.periods) ensureSched(exp, exp.periods - 1);
+  else ensureSched(exp, 0);
+  saveExperiments();
+  renderAll();
+}
+
+// ── Running view ─────────────────────────────────────────────────
+function renderRunning(main, exp) {
+  const ph = phase(exp);
+  const tIdx = todayIdx(exp);
+  const todayK = dayKey(Date.now());
+
+  const c = el('div', 'card');
+  const dateLine = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+  let kicker, title, titleCls = '';
+  const N = totalDays(exp);
+  if (ph === 'pending') {
+    kicker = dateLine;
+    const wait = -tIdx;
+    title = 'starts ' + (wait === 1 ? 'tomorrow' : 'in ' + wait + ' days') + ' — prepare your ' + esc(exp.labelWord) + 's';
+    titleCls = 'rest';
+  } else if (ph === 'complete') {
+    kicker = dateLine + ' · all ' + N + ' days done';
+    title = 'complete — unblind when ready';
+    titleCls = 'ok';
+  } else {
+    const p = periodOf(exp, tIdx);
+    kicker = dateLine + ' · day ' + (tIdx + 1) + (N ? ' of ' + N : '') + ' · period ' + (p + 1) + (exp.periods ? ' of ' + exp.periods : '');
+    const arm = armOf(exp, tIdx);
+    const wash = isWashout(exp, tIdx);
+    title = 'take from <span class="arm' + arm + '">' + esc(armLabel(exp, arm)) + '</span>' +
+      (wash ? ' <span style="font-size:0.7em;color:var(--muted)">· washout day, outcome excluded</span>' : '');
+  }
+  c.innerHTML = '<div class="card-kicker">' + esc(exp.name) + ' · ' + kicker + '</div>' +
+    '<div class="card-title ' + titleCls + '">' + title + '</div>';
+  if (ph === 'active') {
+    c.appendChild(buildEntryForm(exp, todayK, false));
+  } else if (ph === 'complete') {
+    const acts = el('div', 'card-actions');
+    acts.appendChild(btn('btn primary', '⚑ end & unblind', () => openUnblind(exp)));
+    c.appendChild(acts);
+  } else {
+    c.innerHTML += '<div class="card-text">' + esc(exp.intervention) + ' vs ' + esc(exp.control) +
+      (exp.hypothesis ? ' · <em>' + esc(exp.hypothesis) + '</em>' : '') + '</div>';
+    const acts = el('div', 'card-actions');
+    acts.appendChild(btn('btn btn-tiny', '✎ edit', () => openDesign(exp.id)));
+    acts.appendChild(btn('btn btn-tiny', '↩ back to draft', () => {
+      if (!confirm('Return this experiment to a draft? Its lots will be redrawn on the next start.')) return;
+      exp.status = 'draft'; exp.sched = []; saveExperiments(); renderAll();
+    }));
+    c.appendChild(acts);
+  }
+  main.appendChild(c);
+
+  // yesterday nudge
+  if (ph === 'active' && tIdx >= 1) {
+    const yk = dayKeyOf(exp, tIdx - 1);
+    const ye = exp.entries[yk];
+    const hasVal = ye && (Object.keys(ye.values).length || ye.skipped);
+    if (!hasVal && !isWashout(exp, tIdx - 1)) {
+      const n = el('div', 'nudge', 'yesterday (' + esc(armLabel(exp, armOf(exp, tIdx - 1))) + ') has no outcome logged — tap to add it');
+      n.onclick = () => openDay(exp, yk);
+      main.appendChild(n);
+    }
+  }
+
+  if (ph !== 'pending') {
+    main.appendChild(el('div', 'section-title', '<span>Lots</span>'));
+    renderHorizon(main, exp);
+    renderStatsStrip(main, exp);
+    if (cfg.interim) renderInterim(main, exp);
+    main.appendChild(el('div', 'section-title', '<span>Log</span>'));
+    renderLog(main, exp);
+  }
+
+  const endTitle = el('div', 'section-title', '<span>Finish</span>');
+  main.appendChild(endTitle);
+  const endCard = el('div', 'card');
+  endCard.innerHTML = '<div class="card-text">' +
+    (ph === 'complete'
+      ? 'Every scheduled day is done. Open the slips in your ' + esc(exp.labelWord) + 's and enter which held which.'
+      : 'Unblinding ends the experiment' + (N ? ' — ' + Math.max(0, N - Math.max(0, tIdx)) + ' scheduled days remain.' : '.') +
+        (cfg.interim ? ' A common stopping rule: keep going until the blinded Bayes factor passes 10 (or drops below 1/10).' : '')) +
+    '</div>';
+  const acts = el('div', 'card-actions');
+  acts.appendChild(btn('btn ' + (ph === 'complete' ? 'primary' : 'warn'), '⚑ end & unblind', () => openUnblind(exp)));
+  acts.appendChild(btn('btn btn-tiny', '✎ rename', () => openDesign(exp.id)));
+  acts.appendChild(btn('btn btn-tiny danger', '✕ delete', () => deleteExperiment(exp)));
+  endCard.appendChild(acts);
+  main.appendChild(endCard);
+}
+
+// One outcome form for a given day, used inline (today) and in the day
+// overlay. Edits accumulate in a draft keyed by day so a re-render never
+// loses half-typed input; save commits the draft into the entry.
+const drafts = new Map();
+function draftFor(exp, dk) {
+  const key = exp.id + ':' + dk;
+  if (!drafts.has(key)) {
+    const e = exp.entries[dk];
+    drafts.set(key, {
+      taken: e ? e.taken : null,
+      skipped: e ? e.skipped : false,
+      values: e ? { ...e.values } : {},
+      guess: e ? e.guess : null,
+      note: e ? e.note : '',
+    });
+  }
+  return drafts.get(key);
+}
+function commitDraft(exp, dk) {
+  const key = exp.id + ':' + dk;
+  const d = drafts.get(key);
+  if (!d) return;
+  const e = sanitizeEntry(d, exp.measures);
+  if (e) exp.entries[dk] = e; else delete exp.entries[dk];
+  drafts.delete(key);
+  saveExperiments();
+}
+
+function buildEntryForm(exp, dk, inOverlay) {
+  const idx = dayDiff(exp.startDay, dk);
+  const d = draftFor(exp, dk);
+  const wrap = el('div');
+  const rerender = () => { const n = buildEntryForm(exp, dk, inOverlay); wrap.replaceWith(n); };
+
+  const takeRow = el('div', 'take-row');
+  const takeBtn = btn('take-btn' + (d.taken != null ? ' on' : ''),
+    d.taken != null ? '✓ taken ' + fmtClock(d.taken) : '＋ taken [T]', () => {
+      if (d.taken != null) d.taken = null;
+      else { d.taken = dk === dayKey(Date.now()) ? Date.now() : keyToNoon(dk); d.skipped = false; }
+      commitDraft(exp, dk); renderAll(); if (inOverlay) openDay(exp, dk);
+    });
+  const skipBtn = btn('take-btn skip' + (d.skipped ? ' on' : ''), d.skipped ? 'skipped' : 'skip', () => {
+    d.skipped = !d.skipped;
+    if (d.skipped) d.taken = null;
+    commitDraft(exp, dk); renderAll(); if (inOverlay) openDay(exp, dk);
+  });
+  skipBtn.title = 'Didn\'t take anything this day — excluded from analysis';
+  takeRow.appendChild(takeBtn);
+  takeRow.appendChild(skipBtn);
+  wrap.appendChild(takeRow);
+
+  for (const m of exp.measures) {
+    const row = el('div', 'measure-row');
+    row.innerHTML = '<div class="measure-label"><span>' + esc(m.name) + '</span><span class="unit">' +
+      (m.type === 'scale' ? m.min + '–' + m.max : esc(m.unit)) + '</span></div>';
+    const cur = d.values[m.id];
+    if (m.type === 'scale' && m.max - m.min <= 11) {
+      const chips = el('div', 'chips');
+      for (let v = m.min; v <= m.max; v++) {
+        chips.appendChild(btn('chip' + (cur === v ? ' active' : ''), String(v), () => {
+          if (cur === v) delete d.values[m.id]; else d.values[m.id] = v;
+          rerender();
+        }));
+      }
+      row.appendChild(chips);
+    } else if (m.type === 'bool') {
+      const chips = el('div', 'chips');
+      for (const [v, label] of [[1, 'yes'], [0, 'no']]) {
+        chips.appendChild(btn('chip' + (cur === v ? ' active' : ''), label, () => {
+          if (cur === v) delete d.values[m.id]; else d.values[m.id] = v;
+          rerender();
+        }));
+      }
+      row.appendChild(chips);
+    } else {
+      const inp = document.createElement('input');
+      inp.type = 'number'; inp.step = 'any'; inp.className = 'num-input'; inp.inputMode = 'decimal';
+      if (m.type === 'scale') { inp.min = m.min; inp.max = m.max; inp.step = '1'; }
+      inp.value = cur == null ? '' : cur;
+      inp.placeholder = m.type === 'scale' ? m.min + '–' + m.max : (m.unit || 'value');
+      inp.oninput = () => {
+        const v = Number(inp.value);
+        if (inp.value.trim() === '' || !isFinite(v)) delete d.values[m.id];
+        else d.values[m.id] = m.type === 'scale' ? Math.min(m.max, Math.max(m.min, Math.round(v))) : v;
+      };
+      row.appendChild(inp);
+    }
+    wrap.appendChild(row);
+  }
+
+  const gRow = el('div', 'measure-row');
+  gRow.innerHTML = '<div class="measure-label"><span>your guess — what was this?</span><span class="unit">blinding check</span></div>';
+  const gChips = el('div', 'chips');
+  for (const [v, label] of [[0, exp.intervention], [1, exp.control], [null, 'no idea']]) {
+    gChips.appendChild(btn('chip' + (d.guess === v ? ' active' : ''), esc(label), () => { d.guess = v; rerender(); }));
+  }
+  gRow.appendChild(gChips);
+  wrap.appendChild(gRow);
+
+  const note = document.createElement('input');
+  note.type = 'text'; note.className = 'note-input'; note.placeholder = 'note (optional)'; note.autocomplete = 'off';
+  note.enterKeyHint = 'done'; note.maxLength = 500;
+  note.value = d.note;
+  note.oninput = () => { d.note = note.value; };
+  note.onkeydown = (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); save(); } };
+  wrap.appendChild(note);
+
+  const saved = exp.entries[dk];
+  const acts = el('div', 'form-actions');
+  const save = () => { commitDraft(exp, dk); note.blur(); renderAll(); if (inOverlay) closeDay(); };
+  acts.appendChild(btn('btn primary', '✓ save', save));
+  if (inOverlay) {
+    acts.appendChild(btn('btn btn-tiny', 'reset', () => { drafts.delete(exp.id + ':' + dk); rerender(); }));
+  }
+  if (saved && Object.keys(saved.values).length) {
+    acts.appendChild(el('span', 'saved', 'logged ✓'));
+  } else if (idx >= 0 && isWashout(exp, idx)) {
+    acts.appendChild(el('span', 'saved', 'washout — still worth logging'));
+  }
+  wrap.appendChild(acts);
+  return wrap;
+}
+
+function renderHorizon(main, exp) {
+  const last = lastIdx(exp);
+  const N = totalDays(exp);
+  const tIdx = todayIdx(exp);
+  // fixed: all days; open-ended: through the end of the current period
+  const shown = N != null ? N : (Math.floor(Math.max(last, 0) / exp.periodDays) + 1) * exp.periodDays;
+  const wrap = el('div', 'horizon');
+  let pEl = null, lastP = -1;
+  for (let i = 0; i < shown; i++) {
+    const p = periodOf(exp, i);
+    if (p !== lastP) { pEl = el('div', 'period'); wrap.appendChild(pEl); lastP = p; }
+    const cell = el('div', 'day-cell');
+    const dk = dayKeyOf(exp, i);
+    let title = fmtDayLabel(dk) + ' · day ' + (i + 1);
+    if (i <= last) {
+      const arm = exp.sched[p];
+      cell.classList.add('a' + arm);
+      title += ' · ' + (exp.mapping ? condName(exp, condOfArm(exp, arm)) : armLabel(exp, arm));
+      const e = exp.entries[dk];
+      if (e && Object.keys(e.values).length) {
+        cell.classList.add('logged');
+        title += ' · ' + exp.measures.map(m => e.values[m.id] != null ? m.name + ' ' + fmtVal(m, e.values[m.id]) : null).filter(Boolean).join(', ');
+      }
+      if (e && e.skipped) { cell.classList.add('skipped'); title += ' · skipped'; }
+      cell.onclick = () => openDay(exp, dk);
+    } else {
+      cell.classList.add('future');
+      title += ' · not yet drawn';
+    }
+    if (isWashout(exp, i)) { cell.classList.add('wash'); title += ' · washout'; }
+    if (i === tIdx) cell.classList.add('today');
+    cell.title = title;
+    pEl.appendChild(cell);
+  }
+  main.appendChild(wrap);
+  const leg = el('div', 'legend');
+  const n0 = exp.mapping ? condName(exp, condOfArm(exp, 0)) : armLabel(exp, 0);
+  const n1 = exp.mapping ? condName(exp, condOfArm(exp, 1)) : armLabel(exp, 1);
+  leg.innerHTML = '<span><i class="sw a0"></i>' + esc(n0) + '</span><span><i class="sw a1"></i>' + esc(n1) + '</span>' +
+    (exp.washout ? '<span><i class="sw wash"></i>washout</span>' : '') +
+    '<span>· dot = outcome logged · tap a day to edit</span>';
+  main.appendChild(leg);
+}
+
+function renderStatsStrip(main, exp) {
+  const last = lastIdx(exp);
+  const N = totalDays(exp);
+  let taken = 0, logged = 0, skipped = 0, elapsed = Math.max(0, last + 1);
+  for (let i = 0; i <= last; i++) {
+    const e = exp.entries[dayKeyOf(exp, i)];
+    if (!e) continue;
+    if (e.taken != null) taken++;
+    if (e.skipped) skipped++;
+    if (Object.keys(e.values).length) logged++;
+  }
+  const strip = el('div', 'stats-strip');
+  const cell = (val, label, cls = '') => '<div class="stat-cell"><div class="stat-val ' + cls + '">' + val + '</div><div class="stat-label">' + label + '</div></div>';
+  strip.innerHTML =
+    cell(elapsed + (N ? '<span style="font-size:0.6em;color:var(--muted)">/' + N + '</span>' : ''), 'days') +
+    cell(elapsed ? Math.round(100 * taken / elapsed) + '%' : '—', 'taken', taken === elapsed && elapsed ? 'accent' : '') +
+    cell(logged, 'logged', logged === elapsed && elapsed ? 'accent' : '') +
+    cell(skipped, 'skipped', skipped ? 'danger' : '');
+  main.appendChild(strip);
+}
+
+function renderInterim(main, exp) {
+  const c = el('div', 'card');
+  let html = '<div class="card-kicker">Blinded interim evidence</div>';
+  let any = false;
+  for (const m of exp.measures) {
+    const g = collectGroups(exp, m, false);
+    const r = compare(g.a, g.b, cfg.prior);
+    let v;
+    if (!r.ok) v = '<span style="color:var(--muted)">' + esc(r.reason) + '</span>';
+    else {
+      any = true;
+      v = 'BF₁₀ = <b>' + fmtBF(r.bf10) + '</b> · ' + bfLabel(r.bf10).replace('for an effect', 'the ' + esc(exp.labelWord) + 's differ').replace('for no effect', 'they don\'t');
+    }
+    html += '<div class="kv-row" style="margin-top:0.35rem"><span class="k">' + esc(m.name) + ' <span style="opacity:0.7">n=' + (r.nA + r.nB) + ' ' + g.unit + 's</span></span><span class="v">' + v + '</span></div>';
+  }
+  html += '<div class="card-text" style="margin-top:0.6rem">' +
+    (any ? 'How strongly the two ' + esc(exp.labelWord) + 's differ — never which way. The Bayes factor is symmetric, so peeking can\'t tip you off.'
+         : 'Once both ' + esc(exp.labelWord) + 's have a couple of logged outcomes, the strength of the difference shows here — never its direction.') +
+    '</div>';
+  c.innerHTML = html;
+  main.appendChild(c);
+}
+
+let logShowAll = false;
+function renderLog(main, exp) {
+  const list = el('div', 'log-list');
+  const last = lastIdx(exp);
+  if (last < 0) {
+    list.innerHTML = '<div class="log-empty">nothing yet — the first lot is drawn on day one</div>';
+    main.appendChild(list);
+    return;
+  }
+  const LIMIT = 30;
+  const from = logShowAll ? 0 : Math.max(0, last - LIMIT + 1);
+  for (let i = last; i >= from; i--) {
+    const dk = dayKeyOf(exp, i);
+    const e = exp.entries[dk];
+    const arm = exp.sched[periodOf(exp, i)];
+    const row = el('div', 'log-row');
+    const vals = e ? exp.measures.map(m => e.values[m.id] != null ? esc(m.name) + ' ' + fmtVal(m, e.values[m.id]) : null).filter(Boolean) : [];
+    if (!vals.length) row.classList.add('dim');
+    const armName = arm == null ? '—' : (exp.mapping ? condName(exp, condOfArm(exp, arm)) : armLabel(exp, arm));
+    let tags = '';
+    if (e && e.skipped) tags += '<span class="l-tag skip">skipped</span>';
+    else if (e && e.taken != null) tags += '<span class="l-tag">✓ ' + fmtClock(e.taken) + '</span>';
+    if (isWashout(exp, i)) tags += '<span class="l-tag wash">washout</span>';
+    if (e && e.guess != null) tags += '<span class="l-tag" title="your guess">? ' + esc(condName(exp, e.guess)) + '</span>';
+    row.innerHTML =
+      '<span class="l-day">' + esc(fmtShortDay(dk)) + ' · d' + (i + 1) + '</span>' +
+      '<span class="l-arm arm' + arm + '">' + esc(armName) + '</span>' +
+      '<span class="l-vals">' + (vals.length ? vals.join(' · ') : 'no outcome') +
+        (e && e.note ? ' <span class="l-note">' + esc(e.note) + '</span>' : '') + '</span>' +
+      (tags ? '<span class="l-tags">' + tags + '</span>' : '');
+    row.onclick = () => openDay(exp, dk);
+    list.appendChild(row);
+  }
+  if (from > 0) {
+    const more = el('button', 'show-more', '▾ show ' + from + ' earlier days');
+    more.onclick = () => { logShowAll = true; renderAll(); };
+    list.appendChild(more);
+  }
+  main.appendChild(list);
+}
+
+// ── Unblinded view ───────────────────────────────────────────────
+function renderUnblinded(main, exp) {
+  const c = el('div', 'card');
+  const N = lastIdx(exp) + 1;
+  c.innerHTML =
+    '<div class="card-kicker">Unblinded ' + esc(fmtDayLabelLc(dayKey(exp.unblindedAt || Date.now()), true)) + ' · ' + N + ' day' + (N === 1 ? '' : 's') + '</div>' +
+    '<div class="card-title">' + esc(exp.name) + '</div>' +
+    (exp.hypothesis ? '<div class="card-text"><em>' + esc(exp.hypothesis) + '</em></div>' : '') +
+    '<div class="kv">' +
+    '<div class="kv-row"><span class="k arm0">' + esc(armLabel(exp, 0)) + '</span><span class="v">' + esc(condName(exp, condOfArm(exp, 0))) + '</span></div>' +
+    '<div class="kv-row"><span class="k arm1">' + esc(armLabel(exp, 1)) + '</span><span class="v">' + esc(condName(exp, condOfArm(exp, 1))) + '</span></div>' +
+    '</div>';
+  main.appendChild(c);
+
+  main.appendChild(el('div', 'section-title', '<span>Evidence</span><span style="font-size:0.6rem;letter-spacing:0.05em;text-transform:none">prior scale ' + cfg.prior + '</span>'));
+  for (const m of exp.measures) renderResult(main, exp, m);
+  renderBlindingCard(main, exp);
+
+  main.appendChild(el('div', 'section-title', '<span>Lots</span>'));
+  renderHorizon(main, exp);
+  const lt = el('div', 'section-title', '<span>Log</span>');
+  const ex = btn('btn btn-tiny', '↓ csv', exportCSV);
+  lt.appendChild(ex);
+  main.appendChild(lt);
+  renderLog(main, exp);
+
+  main.appendChild(el('div', 'section-title', '<span>Manage</span>'));
+  const mc = el('div', 'card');
+  const acts = el('div', 'card-actions');
+  acts.appendChild(btn('btn btn-tiny', '✎ rename', () => openDesign(exp.id)));
+  acts.appendChild(btn('btn btn-tiny', '⧉ repeat as new draft', () => cloneExperiment(exp)));
+  acts.appendChild(btn('btn btn-tiny danger', '✕ delete', () => deleteExperiment(exp)));
+  mc.appendChild(acts);
+  main.appendChild(mc);
+}
+
+function renderResult(main, exp, m) {
+  const g = collectGroups(exp, m, true);
+  const r = compare(g.a, g.b, cfg.prior);
+  const card = el('div', 'result-card');
+  const A = esc(exp.intervention), B = esc(exp.control);
+  let html = '<div class="result-name">' + esc(m.name) + (m.unit ? ' <span style="font-size:0.7em;color:var(--muted)">' + esc(m.unit) + '</span>' : '') + '</div>';
+  if (!r.ok) {
+    html += '<div class="result-line">Not enough data: ' + esc(r.reason) + ' (' + A + ' n=' + r.nA + ', ' + B + ' n=' + r.nB + ').</div>';
+    if (r.mA != null) html += '<div class="result-line">' + A + ' mean <b>' + fmtNum(r.mA) + '</b> · ' + B + ' mean <b>' + fmtNum(r.mB) + '</b></div>';
+    card.innerHTML = html;
+    main.appendChild(card);
+    return;
+  }
+  const bfCls = r.bf10 >= 3 ? 'accent' : r.bf10 <= 1 / 3 ? 'warn' : '';
+  const higher = r.diff > 0 ? 'higher' : 'lower';
+  html +=
+    '<div class="hero-row">' +
+    '<div class="hero"><div class="h-val ' + bfCls + '">' + fmtBF(r.bf10) + '</div><div class="h-lbl">Bayes factor BF₁₀</div><div class="h-sub">' + (r.bf10 < 1 ? 'BF₀₁ = ' + fmtBF(1 / r.bf10) : 'effect vs none') + '</div></div>' +
+    '<div class="hero"><div class="h-val">' + fmtPct(r.pPos) + '</div><div class="h-lbl">P(' + A + ' higher)</div><div class="h-sub">odds ' + fmtOdds(r.pPos) + '</div></div>' +
+    '<div class="hero"><div class="h-val">' + fmtSigned(r.diff) + '</div><div class="h-lbl">difference</div><div class="h-sub">95% CI ' + fmtSigned(r.ciLo) + ' to ' + fmtSigned(r.ciHi) + '</div></div>' +
+    '</div>' +
+    '<div class="verdict">' + bfLabel(r.bf10).replace(/^./, ch => ch.toUpperCase()) +
+      (r.bf10 >= 1 ? ' — ' + A + ' ran ' + fmtNum(Math.abs(r.diff)) + ' ' + higher + ' than ' + B + ' on average, and the odds are ' +
+        fmtOdds(r.diff > 0 ? r.pPos : 1 - r.pPos) + ' that the direction is real.' : ' — whatever difference exists is small relative to day-to-day noise.') + '</div>' +
+    '<div class="result-line">' + A + ' <b>' + fmtNum(r.mA) + '</b> ± ' + fmtNum(r.sdA) + ' (n=' + r.nA + ') · ' + B + ' <b>' + fmtNum(r.mB) + '</b> ± ' + fmtNum(r.sdB) + ' (n=' + r.nB + ') · ' +
+      'unit: ' + g.unit + (g.unit === 'period' ? ' means' : '') + ' · standardised effect d = ' + fmtSigned(r.dEff) + '</div>' +
+    '<div class="result-line">Likelihood: the best-fitting effect (' + fmtSigned(r.diff) + ') makes the data <b>' + fmtBF(r.maxLR) + '×</b> more likely than no effect. ' +
+      'Effects from <b>' + fmtSigned(r.supLo) + '</b> to <b>' + fmtSigned(r.supHi) + '</b> are at least ⅛ as well supported as the best (1/8 likelihood interval).</div>';
+  card.innerHTML = html;
+
+  card.appendChild(el('div', 'chart-title', 'outcome by ' + g.unit));
+  card.appendChild(dataChart(exp, m, r));
+  const leg = el('div', 'chart-legend');
+  leg.innerHTML = '<span class="m0">' + A + ' · mean ' + fmtNum(r.mA) + '</span><span class="m1">' + B + ' · mean ' + fmtNum(r.mB) + '</span>';
+  card.appendChild(leg);
+  card.appendChild(el('div', 'chart-title', 'likelihood ratio vs. no effect, by hypothesised effect'));
+  card.appendChild(lrChart(r));
+  main.appendChild(card);
+}
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs, text) {
+  const n = document.createElementNS(SVG_NS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (text != null) n.textContent = text;
+  return n;
+}
+function niceTicks(lo, hi, count) {
+  const span = hi - lo || 1;
+  const raw = span / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  const step = (norm < 1.5 ? 1 : norm < 3.5 ? 2 : norm < 7.5 ? 5 : 10) * mag;
+  const ticks = [];
+  for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) ticks.push(Number(v.toFixed(10)));
+  return ticks;
+}
+
+// Every analysed unit in time order, coloured by condition, with the two
+// condition means as dashed reference lines.
+function dataChart(exp, m, r) {
+  const last = lastIdx(exp);
+  const pts = []; // {x, y, cond, label}
+  if (exp.periodDays === 1) {
+    for (let i = 0; i <= last; i++) {
+      const e = exp.entries[dayKeyOf(exp, i)];
+      if (!e || e.skipped || e.values[m.id] == null) continue;
+      const arm = exp.sched[periodOf(exp, i)];
+      if (arm == null) continue;
+      pts.push({ x: i, y: e.values[m.id], cond: condOfArm(exp, arm), faint: isWashout(exp, i), label: fmtShortDay(dayKeyOf(exp, i)) + ' · day ' + (i + 1) });
+    }
+  } else {
+    const per = new Map();
+    for (let i = 0; i <= last; i++) {
+      if (isWashout(exp, i)) continue;
+      const e = exp.entries[dayKeyOf(exp, i)];
+      if (!e || e.skipped || e.values[m.id] == null) continue;
+      const p = periodOf(exp, i);
+      (per.get(p) || per.set(p, []).get(p)).push(e.values[m.id]);
+    }
+    for (const [p, vals] of per) {
+      pts.push({ x: p, y: mean(vals), cond: condOfArm(exp, exp.sched[p]), faint: false, label: 'period ' + (p + 1) + ' · ' + vals.length + ' days' });
+    }
+    pts.sort((a, b) => a.x - b.x);
+  }
+  const W = 600, H = 200, L = 34, R = 56, T = 10, Bm = 24;
+  const xs = pts.map(p => p.x);
+  const xLo = Math.min(...xs), xHi = Math.max(...xs);
+  let yLo = Math.min(...pts.map(p => p.y), r.mA, r.mB), yHi = Math.max(...pts.map(p => p.y), r.mA, r.mB);
+  if (m.type === 'scale') { yLo = Math.min(yLo, m.min); yHi = Math.max(yHi, m.max); }
+  if (m.type === 'bool') { yLo = 0; yHi = 1; }
+  if (yHi === yLo) { yLo -= 1; yHi += 1; }
+  const pad = (yHi - yLo) * 0.06;
+  yLo -= pad; yHi += pad;
+  const sx = x => xHi === xLo ? (L + (W - L - R) / 2) : L + (x - xLo) / (xHi - xLo) * (W - L - R);
+  const sy = y => T + (yHi - y) / (yHi - yLo) * (H - T - Bm);
+  const svg = svgEl('svg', { class: 'chart', viewBox: '0 0 ' + W + ' ' + H, role: 'img' });
+  for (const tk of niceTicks(yLo, yHi, 4)) {
+    svg.appendChild(svgEl('line', { class: 'grid', x1: L, x2: W - R, y1: sy(tk), y2: sy(tk) }));
+    svg.appendChild(svgEl('text', { x: L - 6, y: sy(tk) + 3, 'text-anchor': 'end' }, String(Number(tk.toFixed(2)))));
+  }
+  svg.appendChild(svgEl('line', { class: 'axis', x1: L, x2: W - R, y1: H - Bm, y2: H - Bm }));
+  const xt = niceTicks(xLo, xHi, 6);
+  for (const tk of xt) {
+    if (!Number.isInteger(tk)) continue;
+    svg.appendChild(svgEl('text', { x: sx(tk), y: H - Bm + 13, 'text-anchor': 'middle' }, (exp.periodDays === 1 ? 'd' : 'p') + (tk + 1)));
+  }
+  // mean lines with direct labels at the right edge
+  for (const [c, mv] of [[0, r.mA], [1, r.mB]]) {
+    svg.appendChild(svgEl('line', { class: 'mean' + c, x1: L, x2: W - R, y1: sy(mv), y2: sy(mv) }));
+    svg.appendChild(svgEl('text', { class: 'lbl' + c, x: W - R + 5, y: sy(mv) + 3 }, fmtNum(mv)));
+  }
+  for (const p of pts) {
+    const dot = svgEl('circle', { class: 'pt' + p.cond + (p.faint ? ' faint' : ''), cx: sx(p.x), cy: sy(p.y), r: 4.5 });
+    dot.appendChild(svgEl('title', {}, p.label + ' · ' + condName(exp, p.cond) + ' · ' + fmtVal(m, p.y) + (p.faint ? ' (washout, excluded)' : '')));
+    svg.appendChild(dot);
+  }
+  return svg;
+}
+
+// LR(δ) on a log axis; the 1/8 likelihood interval shaded; zero marked.
+function lrChart(r) {
+  const W = 600, H = 170, L = 40, R = 14, T = 14, Bm = 24;
+  const curve = r.curve;
+  const xLo = curve[0][0], xHi = curve[curve.length - 1][0];
+  const logs = curve.map(([, v]) => Math.log10(Math.max(v, 1e-12)));
+  const yMax = Math.max(...logs, 0.3), yMin = Math.min(...logs, -1);
+  const yLo = Math.max(yMin, yMax - 6), yHi = yMax + 0.2;
+  const sx = x => L + (x - xLo) / (xHi - xLo) * (W - L - R);
+  const sy = v => T + (yHi - v) / (yHi - yLo) * (H - T - Bm);
+  const svg = svgEl('svg', { class: 'chart', viewBox: '0 0 ' + W + ' ' + H, role: 'img' });
+  svg.appendChild(svgEl('rect', { class: 'support', x: sx(r.supLo), y: T, width: Math.max(1, sx(r.supHi) - sx(r.supLo)), height: H - T - Bm }));
+  for (let e = Math.ceil(yLo); e <= Math.floor(yHi); e++) {
+    svg.appendChild(svgEl('line', { class: 'grid', x1: L, x2: W - R, y1: sy(e), y2: sy(e) }));
+    svg.appendChild(svgEl('text', { x: L - 6, y: sy(e) + 3, 'text-anchor': 'end' }, e === 0 ? '1×' : e > 0 ? Math.pow(10, e) + '×' : '1/' + Math.pow(10, -e)));
+  }
+  svg.appendChild(svgEl('line', { class: 'axis', x1: L, x2: W - R, y1: H - Bm, y2: H - Bm }));
+  for (const tk of niceTicks(xLo, xHi, 6)) {
+    svg.appendChild(svgEl('text', { x: sx(tk), y: H - Bm + 13, 'text-anchor': 'middle' }, fmtSigned(tk, 1)));
+  }
+  if (xLo <= 0 && xHi >= 0) {
+    svg.appendChild(svgEl('line', { class: 'zero', x1: sx(0), x2: sx(0), y1: T, y2: H - Bm }));
+    svg.appendChild(svgEl('text', { x: sx(0) + 4, y: T + 9, class: 'lbl-text' }, 'no effect'));
+  }
+  const d = curve.map(([x, v], i) => (i ? 'L' : 'M') + sx(x).toFixed(1) + ' ' + sy(Math.max(Math.log10(Math.max(v, 1e-12)), yLo)).toFixed(1)).join(' ');
+  svg.appendChild(svgEl('path', { class: 'line', d }));
+  const px = sx(r.diff), py = sy(Math.log10(r.maxLR));
+  svg.appendChild(svgEl('circle', { class: 'peak', cx: px, cy: py, r: 5 }));
+  const anchor = px > W * 0.7 ? 'end' : 'start';
+  svg.appendChild(svgEl('text', { class: 'lbl-acc', x: px + (anchor === 'end' ? -8 : 8), y: py - 6, 'text-anchor': anchor }, fmtBF(r.maxLR) + '× at ' + fmtSigned(r.diff)));
+  return svg;
+}
+
+function renderBlindingCard(main, exp) {
+  const b = blindingCheck(exp);
+  const c = el('div', 'card');
+  let html = '<div class="card-kicker">Blinding check</div>';
+  if (!b.n) {
+    html += '<div class="card-text">No guesses were recorded, so there is nothing to check. Next time, guess each day — it is the only way to know the blind held.</div>';
+  } else {
+    const held = b.pAbove < 0.9;
+    html += '<div class="card-title ' + (held ? 'ok' : 'warn') + '" style="font-size:1.15rem">' +
+      (held ? 'blinding held' : 'you could probably tell them apart') + '</div>' +
+      '<div class="card-text">You guessed right on <b>' + b.k + ' of ' + b.n + '</b> days (' + Math.round(100 * b.k / b.n) + '%). ' +
+      'Probability you were guessing better than chance: <b>' + fmtPct(b.pAbove) + '</b>' + (held
+        ? ' — consistent with coin-flipping, so expectation effects are unlikely to explain the result.'
+        : ' — the intervention may have been recognisable, so some of the effect could be expectation. Read the evidence with that in mind.') +
+      '</div>';
+  }
+  c.innerHTML = html;
+  main.appendChild(c);
+}
+
+// ── Day overlay ──────────────────────────────────────────────────
+let dayOpen = null;
+function openDay(exp, dk) {
+  const idx = dayDiff(exp.startDay, dk);
+  if (idx < 0 || idx > lastIdx(exp)) return;
+  dayOpen = { id: exp.id, dk };
+  const arm = exp.sched[periodOf(exp, idx)];
+  const who = arm == null ? '' : ' · ' + (exp.mapping ? condName(exp, condOfArm(exp, arm)) : armLabel(exp, arm));
+  document.getElementById('day-title').textContent = (fmtDayLabel(dk) + ' · day ' + (idx + 1) + who).toUpperCase();
+  const holder = document.getElementById('day-form');
+  holder.innerHTML = '';
+  holder.appendChild(buildEntryForm(exp, dk, true));
+  document.getElementById('day-overlay').classList.add('visible');
+}
+function closeDay() {
+  if (dayOpen) drafts.delete(dayOpen.id + ':' + dayOpen.dk);
+  dayOpen = null;
+  document.getElementById('day-overlay').classList.remove('visible');
+}
+
+// ── Unblind overlay ──────────────────────────────────────────────
+let unblindId = null;
+function openUnblind(exp) {
+  const ph = phase(exp);
+  const N = totalDays(exp);
+  if (ph !== 'complete' && N != null) {
+    const done = Math.max(0, Math.min(todayIdx(exp), N));
+    if (!confirm('Only ' + done + ' of ' + N + ' scheduled days are done. Unblinding ends the experiment now. Continue?')) return;
+  } else if (ph === 'pending') {
+    if (!confirm('This experiment has not started. Unblinding ends it with no data. Continue?')) return;
+  }
+  unblindId = exp.id;
+  const w = exp.labelWord;
+  document.getElementById('unblind-note').textContent =
+    'Open the slip hidden in ' + w + ' 1. This ends the experiment — the app reveals the whole allocation and analyses by condition.';
+  document.getElementById('unblind-q').textContent = 'Which condition was in ' + w + ' 1?';
+  const sel = document.getElementById('unblind-sel');
+  sel.options[0].textContent = exp.intervention;
+  sel.options[1].textContent = exp.control;
+  sel.value = '0';
+  sel.onchange = () => {
+    document.getElementById('unblind-echo').textContent = 'So ' + w + ' 2 held ' + (sel.value === '0' ? exp.control : exp.intervention) + '.';
+  };
+  sel.onchange();
+  document.getElementById('unblind-overlay').classList.add('visible');
+}
+function closeUnblind() {
+  unblindId = null;
+  document.getElementById('unblind-overlay').classList.remove('visible');
+}
+function confirmUnblind() {
+  const exp = experiments.find(x => x.id === unblindId);
+  if (!exp) { closeUnblind(); return; }
+  const first = Number(document.getElementById('unblind-sel').value) === 1 ? 1 : 0;
+  exp.mapping = [first, 1 - first];
+  exp.status = 'unblinded';
+  exp.unblindedAt = Date.now();
+  exp.endIdx = lastIdx({ ...exp, status: 'running' });
+  saveExperiments();
+  closeUnblind();
+  renderAll();
+  window.scrollTo({ top: 0 });
+}
+
+// ── Design overlay ───────────────────────────────────────────────
+let designId = null;
+let designMeasures = [];
+
+function openDesign(id) {
+  const exp = id == null ? null : experiments.find(x => x.id === id);
+  designId = exp ? exp.id : null;
+  document.getElementById('design-title').textContent = exp ? (exp.status === 'draft' ? 'EDIT DESIGN' : 'RENAME') : 'NEW EXPERIMENT';
+  document.getElementById('d-name').value = exp ? exp.name : '';
+  document.getElementById('d-hyp').value = exp ? exp.hypothesis : '';
+  document.getElementById('d-int').value = exp ? exp.intervention : '';
+  document.getElementById('d-ctl').value = exp ? exp.control : 'placebo';
+  document.getElementById('d-label').value = exp ? exp.labelWord : 'jar';
+  document.getElementById('d-pdays').value = exp ? exp.periodDays : 1;
+  document.getElementById('d-periods').value = exp ? exp.periods : 28;
+  document.getElementById('d-wash').value = exp ? exp.washout : 0;
+  document.getElementById('d-design').value = exp ? exp.design : 'pairs';
+  document.getElementById('d-start').value = exp && exp.startDay ? exp.startDay : dayKey(Date.now());
+  designMeasures = exp ? exp.measures.map(m => ({ ...m })) : [{ id: 'm0_' + Date.now(), name: '', type: 'scale', min: 1, max: 10, unit: '' }];
+  const locked = !!exp && exp.status !== 'draft';
+  for (const fid of ['d-int', 'd-ctl', 'd-label', 'd-pdays', 'd-periods', 'd-wash', 'd-design', 'd-start']) {
+    document.getElementById(fid).disabled = locked;
+  }
+  document.getElementById('d-delete').style.display = exp ? '' : 'none';
+  renderMeasureDefs(locked);
+  document.getElementById('design-overlay').classList.add('visible');
+  if (!exp) document.getElementById('d-name').focus();
+}
+function closeDesign() {
+  designId = null;
+  document.getElementById('design-overlay').classList.remove('visible');
+}
+
+function renderMeasureDefs(locked) {
+  const holder = document.getElementById('d-measures');
+  holder.innerHTML = '';
+  designMeasures.forEach((m, i) => {
+    const box = el('div', 'measure-def');
+    box.innerHTML = '<div class="m-head"><span>outcome ' + (i + 1) + (i === 0 ? ' · primary' : '') + '</span></div>';
+    if (!locked && designMeasures.length > 1) {
+      box.querySelector('.m-head').appendChild(btn('icon-btn', '✕', () => { designMeasures.splice(i, 1); renderMeasureDefs(locked); }));
+    }
+    const nameRow = el('div', 'settings-row');
+    const name = document.createElement('input');
+    name.type = 'text'; name.placeholder = i === 0 ? 'e.g. afternoon focus' : 'name'; name.value = m.name; name.autocomplete = 'off';
+    name.oninput = () => { m.name = name.value; };
+    nameRow.appendChild(name);
+    box.appendChild(nameRow);
+    const typeRow = el('div', 'settings-row half');
+    const type = document.createElement('select');
+    for (const [v, l] of [['scale', 'rating scale'], ['number', 'number'], ['bool', 'yes / no']]) {
+      const o = document.createElement('option'); o.value = v; o.textContent = l; type.appendChild(o);
+    }
+    type.value = m.type; type.disabled = locked;
+    type.onchange = () => { m.type = type.value; renderMeasureDefs(locked); };
+    typeRow.appendChild(type);
+    if (m.type === 'scale') {
+      const mn = document.createElement('input'); mn.type = 'number'; mn.step = '1'; mn.value = m.min; mn.placeholder = 'min'; mn.disabled = locked;
+      const mx = document.createElement('input'); mx.type = 'number'; mx.step = '1'; mx.value = m.max; mx.placeholder = 'max'; mx.disabled = locked;
+      mn.oninput = () => { m.min = Number(mn.value); };
+      mx.oninput = () => { m.max = Number(mx.value); };
+      typeRow.appendChild(mn); typeRow.appendChild(mx);
+    } else if (m.type === 'number') {
+      const u = document.createElement('input'); u.type = 'text'; u.value = m.unit; u.placeholder = 'unit (e.g. hours, ms)'; u.maxLength = 20;
+      u.oninput = () => { m.unit = u.value; };
+      typeRow.appendChild(u);
+    }
+    box.appendChild(typeRow);
+    holder.appendChild(box);
+  });
+}
+function addMeasureDef() {
+  if (designMeasures.length >= 6) return;
+  designMeasures.push({ id: 'm' + designMeasures.length + '_' + Date.now(), name: '', type: 'scale', min: 1, max: 10, unit: '' });
+  renderMeasureDefs(false);
+}
+
+function saveDesign() {
+  const exp = designId == null ? null : experiments.find(x => x.id === designId);
+  const name = document.getElementById('d-name').value.trim();
+  if (!name) { alert('Give the experiment a name.'); return; }
+  if (exp && exp.status !== 'draft') {
+    exp.name = name.slice(0, 80);
+    exp.hypothesis = document.getElementById('d-hyp').value.trim().slice(0, 300);
+    designMeasures.forEach((m, i) => { if (exp.measures[i] && m.name.trim()) exp.measures[i].name = m.name.trim(); });
+    exp.measures = exp.measures.map(sanitizeMeasure);
+    saveExperiments(); closeDesign(); renderAll();
+    return;
+  }
+  const measures = designMeasures.map(sanitizeMeasure);
+  if (designMeasures.some(m => !m.name.trim())) { alert('Every outcome needs a name.'); return; }
+  const pdays = intOr(Number(document.getElementById('d-pdays').value), 1, 1, 30);
+  const raw = {
+    id: exp ? exp.id : Date.now() + Math.random(),
+    created: exp ? exp.created : Date.now(),
+    name, hypothesis: document.getElementById('d-hyp').value,
+    intervention: document.getElementById('d-int').value,
+    control: document.getElementById('d-ctl').value,
+    labelWord: document.getElementById('d-label').value,
+    measures,
+    periodDays: pdays,
+    periods: intOr(Number(document.getElementById('d-periods').value), 0, 0, 365),
+    washout: intOr(Number(document.getElementById('d-wash').value), 0, 0, pdays - 1),
+    design: document.getElementById('d-design').value,
+    startDay: document.getElementById('d-start').value,
+    status: 'draft', entries: exp ? exp.entries : {},
+  };
+  const clean = sanitizeExperiment(raw);
+  if (!clean) return;
+  if (exp) experiments[experiments.indexOf(exp)] = clean;
+  else experiments.push(clean);
+  selectedId = clean.id;
+  saveSelected();
+  saveExperiments();
+  closeDesign();
+  renderAll();
+}
+
+function deleteDesign() {
+  const exp = experiments.find(x => x.id === designId);
+  if (!exp) { closeDesign(); return; }
+  closeDesign();
+  deleteExperiment(exp);
+}
+
+function deleteExperiment(exp) {
+  const n = Object.keys(exp.entries).length;
+  if (!confirm('Delete "' + exp.name + '"' + (n ? ' and its ' + n + ' logged days' : '') + '? Export first if you want a copy.')) return;
+  experiments = experiments.filter(x => x.id !== exp.id);
+  if (selectedId === exp.id) selectedId = null;
+  saveExperiments();
+  saveSelected();
+  renderAll();
+}
+
+function cloneExperiment(exp) {
+  const copy = sanitizeExperiment({
+    ...serializeExperiment(exp), id: Date.now() + Math.random(), created: Date.now(),
+    name: exp.name + ' (again)', status: 'draft', entries: {}, sched: '', mapping: null, unblindedAt: null, endIdx: null,
+    startDay: dayKey(Date.now()),
+  });
+  experiments.push(copy);
+  selectedId = copy.id;
+  saveSelected(); saveExperiments(); renderAll();
+}
+
+// ── Settings ─────────────────────────────────────────────────────
+function openSettings() {
+  renderCfgUI();
+  document.getElementById('settings-overlay').classList.add('visible');
+}
+function closeSettings() { document.getElementById('settings-overlay').classList.remove('visible'); }
+function renderCfgUI() {
+  for (const r of PRIOR_SCALES) document.getElementById('prior-' + r).classList.toggle('sel', cfg.prior === r);
+  document.getElementById('interim-on').classList.toggle('sel', cfg.interim);
+  document.getElementById('interim-off').classList.toggle('sel', !cfg.interim);
+}
+function setPrior(r) { cfg.prior = r; saveCfg(); renderCfgUI(); renderAll(); }
+function setInterim(v) { cfg.interim = v; saveCfg(); renderCfgUI(); renderAll(); }
+
+// ── Export / import ──────────────────────────────────────────────
+const csvQuote = s => '"' + String(s).replace(/"/g, '""') + '"';
+
+function downloadBlob(text, type, filename) {
+  const blob = new Blob([text], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function buildJSON() {
+  return JSON.stringify({ app: 'peira', exported: new Date().toISOString(), experiments: experiments.map(serializeExperiment) }, null, 2);
+}
+function exportJSON() { downloadBlob(buildJSON(), 'application/json', 'peira-' + dayKey(Date.now()) + '.json'); }
+
+// Day table for the selected experiment. Future days and undrawn lots are
+// omitted; the condition column is only filled once unblinded.
+function buildCSV(exp) {
+  const head = ['day', 'date', 'period', exp.labelWord, 'condition', 'washout', 'taken', 'skipped', 'guess']
+    .concat(exp.measures.map(m => m.name)).concat(['note']);
+  const rows = [head.map(csvQuote).join(',')];
+  const last = lastIdx(exp);
+  for (let i = 0; i <= last; i++) {
+    const dk = dayKeyOf(exp, i);
+    const e = exp.entries[dk] || { taken: null, skipped: false, values: {}, guess: null, note: '' };
+    const arm = exp.sched[periodOf(exp, i)];
+    rows.push([
+      i + 1, dk, periodOf(exp, i) + 1, arm == null ? '' : arm + 1,
+      exp.mapping && arm != null ? csvQuote(condName(exp, condOfArm(exp, arm))) : '',
+      isWashout(exp, i) ? 1 : 0,
+      e.taken == null ? '' : new Date(e.taken).toISOString(),
+      e.skipped ? 1 : 0,
+      e.guess == null ? '' : csvQuote(condName(exp, e.guess)),
+    ].concat(exp.measures.map(m => e.values[m.id] ?? '')).concat([csvQuote(e.note)]).join(','));
+  }
+  return rows.join('\n') + '\n';
+}
+function exportCSV() {
+  const exp = currentExperiment();
+  if (!exp) { alert('No experiment selected.'); return; }
+  if (exp.status === 'draft') { alert('This experiment has no days yet.'); return; }
+  const slug = exp.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'experiment';
+  downloadBlob(buildCSV(exp), 'text/csv', 'peira-' + slug + '-' + dayKey(Date.now()) + '.csv');
+}
+
+function importJSON() { document.getElementById('import-file').click(); }
+function handleImportFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let parsed;
+    try { parsed = JSON.parse(String(reader.result)); } catch (e) { alert('Not a valid JSON file.'); return; }
+    const list = Array.isArray(parsed) ? parsed : (parsed && Array.isArray(parsed.experiments) ? parsed.experiments : null);
+    if (!list) { alert('No experiments found in that file.'); return; }
+    const incoming = sanitizeExperiments(list);
+    const have = new Set(experiments.map(e => e.id));
+    const added = incoming.filter(e => !have.has(e.id));
+    experiments = experiments.concat(added);
+    saveExperiments();
+    renderAll();
+    alert('Imported ' + added.length + ' experiment' + (added.length === 1 ? '' : 's') + ' (' + (incoming.length - added.length) + ' already present, skipped).');
+  };
+  reader.readAsText(file);
+  document.getElementById('import-file').value = '';
+}
+
+function clearAll() {
+  if (!confirm('Delete ALL ' + experiments.length + ' experiments? Export first if you want a backup.')) return;
+  experiments = [];
+  selectedId = null;
+  saveExperiments();
+  saveSelected();
+  renderAll();
+}
+
+// ── Backup (meridian-style) ──────────────────────────────────────
+// When a backup is due on open: browsers with the File System Access API
+// (desktop Chrome) get a silent auto-download; everywhere else an in-app
+// reminder — an unprompted download on mobile is worse than a nudge.
+function sanitizeBackupCfg(raw) {
+  const c = raw && typeof raw === 'object' ? raw : {};
+  return {
+    freq: c.freq === 'daily' || c.freq === 'weekly' ? c.freq : 'off',
+    lastBackup: finiteOrNull(c.lastBackup),
+    lastReminder: finiteOrNull(c.lastReminder),
+  };
+}
+let backupCfg = sanitizeBackupCfg(loadJSON(BACKUP_KEY, null));
+function saveBackupCfg() { storageSet(BACKUP_KEY, JSON.stringify(backupCfg)); }
+function setBackupFreq(freq) { backupCfg.freq = freq; saveBackupCfg(); renderBackupUI(); checkBackupDue(); }
+function renderBackupUI() {
+  for (const f of ['off', 'daily', 'weekly']) document.getElementById('backup-' + f).classList.toggle('sel', backupCfg.freq === f);
+  const last = backupCfg.lastBackup ? new Date(backupCfg.lastBackup).toLocaleDateString() : 'never';
+  const noteEl = document.getElementById('backup-note');
+  if (backupCfg.freq === 'off') noteEl.textContent = 'Periodic timestamped JSON backups of every experiment. Last backup: ' + last + '.';
+  else if ('showSaveFilePicker' in window) noteEl.textContent = 'A timestamped JSON downloads automatically when you open the app and a ' + backupCfg.freq + ' backup is due. Last backup: ' + last + '.';
+  else noteEl.textContent = 'This browser can\'t save files unprompted, so you\'ll get an in-app reminder to back up on a ' + backupCfg.freq + ' basis. Last backup: ' + last + '.';
+}
+function isBackupDue() {
+  if (backupCfg.freq === 'off' || !experiments.length) return false;
+  if (!backupCfg.lastBackup) return true;
+  return Date.now() - backupCfg.lastBackup >= (backupCfg.freq === 'daily' ? 86400000 : 604800000);
+}
+function isReminderSnoozed() { return backupCfg.lastReminder != null && Date.now() - backupCfg.lastReminder < 3600000; }
+function checkBackupDue() {
+  if (!isBackupDue()) return;
+  if ('showSaveFilePicker' in window) runBackupNow(true);
+  else if (!isReminderSnoozed()) showBackupReminder();
+}
+async function runBackupNow(silent = false) {
+  if (!experiments.length) { if (!silent) alert('Nothing to back up.'); return; }
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const filename = 'peira-backup-' + stamp + '.json';
+  const json = buildJSON();
+  if (!silent && 'showSaveFilePicker' in window) {
+    try {
+      const handle = await window.showSaveFilePicker({ suggestedName: filename, types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }] });
+      const writable = await handle.createWritable();
+      await writable.write(json);
+      await writable.close();
+    } catch (e) { return; } // user cancelled the picker
+  } else {
+    downloadBlob(json, 'application/json', filename);
+  }
+  backupCfg.lastBackup = Date.now();
+  saveBackupCfg();
+  hideBackupReminder();
+  renderBackupUI();
+}
+function showBackupReminder() {
+  const last = backupCfg.lastBackup ? new Date(backupCfg.lastBackup).toLocaleDateString() : 'never';
+  document.getElementById('backup-reminder-text').textContent = 'Your ' + backupCfg.freq + ' backup is overdue (last: ' + last + '). Export a JSON to keep a local copy safe.';
+  document.getElementById('backup-reminder').style.display = 'block';
+}
+function hideBackupReminder() { document.getElementById('backup-reminder').style.display = 'none'; }
+function snoozeReminder() { backupCfg.lastReminder = Date.now(); saveBackupCfg(); hideBackupReminder(); }
+function dismissReminder() { backupCfg.lastBackup = Date.now(); saveBackupCfg(); hideBackupReminder(); renderBackupUI(); }
+
+// ── Resume handling (meridian-style) ─────────────────────────────
+// If the page loaded while localStorage was detached, the app came up empty.
+// Once storage is reachable again, union stored data with anything logged
+// since. Must run BEFORE flushPendingWrites — otherwise a save made against
+// the empty in-memory state would overwrite the real history.
+function recoverFailedReads() {
+  if (failedReads.size === 0) return;
+  try { localStorage.getItem(DB_KEY); } catch (e) { return; }
+  const toRecover = new Set(failedReads);
+  failedReads.clear();
+  if (toRecover.has(DB_KEY)) {
+    const stored = sanitizeExperiments(loadJSON(DB_KEY, []));
+    const have = new Set(experiments.map(e => e.id));
+    const missing = stored.filter(e => !have.has(e.id));
+    if (missing.length) { experiments = sanitizeExperiments(experiments.concat(missing)); saveExperiments(); }
+  }
+  if (toRecover.has(CFG_KEY) && !pendingWrites.has(CFG_KEY)) cfg = sanitizeCfg(loadJSON(CFG_KEY, null));
+  if (toRecover.has(THEME_KEY) && !pendingWrites.has(THEME_KEY)) setTheme(storageGet(THEME_KEY) || 'auto');
+}
+function resyncAfterResume() {
+  recoverFailedReads();
+  flushPendingWrites();
+  renderAll();
+}
+window.addEventListener('pageshow', (e) => { if (e.persisted) resyncAfterResume(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) flushPendingWrites();
+  else resyncAfterResume();
+});
+
+// Midnight rollover: only re-render when the day actually changes, so a
+// half-filled outcome form is never rebuilt underneath the user.
+let lastRenderDay = null;
+setInterval(() => { if (dayKey(Date.now()) !== lastRenderDay) renderAll(); }, 60000);
+
+// ── Theme (auto / dark / light) ──────────────────────────────────
+function setTheme(pref) {
+  storageSet(THEME_KEY, pref);
+  applyTheme(pref);
+  for (const p of ['auto', 'dark', 'light']) document.getElementById('theme-' + p).classList.toggle('sel', p === pref);
+}
+function applyTheme(pref) {
+  const dark = pref === 'dark' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.body.classList.toggle('light', !dark);
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if ((storageGet(THEME_KEY) || 'auto') === 'auto') applyTheme('auto');
+});
+function toggleThemeQuick() { setTheme(document.body.classList.contains('light') ? 'dark' : 'light'); }
+
+// ── Keyboard ─────────────────────────────────────────────────────
+document.addEventListener('keydown', (ev) => {
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+    if (ev.key === 'Escape') document.activeElement.blur();
+    return;
+  }
+  if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+  const k = ev.key.toLowerCase();
+  if (k === 'escape') { closeSettings(); closeDesign(); closeDay(); closeUnblind(); }
+  else if (k === 't') {
+    const exp = currentExperiment();
+    if (exp && exp.status === 'running' && phase(exp) === 'active') {
+      const dk = dayKey(Date.now());
+      const d = draftFor(exp, dk);
+      if (d.taken == null) { d.taken = Date.now(); d.skipped = false; commitDraft(exp, dk); renderAll(); }
+    }
+  }
+  else if (k === 'n') { openDesign(null); ev.preventDefault(); }
+  else if (k === 's') openSettings();
+  else if (k === 'e') exportCSV();
+  else if (k === 'i') importJSON();
+});
+
+// ── Service worker (PWA install + offline) ───────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
+
+setTheme(storageGet(THEME_KEY) || 'auto');
+renderAll();
+renderBackupUI();
+checkBackupDue();
+setInterval(checkBackupDue, 3600000);
+</script>
+</body>
+</html>

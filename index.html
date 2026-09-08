@@ -55,13 +55,14 @@
     <li><a class="app" href="pharmakon/"><strong>pharmakon</strong><span>stimulant-cycling tracker</span></a></li>
     <li><a class="app" href="halteres/"><strong>halteres</strong><span>Simple &amp; Sinister kettlebell log</span></a></li>
     <li><a class="app" href="nbacking/"><strong>nbacking</strong><span>dual n-back working memory training</span></a></li>
+    <li><a class="app" href="peira/"><strong>peira</strong><span>blinded, randomised n-of-1 self-experiments with Bayesian evidence</span></a></li>
   </ul>
   <button id="exportAll" type="button">export all app data</button>
   <footer><a href="https://github.com/DrakeMorrison/aristeia">source on GitHub</a></footer>
 </main>
 <script>
   document.getElementById('exportAll').addEventListener('click', () => {
-    const apps = ['meridian', 'gnomon', 'pharmakon', 'halteres', 'nbacking'];
+    const apps = ['meridian', 'gnomon', 'pharmakon', 'halteres', 'nbacking', 'peira'];
     const data = {};
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);

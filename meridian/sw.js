@@ -1,4 +1,4 @@
-const CACHE = 'meridian-v3';
+const CACHE = 'meridian-v4';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -29,5 +29,23 @@ self.addEventListener('fetch', (e) => {
         return res;
       })
       .catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
+  );
+});
+
+// Lock-screen notification taps: focus the app if a window exists, else open
+// one. Stop/Pause action buttons (Android) are relayed to an open window as a
+// message, or carried in the hash for a fresh one to act on at load.
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const action = e.action === 'stop' || e.action === 'pause' ? e.action : '';
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      const client = list.find(c => 'focus' in c);
+      if (client) {
+        if (action) client.postMessage({ type: 'timer-action', action });
+        return client.focus();
+      }
+      return self.clients.openWindow(action ? './#' + action : './');
+    }).catch(() => {})
   );
 });

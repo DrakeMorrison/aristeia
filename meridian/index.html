@@ -1136,6 +1136,20 @@
     </div>
 
     <div>
+      <div class="settings-section-title">Notifications</div>
+      <div class="auto-export-row no-divider">
+        <div class="toggle-label">Running timer on lock screen</div>
+        <div class="toggle" id="notif-toggle" onclick="toggleNotif('ongoing')"></div>
+      </div>
+      <div class="auto-export-row no-divider">
+        <div class="toggle-label">Alert when estimate is reached</div>
+        <div class="toggle" id="notif-over-toggle" onclick="toggleNotif('over')"></div>
+      </div>
+      <div class="export-note">One silent notification per timer, showing the task, its estimate and when it's due. Tap it to reopen Meridian; on Android it also has Stop and Pause buttons. The estimate alert fires while Meridian is open or in the background — iPhone suspends it once locked. On iPhone, add Meridian to the Home Screen first.</div>
+      <div class="file-handle-status" id="notif-status"></div>
+    </div>
+
+    <div>
       <div class="settings-section-title">Slack</div>
       <div class="auto-export-row no-divider">
         <div class="toggle-label">Post completed tasks</div>
@@ -1295,6 +1309,7 @@ function sanitizePaused(raw) {
       startTime: finiteOrNull(t.startTime) || 0,
       accumulatedMs: finiteOrNull(t.accumulatedMs) || 0,
       voided: t.voided === true,
+      notified: t.notified === true,
     }));
 }
 
@@ -1354,6 +1369,140 @@ if ('serviceWorker' in navigator) {
     if (hadController && !REPORT_MODE && !document.hidden && canReloadSafely()) location.reload();
     hadController = true;
   });
+  // Stop/Pause buttons on the lock-screen notification arrive here when a
+  // window is open; with no window the SW opens one with #stop / #pause
+  // instead (handled after restoreActiveTimer at load).
+  navigator.serviceWorker.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'timer-action') handleTimerAction(e.data.action);
+  });
+}
+
+// ── Lock-screen notification ───────────────────────────────────────
+// Opt-in, per device. One silent notification per running timer, posted at
+// start/resume and closed at stop/pause — never refreshed on a schedule and
+// never re-posted on reload, so it can't nag. The page is suspended while
+// the phone is locked, so the body is static: task, estimate, start and due
+// times, which stay true without a running clock. The optional estimate
+// alert fires once from the display tick, only while the page is awake.
+const NOTIF_KEY = 'meridian_notif_cfg';
+const ONGOING_TAG = 'meridian-active';
+const OVER_TAG = 'meridian-over';
+
+function normalizeNotifCfg(raw) {
+  const cfg = Object.assign({ ongoing: false, over: false }, raw && typeof raw === 'object' ? raw : {});
+  cfg.ongoing = cfg.ongoing === true;
+  cfg.over = cfg.over === true;
+  return cfg;
+}
+let notifCfg = normalizeNotifCfg(loadJSON(NOTIF_KEY, null));
+function saveNotifCfg() { storageSet(NOTIF_KEY, JSON.stringify(notifCfg)); }
+
+// On iPhone the Notification API only exists inside a Home Screen web app.
+function notifSupported() {
+  return typeof Notification === 'function' && 'serviceWorker' in navigator;
+}
+function notifGranted() {
+  return notifSupported() && Notification.permission === 'granted';
+}
+
+function withSW(fn) {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.ready.then(fn).catch(() => {});
+}
+
+function showNotif(title, opts) {
+  withSW(reg => reg.showNotification(title, Object.assign({ icon: 'icon-192.png', badge: 'icon-192.png' }, opts)).catch(() => {}));
+}
+
+function closeNotif(tag) {
+  withSW(reg => reg.getNotifications({ tag }).then(ns => ns.forEach(n => n.close())));
+}
+
+function ongoingNotifBody() {
+  const t = activeTimer;
+  const started = 'started ' + formatTime(t.startTime);
+  if (t.predictedMs == null) return 'no estimate · ' + started;
+  const estMin = +(t.predictedMs / 60000).toFixed(2);
+  if (t.voided) return `est. ${estMin} min (voided) · ${started}`;
+  const due = t.lastResumeAt + (t.predictedMs - t.accumulatedMs);
+  return `est. ${estMin} min · ${started} · due ${formatTime(due)}`;
+}
+
+function showOngoingNotif() {
+  if (!activeTimer || !notifCfg.ongoing || !notifGranted()) return;
+  showNotif(activeTimer.task, {
+    body: ongoingNotifBody(),
+    tag: ONGOING_TAG,
+    silent: true,
+    renotify: false,
+    requireInteraction: true,
+    timestamp: activeTimer.startTime,
+    actions: [{ action: 'stop', title: 'Stop' }, { action: 'pause', title: 'Pause' }],
+    data: { kind: 'ongoing', id: activeTimer.id },
+  });
+}
+
+function closeOngoingNotif() { closeNotif(ONGOING_TAG); }
+
+function showOverNotif() {
+  if (!activeTimer || !notifCfg.over || !notifGranted()) return;
+  const estMin = +(activeTimer.predictedMs / 60000).toFixed(2);
+  showNotif('Estimate reached', {
+    body: `${activeTimer.task} · est. ${estMin} min`,
+    tag: OVER_TAG,
+    renotify: true,
+    data: { kind: 'over', id: activeTimer.id },
+  });
+}
+
+function handleTimerAction(action) {
+  if (!activeTimer) return;
+  if (action === 'stop') stopTimer();
+  else if (action === 'pause') pauseActiveTimer();
+}
+
+function requestNotifPermission() {
+  return new Promise(resolve => {
+    try {
+      const p = Notification.requestPermission(resolve);
+      if (p && typeof p.then === 'function') p.then(resolve);
+    } catch (e) { resolve('denied'); }
+  });
+}
+
+function toggleNotif(which) {
+  if (notifCfg[which]) {
+    notifCfg[which] = false;
+    saveNotifCfg();
+    if (which === 'ongoing') closeOngoingNotif();
+    renderNotifUI();
+    return;
+  }
+  if (!notifSupported()) { renderNotifUI(); return; }
+  // Must stay inside the tap's user gesture — no awaits before this call.
+  requestNotifPermission().then(perm => {
+    if (perm === 'granted') {
+      notifCfg[which] = true;
+      saveNotifCfg();
+      if (which === 'ongoing') showOngoingNotif();
+    }
+    renderNotifUI();
+  });
+}
+
+function renderNotifUI() {
+  document.getElementById('notif-toggle').classList.toggle('on', notifCfg.ongoing);
+  document.getElementById('notif-over-toggle').classList.toggle('on', notifCfg.over);
+  const status = document.getElementById('notif-status');
+  if (!notifSupported()) {
+    status.textContent = 'not available here — on iPhone, open Meridian from the Home Screen';
+  } else if (Notification.permission === 'denied') {
+    status.textContent = 'blocked — allow notifications for Meridian in system settings';
+  } else if (Notification.permission === 'granted') {
+    status.textContent = 'allowed';
+  } else {
+    status.textContent = '';
+  }
 }
 
 function formatDuration(ms) {
@@ -1413,10 +1562,12 @@ function startTimer() {
     accumulatedMs: 0,
     lastResumeAt: now,
     voided: false,
+    notified: false,
   };
   saveActive();
 
   beginActiveTimerUI();
+  showOngoingNotif();
 }
 
 // Retrodiction: a task logged after the fact — no prediction existed, so
@@ -1516,6 +1667,13 @@ function updateTimerDisplay() {
   } else if (isOver) {
     digits.textContent = '-' + formatDuration(Math.abs(remaining));
     digits.classList.add('over');
+    if (!activeTimer.notified) {
+      // Marked on the crossing whether or not the alert is enabled, so
+      // switching it on mid-overrun doesn't fire a stale alert.
+      activeTimer.notified = true;
+      saveActive();
+      showOverNotif();
+    }
   } else {
     digits.textContent = formatDuration(remaining);
     digits.classList.remove('over');
@@ -1567,6 +1725,8 @@ function stopTimer() {
   const entry = logEntryFromTimer(activeTimer, activeElapsed());
   activeTimer = null;
   saveActive();
+  closeOngoingNotif();
+  closeNotif(OVER_TAG);
 
   logs.unshift(entry);
   saveLogs();
@@ -1589,11 +1749,13 @@ function pauseActiveTimer() {
     startTime: activeTimer.startTime,
     accumulatedMs: activeTimer.accumulatedMs,
     voided: activeTimer.voided === true,
+    notified: activeTimer.notified === true,
   });
   activeTimer = null;
   clearActiveIntervals();
   saveActive();
   savePaused();
+  closeOngoingNotif();
   hideActiveTimerUI();
   document.getElementById('input-section').style.display = '';
   document.getElementById('task-input').value = '';
@@ -1616,9 +1778,11 @@ function resumePausedTimer(id) {
     accumulatedMs: t.accumulatedMs,
     lastResumeAt: Date.now(),
     voided: t.voided === true,
+    notified: t.notified === true,
   };
   saveActive();
   beginActiveTimerUI();
+  showOngoingNotif();
   renderLog();
 }
 
@@ -2562,6 +2726,7 @@ function restoreActiveTimer() {
     activeTimer = t;
     activeTimer.task = String(activeTimer.task);
     activeTimer.voided = activeTimer.voided === true;
+    activeTimer.notified = activeTimer.notified === true;
     if (finiteOrNull(activeTimer.accumulatedMs) == null) activeTimer.accumulatedMs = 0;
     if (finiteOrNull(activeTimer.lastResumeAt) == null) activeTimer.lastResumeAt = Date.now();
     if (finiteOrNull(activeTimer.startTime) == null) activeTimer.startTime = Date.now() - activeTimer.accumulatedMs;
@@ -3017,6 +3182,16 @@ function renderSlackUI() {
 
 if (!REPORT_MODE) {
   renderSlackUI();
+  renderNotifUI();
+  // Opened from a notification button with no window around: act, then drop
+  // the hash so a later resume-reload doesn't repeat it. Runs here, after
+  // every top-level declaration, because stopping a timer posts to Slack.
+  if (location.hash === '#stop' || location.hash === '#pause') {
+    handleTimerAction(location.hash.slice(1));
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+  // A crash or killed page can leave the ongoing notification orphaned.
+  if (!activeTimer) closeOngoingNotif();
   window.addEventListener('online', flushSlackQueue);
   flushSlackQueue();
   checkDailySummary();
@@ -3271,6 +3446,10 @@ function recoverFailedReads() {
     const stored = loadJSON(SLACK_KEY, null);
     if (stored) slackCfg = normalizeSlackCfg(stored);
     if (!REPORT_MODE) renderSlackUI();
+  }
+  if (toRecover.has(NOTIF_KEY) && !pendingWrites.has(NOTIF_KEY)) {
+    notifCfg = normalizeNotifCfg(loadJSON(NOTIF_KEY, null));
+    if (!REPORT_MODE) renderNotifUI();
   }
   if (toRecover.has(SLACK_QUEUE_KEY)) {
     const stored = loadJSON(SLACK_QUEUE_KEY, []);

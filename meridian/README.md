@@ -18,6 +18,7 @@ Meridian helps you measure how accurately you estimate tasks. Log sessions, trac
 - **Import / Export** — CSV export and import for portability
 - **Daily summary** — one click copies today's sessions as Slack-ready text
 - **Auto-backup** — point it at a local folder and it saves a CSV on a daily or weekly schedule
+- **Lock-screen notification** — opt-in: a silent notification while a timer runs (task, estimate, due time), with Stop / Pause buttons on Android, plus an optional one-shot alert when the estimate is reached. On iPhone, add Meridian to the Home Screen first
 - **Light and dark themes**
 - **Keyboard shortcuts** — `Enter` to start/stop, `E` to export, `I` to import, `C` to clear, `Y` to copy daily summary, `Escape` to exit graph view
 

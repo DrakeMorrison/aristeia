@@ -19,14 +19,14 @@ Progress happens by **step-loading in pairs**: move two sets at a time from your
 
 **Every second or third day**, the book says, swap the one-hand swings for two-hand swings with the same bell — active rest for the grip and back. Pick the cadence in settings (default every 3rd day, or off) and the swings card defaults to two-hand on the day it comes due, counted in practice days so a week off doesn't spend the rest. Two-hand days are tracked in the log and horizon but don't drive progression: the plan, "best full session", the move-up clock, and the test all read one-hand work only.
 
-And when you've been at the same load for **four weeks with at least 70% of days practiced**, a notice appears telling you it's time to move up — with a one-tap button that adds the next pair to today's plan. Any change in your logged work (a pair added, a bell graduated, even a step back) resets that clock.
+And when you've been at the same load for **four weeks with at least 60% of days practiced**, a notice appears telling you it's time to move up — with a one-tap button that adds the next pair to today's plan. Any change in your logged work (a pair added, a bell graduated, even a step back) resets that clock.
 
 Test rarely. The standard is 100 swings in 5:00, one minute of rest, then 10 get-ups in 10:00 with the goal bell — **Simple** at 32 kg, **Sinister** at 48 kg (both configurable, so the women's standards or any custom goal work too).
 
 ## Features
 
 - **Today card** — practiced or ready, days since the last session, and the plan for today's session
-- **Move-up nudge** — after 4 weeks at the same load with ≥70% attendance, a notice with a one-tap "+2 @next bell" button
+- **Move-up nudge** — after 4 weeks at the same load with ≥60% attendance, a notice with a one-tap "+2 @next bell" button
 - **Two-hand days** — a one-hand / two-hand toggle on the swings card that flips to two-hand when it's due, with a countdown in the today card
 - **One-tap logging** — bell chips per exercise, a step-load counter, an optional timed-test mode with m:ss entries, and a note
 - **Progression cards** — current bell → next bell with a 10-set progress bar, best full session, last test time, and the goal standard; a banner when both standards are met

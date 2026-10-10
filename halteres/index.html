@@ -476,6 +476,44 @@
   #backup-reminder .br-title { font-family: var(--mono); font-size: 0.62rem; color: var(--accent2); letter-spacing: 0.1em; margin-bottom: 0.4rem; }
   #backup-reminder .br-text { font-size: 0.62rem; color: var(--text-dim); line-height: 1.5; margin-bottom: 0.75rem; }
 
+  /* ── Mode tabs ──────────────────────────────────────────────── */
+  .mode-tabs { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--border); margin-bottom: 0.7rem; }
+  .mode-tab {
+    font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.05em; text-transform: uppercase;
+    padding: 0.5rem 0.4rem; background: var(--surface); border: none; color: var(--muted);
+    cursor: pointer; touch-action: manipulation;
+  }
+  .mode-tab + .mode-tab { border-left: 1px solid var(--border); }
+  .mode-tab:hover { color: var(--text); }
+  .mode-tab.active { background: var(--surface2); color: var(--accent); }
+  .mode-tab.active.bw { color: var(--orange); }
+
+  /* ── Bodyweight (strength aerobics) ─────────────────────────── */
+  .ex-bw { color: var(--orange); }
+  .ex-cards.three { grid-template-columns: 1fr; }
+  .bw-line { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+  .bw-line .step-row { flex: 1 1 12rem; }
+  .bw-line .var-input { flex: 1 1 10rem; width: auto; }
+  .var-input, .bw-shared input {
+    font-family: var(--mono); font-size: 1rem; /* ≥16px prevents iOS zoom-on-focus */
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    padding: 0.3rem 0.45rem;
+  }
+  .var-input { width: 100%; min-width: 0; }
+  .var-input:focus, .bw-shared input:focus { outline: none; border-color: var(--orange); }
+  .var-input::placeholder, .bw-shared input::placeholder { color: var(--muted); font-size: 0.66rem; }
+  .bw-shared { display: flex; gap: 0.7rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.6rem; }
+  .bw-shared .step-row { flex: 1 1 12rem; font-size: 0.72rem; }
+  .bw-shared input { width: 7rem; }
+  .bw-rules { font-size: 0.62rem; color: var(--muted); line-height: 1.5; margin-bottom: 0.6rem; }
+  .bw-rows { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.45rem; }
+  .bw-row { display: flex; gap: 0.6rem; font-size: 0.72rem; flex-wrap: wrap; align-items: baseline; }
+  .bw-row .bw-var { color: var(--text-dim); }
+  .bw-row .bw-vol { color: var(--muted); margin-left: auto; text-align: right; }
+  .day-cell.bw { background: var(--orange); border-color: color-mix(in srgb, var(--orange) 70%, var(--bg)); }
+  .horizon-legend .lg-bw { color: var(--orange); }
+  .log-row .l-work .w-bw { color: var(--orange); }
+
   footer { margin-top: auto; padding-top: 2rem; font-size: 0.6rem; color: var(--muted); text-align: center; letter-spacing: 0.05em; }
 
   @media (max-width: 480px) {
@@ -483,6 +521,7 @@
     .today-status { font-size: 1.25rem; }
     .horizon { gap: 2px; }
     .ex-cards { grid-template-columns: 1fr; }
+    .bw-row .bw-vol { flex-basis: 100%; margin-left: 0; text-align: left; }
   }
 </style>
 </head>
@@ -504,6 +543,28 @@
 
   <div class="nudge-card" id="nudge-card" style="display:none"></div>
 
+  <div class="mode-tabs">
+    <button class="mode-tab" id="mode-kb" onclick="setMode('kb')">kettlebell · S&amp;S</button>
+    <button class="mode-tab bw" id="mode-bw" onclick="setMode('bw')">bodyweight · SA [B]</button>
+  </div>
+
+  <div id="bw-form" style="display:none">
+    <div class="ex-cards three" id="bw-cards"></div>
+    <div class="bw-shared">
+      <div class="step-row">
+        <button type="button" class="step-btn" onclick="bumpLadders(-1)">−</button>
+        <span class="step-label" id="bw-ladders-label"></span>
+        <button type="button" class="step-btn" onclick="bumpLadders(1)">＋</button>
+      </div>
+      <input type="text" id="bw-time" placeholder="time (opt.)" autocomplete="off" inputmode="numeric">
+    </div>
+    <div class="bw-rules">
+      Low reps, well short of your max · rest until you can breathe through your nose again ·
+      stop when reps slow or form slips · progress with a harder variation, not more grinding.
+    </div>
+  </div>
+
+  <div id="kb-form">
   <div class="ex-cards">
     <div class="ex-card" id="card-sw">
       <div class="ex-head">
@@ -529,6 +590,7 @@
     <input type="text" id="test-sw-time" placeholder="swings m:ss" autocomplete="off" inputmode="numeric" style="display:none">
     <input type="text" id="test-tgu-time" placeholder="get-ups m:ss" autocomplete="off" inputmode="numeric" style="display:none">
   </div>
+  </div>
 
   <button class="log-session-btn" id="log-session-btn" onclick="logSession()"></button>
 
@@ -539,10 +601,11 @@
   <div class="section-title">Progression</div>
   <div id="std-banner"></div>
   <div id="prog-cards"></div>
+  <div id="bw-prog"></div>
 
   <div class="section-title">Horizon</div>
   <div class="horizon" id="horizon"></div>
-  <div class="horizon-legend"><span id="horizon-from"></span><span><span class="lg-prac">■</span> one-hand · <span class="lg-two">■</span> two-hand · <span class="lg-test">■</span> test</span><span>today ▲</span></div>
+  <div class="horizon-legend"><span id="horizon-from"></span><span><span class="lg-prac">■</span> one-hand · <span class="lg-two">■</span> two-hand · <span class="lg-test">■</span> test · <span class="lg-bw">■</span> SA</span><span>today ▲</span></div>
 
   <div class="stats-strip">
     <div class="stat-cell"><div class="stat-val accent" id="stat-week">0</div><div class="stat-label">This Week</div></div>
@@ -604,6 +667,20 @@
     <div class="settings-note">
       After each session: the QL straddle, the 90/90 stretch, and a hang
       from a pull-up bar.
+    </div>
+
+    <div class="settings-section-title">Bodyweight · strength aerobics</div>
+    <div class="settings-note">
+      For off days without the bells. Pistols, one-arm push-ups and
+      pull-ups, worked in ladders: 1, 2, 3 of each exercise in turn, then back
+      to 1. A ladder is one climb from 1 to the top rung. Keep every set far
+      from failure and rest until nose-breathing returns. Your heart rate
+      stays aerobic, and you finish fresher than you started. Progress
+      with a harder variation (feet-elevated, weighted, archer), which you
+      note on each exercise card. The log, horizon and CSV include these days.
+      Beeminder gets a datapoint for each one: 1 with the per-session
+      metric, 0 with swing reps or tonnage, so the goal still shows the day.
+      S&amp;S attendance, the move-up clock and stats ignore them.
     </div>
 
     <div class="settings-section-title">Bells (kg)</div>
@@ -720,6 +797,33 @@
   </div>
 </div>
 
+<div class="overlay" id="bw-edit-overlay" onclick="if(event.target===this) closeBwEdit()">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>EDIT STRENGTH AEROBICS</h2>
+      <button class="icon-btn" onclick="closeBwEdit()">✕</button>
+    </div>
+    <div class="settings-row">
+      <label>Time</label>
+      <input type="datetime-local" id="bw-edit-time" step="1">
+    </div>
+    <div class="settings-row">
+      <label>Ladders / duration m:ss</label>
+      <input type="number" class="half" id="bw-edit-ladders" min="1" step="1">
+      <input type="text" class="half" id="bw-edit-dur" autocomplete="off" placeholder="25:00">
+    </div>
+    <div id="bw-edit-ex"></div>
+    <div class="settings-row">
+      <label>Note</label>
+      <input type="text" id="bw-edit-note" autocomplete="off">
+    </div>
+    <div class="edit-actions">
+      <button class="btn primary" onclick="saveBwEdit()">✓ Save</button>
+      <button class="btn danger" onclick="deleteBwEdit()">✕ Delete</button>
+    </div>
+  </div>
+</div>
+
 <script>
 'use strict';
 const DB_KEY = 'halteres_sessions';
@@ -747,6 +851,20 @@ const NUDGE_ADHERENCE = 0.6;
 // is configurable (0 = off); counted in practice days with swings.
 const TWO_HAND_OPTIONS = [0, 2, 3];
 const TWO_HAND_DEFAULT = 3;
+
+// Bodyweight strength aerobics, for off days: ladders (1, 2, …, top) of
+// each exercise in turn, far from failure, resting until nose-breathing
+// returns. Kept in its own log so the S&S engine never sees it.
+const BW_KEY = 'halteres_bodyweight';
+const BW_IDS = ['pistol', 'oapu', 'pullup'];
+const BW = {
+  pistol: { name: 'pistols',          short: 'pistol', sided: true,  hint: 'e.g. +8kg, slow' },
+  oapu:   { name: 'one-arm push-ups', short: 'oapu',   sided: true,  hint: 'e.g. feet up' },
+  pullup: { name: 'pull-ups',         short: 'pull',   sided: false, hint: 'e.g. archer' },
+};
+const BW_TOP_MAX = 10;
+const BW_LADDERS_MAX = 20;
+const BW_DEFAULT = { top: 3, ladders: 5 };
 
 // ── Storage (meridian-style) ─────────────────────────────────────
 // Mobile WebKit can detach localStorage while the app is suspended in the
@@ -851,7 +969,40 @@ function sanitizeCfg(raw) {
   }
   const the = raw ? finiteOrNull(raw.twoHandEvery) : null;
   const twoHandEvery = TWO_HAND_OPTIONS.includes(the) ? the : TWO_HAND_DEFAULT;
-  return { bells: bells.length ? bells : [16, 24, 32], goal, twoHandEvery };
+  const mode = raw && raw.mode === 'bw' ? 'bw' : 'kb';
+  return { bells: bells.length ? bells : [16, 24, 32], goal, twoHandEvery, mode };
+}
+
+function clampInt(v, lo, hi) {
+  const n = finiteOrNull(v);
+  return n == null ? null : Math.max(lo, Math.min(hi, Math.round(n)));
+}
+
+// Bodyweight session = {id, t, ladders, dur (s|null), ex: {id: {top, v}}, note};
+// an exercise absent from ex was skipped.
+function sanitizeBwSessions(raw) {
+  if (!Array.isArray(raw)) return [];
+  const clean = [];
+  for (const e of raw) {
+    if (!e || typeof e !== 'object') continue;
+    const t = finiteOrNull(e.t);
+    const ladders = clampInt(e.ladders, 0, BW_LADDERS_MAX);
+    if (t == null || !ladders) continue;
+    const ex = {};
+    for (const x of BW_IDS) {
+      const r = e.ex && e.ex[x];
+      const top = r && clampInt(r.top, 0, BW_TOP_MAX);
+      if (top) ex[x] = { top, v: typeof r.v === 'string' ? r.v.trim().slice(0, 60) : '' };
+    }
+    if (!Object.keys(ex).length) continue;
+    clean.push({
+      id: finiteOrNull(e.id) ?? t, t, ladders, ex,
+      dur: posSecsOrNull(e.dur),
+      note: typeof e.note === 'string' ? e.note.trim() : '',
+    });
+  }
+  clean.sort((a, b) => a.t - b.t);
+  return clean;
 }
 
 function sanitizeBee(raw) {
@@ -888,10 +1039,15 @@ let sessions = sanitizeSessions(loadJSON(DB_KEY, []));
 let cfg = sanitizeCfg(loadJSON(CFG_KEY, null));
 let bee = sanitizeBee(loadJSON(BEE_KEY, null));
 let beeLedger = sanitizeBeeLedger(loadJSON(BEEQ_KEY, []));
+let bwSessions = sanitizeBwSessions(loadJSON(BW_KEY, []));
 
 function saveSessions() {
   sessions.sort((a, b) => a.t - b.t);
   storageSet(DB_KEY, JSON.stringify(sessions));
+}
+function saveBwSessions() {
+  bwSessions.sort((a, b) => a.t - b.t);
+  storageSet(BW_KEY, JSON.stringify(bwSessions));
 }
 function saveCfg() {
   storageSet(CFG_KEY, JSON.stringify(cfg));
@@ -1101,6 +1257,132 @@ function setSwingStyle(twoHand) {
 }
 reseedPlans();
 
+// ── Bodyweight engine ────────────────────────────────────────────
+// One ladder to `top` is 1 + 2 + … + top reps (per side for the unilateral
+// moves), done round-robin across the exercises.
+function bwRungReps(top) { return top * (top + 1) / 2; }
+function bwReps(s, x) { return s.ex[x] ? s.ladders * bwRungReps(s.ex[x].top) : 0; }
+function bwTotalReps(s) {
+  return BW_IDS.reduce((sum, x) => sum + bwReps(s, x) * (BW[x].sided ? 2 : 1), 0);
+}
+function fmtLadder(top) {
+  return top <= 5 ? Array.from({ length: top }, (_, i) => i + 1).join('–') : '1–…–' + top;
+}
+function fmtBwEx(x, top, ladders, v) {
+  return fmtLadder(top) + ' ×' + ladders + ' = ' + ladders * bwRungReps(top) +
+    (BW[x].sided ? '/side' : '') + (v ? ' · ' + v : '');
+}
+const sameVar = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+// Form state, prefilled from the last session: {ladders, ex: {id: {top, v, on}}}.
+let bwSel = null;
+
+function reseedBw() {
+  const last = bwSessions[bwSessions.length - 1];
+  const ex = {};
+  for (const x of BW_IDS) {
+    let prev = null;
+    for (let i = bwSessions.length - 1; i >= 0 && !prev; i--) prev = bwSessions[i].ex[x] || null;
+    ex[x] = { top: prev ? prev.top : BW_DEFAULT.top, v: prev ? prev.v : '', on: last ? !!last.ex[x] : true };
+  }
+  bwSel = { ladders: last ? last.ladders : BW_DEFAULT.ladders, ex };
+}
+reseedBw();
+
+function setMode(mode) {
+  cfg = sanitizeCfg({ ...cfg, mode });
+  saveCfg();
+  if (mode === 'bw' && testMode) toggleTest();
+  renderAll();
+}
+
+function bumpLadders(d) {
+  bwSel.ladders = Math.max(1, Math.min(BW_LADDERS_MAX, bwSel.ladders + d));
+  renderForm();
+  renderToday();
+}
+function bumpTop(x, d) {
+  bwSel.ex[x].top = Math.max(1, Math.min(BW_TOP_MAX, bwSel.ex[x].top + d));
+  renderForm();
+  renderToday();
+}
+function toggleBwInclude(x) {
+  bwSel.ex[x].on = !bwSel.ex[x].on;
+  renderForm();
+  renderToday();
+}
+
+// Cards are built once and renders only update their labels, so a
+// half-typed variation survives the minute tick.
+function buildBwForm() {
+  const wrap = document.getElementById('bw-cards');
+  for (const x of BW_IDS) {
+    const card = document.createElement('div');
+    card.className = 'ex-card';
+    card.id = 'card-' + x;
+    card.innerHTML =
+      '<div class="ex-head"><span class="ex-name ex-bw">' + BW[x].name + '</span>' +
+      '<button class="ex-skip" id="skip-' + x + '"></button></div>' +
+      '<div class="bw-line"><div class="step-row"><button type="button" class="step-btn">−</button>' +
+      '<span class="step-label" id="top-' + x + '"></span>' +
+      '<button type="button" class="step-btn">＋</button></div>' +
+      '<input type="text" class="var-input" id="var-' + x + '" autocomplete="off" enterkeyhint="done" placeholder="variation — ' + esc(BW[x].hint) + '"></div>';
+    const [minus, plus] = card.querySelectorAll('.step-btn');
+    minus.onclick = () => bumpTop(x, -1);
+    plus.onclick = () => bumpTop(x, 1);
+    card.querySelector('.ex-skip').onclick = () => toggleBwInclude(x);
+    const input = card.querySelector('.var-input');
+    input.addEventListener('input', () => { bwSel.ex[x].v = input.value; renderToday(); });
+    input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') input.blur(); });
+    wrap.appendChild(card);
+  }
+}
+
+function renderBwForm() {
+  for (const x of BW_IDS) {
+    const s = bwSel.ex[x];
+    document.getElementById('card-' + x).classList.toggle('skipped', !s.on);
+    document.getElementById('skip-' + x).textContent = s.on ? 'skip ✕' : 'skipped — include ✓';
+    document.getElementById('top-' + x).innerHTML = '<span class="hv">' + fmtLadder(s.top) + '</span> · ' +
+      bwRungReps(s.top) + (BW[x].sided ? '/side' : '') + ' per ladder';
+    const input = document.getElementById('var-' + x);
+    if (document.activeElement !== input) input.value = s.v;
+  }
+  document.getElementById('bw-ladders-label').innerHTML =
+    '<span class="hv">' + bwSel.ladders + '</span> ladder' + (bwSel.ladders === 1 ? '' : 's');
+
+  const on = BW_IDS.filter(x => bwSel.ex[x].on);
+  const btn = document.getElementById('log-session-btn');
+  btn.disabled = !on.length;
+  btn.textContent = on.length
+    ? '＋ log strength aerobics — ' + bwSel.ladders + ' × ' +
+      on.map(x => BW[x].short + ' ' + fmtLadder(bwSel.ex[x].top)).join(' · ')
+    : 'nothing to log — every exercise skipped';
+}
+
+function logBw() {
+  const on = BW_IDS.filter(x => bwSel.ex[x].on);
+  if (!on.length) return;
+  const t = Date.now();
+  const noteEl = document.getElementById('note-input');
+  const timeEl = document.getElementById('bw-time');
+  const ex = {};
+  for (const x of on) ex[x] = { top: bwSel.ex[x].top, v: bwSel.ex[x].v };
+  const [entry] = sanitizeBwSessions([{
+    id: t + Math.random(), t, ladders: bwSel.ladders, ex,
+    dur: parseTime(timeEl.value), note: noteEl.value,
+  }]);
+  if (!entry) return;
+  bwSessions.push(entry);
+  queueBeeUpsert(entry);
+  noteEl.value = '';
+  noteEl.blur();
+  timeEl.value = '';
+  saveBwSessions();
+  reseedBw();
+  renderAll();
+}
+
 function toggleInclude(ex) {
   incl[ex] = !incl[ex];
   renderForm();
@@ -1115,6 +1397,7 @@ function toggleTest() {
 }
 
 function logSession() {
+  if (cfg.mode === 'bw') { logBw(); return; }
   if (!incl.sw && !incl.tgu) return;
   const t = Date.now();
   const noteEl = document.getElementById('note-input');
@@ -1147,9 +1430,13 @@ function logSession() {
 // ledger until the network and Beeminder cooperate.
 function beeConfigured() { return !!(bee.user && bee.token && bee.slug); }
 
-function beeRid(s) { return 'hal' + String(s.id).replace(/\D/g, '').slice(0, 30); }
+// Bodyweight sessions get their own prefix so their requestids can never
+// collide with a kettlebell session's.
+const isBw = s => !!s.ex;
+function beeRid(s) { return (isBw(s) ? 'halbw' : 'hal') + String(s.id).replace(/\D/g, '').slice(0, 30); }
 
 function beeValue(s) {
+  if (isBw(s)) return bee.metric === 'session' ? 1 : 0;
   if (bee.metric === 'swings') return s.sw.reduce((sum, p) => sum + p.n * EX.sw.repsPer, 0);
   if (bee.metric === 'tonnage') return EX_IDS.reduce((sum, x) => sum + workTonnage(x, s[x]), 0);
   return 1;
@@ -1157,6 +1444,14 @@ function beeValue(s) {
 
 function beeComment(s) {
   const bits = [];
+  if (isBw(s)) {
+    const exs = BW_IDS.filter(x => s.ex[x]).map(x =>
+      BW[x].short + ' ' + fmtLadder(s.ex[x].top) + (s.ex[x].v ? ' (' + s.ex[x].v + ')' : ''));
+    bits.push('strength aerobics ' + s.ladders + ' × ' + exs.join(', '));
+    if (s.dur) bits.push(fmtSecs(s.dur));
+    if (s.note) bits.push(s.note);
+    return 'halteres: ' + bits.join(' · ');
+  }
   for (const x of EX_IDS) if (s[x].length) bits.push(EX[x].name + ' ' + fmtSessionWork(s, x));
   if (s.test) {
     const times = [];
@@ -1249,10 +1544,44 @@ window.addEventListener('online', syncBee);
 // ── Rendering ────────────────────────────────────────────────────
 const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+function bwPlanRow(x, top, ladders, v) {
+  return '<div class="plan-row"><span class="ex-bw">' + BW[x].name + '</span>' +
+    '<span class="plan-what">' + esc(fmtBwEx(x, top, ladders, v)) + '</span></div>';
+}
+
+function renderTodayBw(todayK) {
+  const todayBw = bwSessions.filter(s => dayKey(s.t) === todayK);
+  const status = document.getElementById('today-status');
+  status.className = 'today-status';
+  let planHtml = '';
+  if (todayBw.length) {
+    status.textContent = 'strength aerobics done';
+    status.classList.add('done');
+    for (const s of todayBw) for (const x of BW_IDS) {
+      if (s.ex[x]) planHtml += bwPlanRow(x, s.ex[x].top, s.ladders, s.ex[x].v);
+    }
+  } else {
+    const last = bwSessions[bwSessions.length - 1];
+    const gap = last ? dayDiff(dayKey(last.t), todayK) : null;
+    status.textContent = gap == null ? 'off day — first strength aerobics'
+      : 'off day — strength aerobics' + (gap === 1 ? ', last yesterday' : ', last ' + gap + ' days ago');
+    status.classList.add('ok');
+    for (const x of BW_IDS) {
+      const e = bwSel.ex[x];
+      if (e.on) planHtml += bwPlanRow(x, e.top, bwSel.ladders, e.v.trim());
+    }
+  }
+  if (sessions.some(s => dayKey(s.t) === todayK)) {
+    planHtml += '<div class="plan-hint">S&amp;S already practiced today, so keep this one easy</div>';
+  }
+  document.getElementById('plan-rows').innerHTML = planHtml;
+}
+
 function renderToday() {
   const todayK = dayKey(Date.now());
   document.getElementById('today-date').textContent =
     new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+  if (cfg.mode === 'bw') { renderTodayBw(todayK); return; }
 
   const todaySessions = sessions.filter(s => dayKey(s.t) === todayK);
   const status = document.getElementById('today-status');
@@ -1291,6 +1620,9 @@ function renderToday() {
         planHtml += '<div class="plan-hint">two-hand day ' +
           (left > 0 ? 'in ' + dayWord(left) : 'due — switched off for today') + '</div>';
       }
+    }
+    if (bwSessions.some(s => dayKey(s.t) === todayK)) {
+      planHtml += '<div class="plan-hint">strength aerobics logged today</div>';
     }
   }
   document.getElementById('plan-rows').innerHTML = planHtml;
@@ -1343,7 +1675,7 @@ function renderNudge() {
   const todayK = dayKey(Date.now());
   const adh = adherence(todayK);
   let lines = '';
-  if (adh >= NUDGE_ADHERENCE) {
+  if (cfg.mode === 'kb' && adh >= NUDGE_ADHERENCE) {
     for (const x of EX_IDS) {
       const chg = lastChangeDay(x);
       if (chg == null || dayDiff(chg, todayK) < NUDGE_WINDOW) continue;
@@ -1368,6 +1700,13 @@ function renderNudge() {
 }
 
 function renderForm() {
+  const bw = cfg.mode === 'bw';
+  document.getElementById('kb-form').style.display = bw ? 'none' : '';
+  document.getElementById('bw-form').style.display = bw ? '' : 'none';
+  document.getElementById('mode-kb').classList.toggle('active', !bw);
+  document.getElementById('mode-bw').classList.toggle('active', bw);
+  if (bw) { renderBwForm(); return; }
+
   for (const x of EX_IDS) {
     document.getElementById('card-' + x).classList.toggle('skipped', !incl[x]);
     document.getElementById('skip-' + x).textContent = incl[x] ? 'skip ✕' : 'skipped — include ✓';
@@ -1479,6 +1818,52 @@ function renderProgress() {
   el.innerHTML = html;
 }
 
+// Strength aerobics progresses by variation, not by volume for its own
+// sake: per exercise, how long you've been at the current variation and
+// the most you've done at it.
+function renderBwProgress() {
+  const el = document.getElementById('bw-prog');
+  if (!bwSessions.length) {
+    el.innerHTML = cfg.mode === 'bw'
+      ? '<div class="prog-card"><div class="prog-head"><span class="ex-name ex-bw">strength aerobics</span></div>' +
+        '<div class="prog-sub">no sessions yet. Log one and this card tracks each variation.</div></div>'
+      : '';
+    return;
+  }
+  const todayK = dayKey(Date.now());
+  const days = [...new Set(bwSessions.map(s => dayKey(s.t)))];
+  const week = days.filter(dk => dayDiff(dk, todayK) < 7).length;
+
+  let rows = '';
+  for (const x of BW_IDS) {
+    const withX = bwSessions.filter(s => s.ex[x]);
+    if (!withX.length) continue;
+    const latest = withX[withX.length - 1];
+    const v = latest.ex[x].v;
+    let streak = 0;
+    for (let i = withX.length - 1; i >= 0 && sameVar(withX[i].ex[x].v, v); i--) streak++;
+    const best = Math.max(...withX.filter(s => sameVar(s.ex[x].v, v)).map(s => bwReps(s, x)));
+    const unit = BW[x].sided ? '/side' : '';
+    rows += '<div class="bw-row"><span class="ex-bw">' + BW[x].name + '</span>' +
+      '<span class="bw-var">' + esc(v || 'standard') + '</span>' +
+      '<span class="bw-vol">last ' + bwReps(latest, x) + unit + ' · best ' + best + unit + ' · ' +
+      streak + ' session' + (streak === 1 ? '' : 's') + '</span></div>';
+  }
+
+  const last = bwSessions[bwSessions.length - 1];
+  const lastBits = [last.ladders + ' ladder' + (last.ladders === 1 ? '' : 's'), bwTotalReps(last) + ' reps'];
+  if (last.dur) {
+    lastBits.push('in ' + fmtSecs(last.dur));
+    lastBits.push((bwTotalReps(last) / (last.dur / 60)).toFixed(1) + ' reps/min');
+  }
+  el.innerHTML = '<div class="prog-card">' +
+    '<div class="prog-head"><span class="ex-name ex-bw">strength aerobics</span>' +
+    '<span class="prog-goal">' + week + ' this week · ' + bwSessions.length + ' total</span></div>' +
+    '<div class="bw-rows">' + rows + '</div>' +
+    '<div class="prog-sub">last: ' + lastBits.join(' · ') +
+    '. When the ladders feel easy, move to a harder variation instead of adding more reps.</div></div>';
+}
+
 function renderHorizon() {
   const el = document.getElementById('horizon');
   const todayK = dayKey(Date.now());
@@ -1490,6 +1875,15 @@ function renderHorizon() {
     if (s.sw2) cur.two = true;
     if (EX_IDS.every(x => !s[x].length || workTotal(s[x]) >= EX[x].total)) cur.full = true;
     for (const x of EX_IDS) if (s[x].length) cur.sum.push(EX[x].name + ' ' + fmtSessionWork(s, x));
+    cur.kb = true;
+    byDay.set(dk, cur);
+  }
+  // Bodyweight days fill otherwise-empty cells. On a day with both, the
+  // kettlebell colour wins and the tooltip lists everything.
+  for (const s of bwSessions) {
+    const dk = dayKey(s.t);
+    const cur = byDay.get(dk) || { test: false, full: false, two: false, sum: [] };
+    for (const x of BW_IDS) if (s.ex[x]) cur.sum.push(BW[x].name + ' ' + fmtBwEx(x, s.ex[x].top, s.ladders, s.ex[x].v));
     byDay.set(dk, cur);
   }
   let html = '';
@@ -1499,7 +1893,7 @@ function renderHorizon() {
     let title = fmtDayLabel(key);
     const d = byDay.get(key);
     if (d) {
-      cls += d.test ? ' test' : d.two ? ' two' : (d.full ? ' prac' : ' part');
+      cls += !d.kb ? ' bw' : d.test ? ' test' : d.two ? ' two' : (d.full ? ' prac' : ' part');
       title += ': ' + d.sum.join(' · ') + (d.test ? ' ⏱ test' : '');
     } else {
       title += ': rest';
@@ -1529,17 +1923,41 @@ let logShowAll = false;
 function renderLog() {
   const el = document.getElementById('log-list');
   el.innerHTML = '';
-  if (sessions.length === 0) {
+  const all = sessions.map(s => ({ bw: false, s })).concat(bwSessions.map(s => ({ bw: true, s })))
+    .sort((a, b) => a.s.t - b.s.t);
+  if (all.length === 0) {
     el.innerHTML = '<div class="log-empty">no sessions yet — pick your bell and log the first one</div>';
     return;
   }
   const LIMIT = 30;
-  const shown = logShowAll ? sessions.slice() : sessions.slice(-LIMIT);
-  const hidden = sessions.length - shown.length;
+  const shown = logShowAll ? all : all.slice(-LIMIT);
+  const hidden = all.length - shown.length;
   const frag = document.createDocumentFragment();
-  for (const s of shown.slice().reverse()) {
+  for (const { bw, s } of shown.slice().reverse()) {
     const row = document.createElement('div');
     row.className = 'log-row';
+    if (bw) {
+      const bits = BW_IDS.filter(x => s.ex[x]).map(x =>
+        BW[x].short + ' ' + fmtLadder(s.ex[x].top) + (s.ex[x].v ? ' (' + s.ex[x].v + ')' : ''));
+      row.innerHTML =
+        '<span class="l-day">' + esc(fmtDayLabel(dayKey(s.t))) + ' ' + fmtClock(s.t) + '</span>' +
+        '<span class="l-work"><span class="w-bw">sa</span> ' + s.ladders + ' × ' + esc(bits.join(' · ')) + '</span>' +
+        (s.dur ? '<span class="test-badge">' + fmtSecs(s.dur) + '</span>' : '') +
+        '<button class="l-del" title="delete">✕</button>' +
+        (s.note ? '<span class="l-note">' + esc(s.note) + '</span>' : '');
+      row.querySelector('.l-del').onclick = (ev) => {
+        ev.stopPropagation();
+        if (!confirm('Delete this session?')) return;
+        queueBeeDelete(s);
+        bwSessions = bwSessions.filter(x => x.id !== s.id);
+        saveBwSessions();
+        reseedBw();
+        renderAll();
+      };
+      row.onclick = () => openBwEdit(s.id);
+      frag.appendChild(row);
+      continue;
+    }
     const workBits = [];
     for (const x of EX_IDS) {
       if (!s[x].length) continue;
@@ -1586,6 +2004,7 @@ function renderAll() {
   renderNudge();
   renderForm();
   renderProgress();
+  renderBwProgress();
   renderHorizon();
   renderStats();
   renderLog();
@@ -1629,6 +2048,16 @@ function recoverFailedReads() {
     if (missing.length) {
       beeLedger = beeLedger.concat(missing);
       saveBeeLedger();
+    }
+  }
+  if (toRecover.has(BW_KEY)) {
+    const stored = sanitizeBwSessions(loadJSON(BW_KEY, []));
+    const have = new Set(bwSessions.map(e => e.id));
+    const missing = stored.filter(e => !have.has(e.id));
+    if (missing.length) {
+      bwSessions = sanitizeBwSessions(bwSessions.concat(missing));
+      saveBwSessions();
+      reseedBw();
     }
   }
   if (toRecover.has(THEME_KEY) && !pendingWrites.has(THEME_KEY)) {
@@ -1704,6 +2133,68 @@ function deleteEdit() {
   saveSessions();
   closeEdit();
   reseedPlans();
+  renderAll();
+}
+
+// ── Bodyweight edit overlay ──────────────────────────────────────
+let bwEditId = null;
+
+function openBwEdit(id) {
+  const s = bwSessions.find(x => x.id === id);
+  if (!s) return;
+  bwEditId = id;
+  document.getElementById('bw-edit-time').value = toLocalInput(s.t);
+  document.getElementById('bw-edit-ladders').value = s.ladders;
+  document.getElementById('bw-edit-dur').value = s.dur != null ? fmtSecs(s.dur) : '';
+  document.getElementById('bw-edit-note').value = s.note;
+  document.getElementById('bw-edit-ex').innerHTML = BW_IDS.map(x =>
+    '<div class="settings-row"><label>' + BW[x].name + ': top rung (0 = skipped) / variation</label>' +
+    '<input type="number" class="half" id="bw-edit-top-' + x + '" min="0" max="' + BW_TOP_MAX + '" step="1" value="' + (s.ex[x] ? s.ex[x].top : 0) + '">' +
+    '<input type="text" class="half" id="bw-edit-var-' + x + '" autocomplete="off" value="' + esc(s.ex[x] ? s.ex[x].v : '') + '"></div>'
+  ).join('');
+  document.getElementById('bw-edit-overlay').classList.add('visible');
+}
+
+function closeBwEdit() {
+  bwEditId = null;
+  document.getElementById('bw-edit-overlay').classList.remove('visible');
+}
+
+function saveBwEdit() {
+  const s = bwSessions.find(x => x.id === bwEditId);
+  if (!s) { closeBwEdit(); return; }
+  const t = new Date(document.getElementById('bw-edit-time').value).getTime();
+  const ex = {};
+  for (const x of BW_IDS) {
+    ex[x] = {
+      top: Number(document.getElementById('bw-edit-top-' + x).value),
+      v: document.getElementById('bw-edit-var-' + x).value,
+    };
+  }
+  // Anything that doesn't survive sanitizing (no exercises, no ladders)
+  // leaves the session as it was rather than silently deleting it.
+  const [fixed] = sanitizeBwSessions([{
+    id: s.id, t: isFinite(t) ? Math.min(t, Date.now()) : s.t,
+    ladders: Number(document.getElementById('bw-edit-ladders').value), ex,
+    dur: parseTime(document.getElementById('bw-edit-dur').value),
+    note: document.getElementById('bw-edit-note').value,
+  }]);
+  if (fixed) Object.assign(s, fixed);
+  saveBwSessions();
+  queueBeeUpsert(s);
+  closeBwEdit();
+  reseedBw();
+  renderAll();
+}
+
+function deleteBwEdit() {
+  if (!confirm('Delete this session?')) return;
+  const s = bwSessions.find(x => x.id === bwEditId);
+  if (s) queueBeeDelete(s);
+  bwSessions = bwSessions.filter(x => x.id !== bwEditId);
+  saveBwSessions();
+  closeBwEdit();
+  reseedBw();
   renderAll();
 }
 
@@ -1789,21 +2280,37 @@ function goalChanged() {
 }
 
 // ── CSV export / import ──────────────────────────────────────────
-const CSV_HEADER = 'id,timestamp,iso,swings,getups,test,swings_time,getups_time,note,two_hand';
+// Bodyweight sessions share the file: kind=bw rows leave the kettlebell
+// columns empty and fill ladders, duration and a top/variation pair per
+// exercise. Rows with no kind column are from older exports, all kettlebell.
+const CSV_HEADER = 'id,timestamp,iso,swings,getups,test,swings_time,getups_time,note,two_hand,kind,ladders,duration' +
+  BW_IDS.map(x => ',' + x + '_top,' + x + '_variation').join('');
 const csvQuote = s => '"' + String(s).replace(/"/g, '""') + '"';
 
 function buildCSV() {
-  const rows = [CSV_HEADER];
+  const rows = [];
   for (const s of sessions) {
-    rows.push([
+    rows.push({ t: s.t, line: [
       s.id, s.t, new Date(s.t).toISOString(),
       workToStr(s.sw), workToStr(s.tgu),
       s.test ? 1 : 0, s.swT ?? '', s.tguT ?? '',
       csvQuote(s.note),
       s.sw2 ? 1 : 0,
-    ].join(','));
+      'kb', '', '', ...BW_IDS.flatMap(() => ['', '']),
+    ].join(',') });
   }
-  return rows.join('\n') + '\n';
+  for (const s of bwSessions) {
+    rows.push({ t: s.t, line: [
+      s.id, s.t, new Date(s.t).toISOString(),
+      '', '', 0, '', '',
+      csvQuote(s.note),
+      0,
+      'bw', s.ladders, s.dur ?? '',
+      ...BW_IDS.flatMap(x => s.ex[x] ? [s.ex[x].top, csvQuote(s.ex[x].v)] : ['', '']),
+    ].join(',') });
+  }
+  rows.sort((a, b) => a.t - b.t);
+  return [CSV_HEADER, ...rows.map(r => r.line)].join('\n') + '\n';
 }
 
 function downloadCSV(csv, filename) {
@@ -1848,10 +2355,20 @@ function handleImportFile(file) {
   reader.onload = () => {
     const lines = String(reader.result).split(/\r?\n/).filter(l => l.trim());
     const imported = [];
+    const importedBw = [];
     for (const line of lines) {
       if (line.startsWith('id,')) continue;
       const f = parseCSVLine(line);
       if (f.length < 9) continue;
+      if (f[10] === 'bw') {
+        const ex = {};
+        BW_IDS.forEach((x, i) => { ex[x] = { top: Number(f[13 + 2 * i]), v: f[14 + 2 * i] || '' }; });
+        importedBw.push({
+          id: Number(f[0]), t: Number(f[1]), ladders: Number(f[11]), ex,
+          dur: f[12] === '' ? null : Number(f[12]), note: f[8],
+        });
+        continue;
+      }
       imported.push({
         id: Number(f[0]), t: Number(f[1]),
         sw: parseWorkStr(f[3]), tgu: parseWorkStr(f[4]),
@@ -1865,22 +2382,33 @@ function handleImportFile(file) {
     const existing = new Set(sessions.map(e => e.id));
     const added = imported.filter(e => isFinite(e.id) && !existing.has(e.id));
     sessions = sanitizeSessions(sessions.concat(added));
+    const existingBw = new Set(bwSessions.map(e => e.id));
+    const addedBw = importedBw.filter(e => isFinite(e.id) && !existingBw.has(e.id));
+    bwSessions = sanitizeBwSessions(bwSessions.concat(addedBw));
     saveSessions();
+    saveBwSessions();
     reseedPlans();
+    reseedBw();
     renderAll();
-    alert('Imported ' + added.length + ' new session' + (added.length === 1 ? '' : 's') + ' (' + (imported.length - added.length) + ' duplicates skipped).');
+    const n = added.length + addedBw.length;
+    const dupes = imported.length + importedBw.length - n;
+    alert('Imported ' + n + ' new session' + (n === 1 ? '' : 's') +
+      (addedBw.length ? ' (' + addedBw.length + ' bodyweight)' : '') + ' · ' + dupes + ' duplicates skipped.');
   };
   reader.readAsText(file);
   document.getElementById('import-file').value = '';
 }
 
 function clearAll() {
-  if (!confirm('Delete ALL ' + sessions.length + ' sessions? Export first if you want a backup. (Datapoints already on Beeminder are left alone.)')) return;
+  if (!confirm('Delete ALL ' + (sessions.length + bwSessions.length) + ' sessions, kettlebell and bodyweight? Export first if you want a backup. (Datapoints already on Beeminder are left alone.)')) return;
   sessions = [];
+  bwSessions = [];
   beeLedger = [];
   saveSessions();
+  saveBwSessions();
   saveBeeLedger();
   reseedPlans();
+  reseedBw();
   renderAll();
 }
 
@@ -1927,7 +2455,7 @@ function renderBackupUI() {
 }
 
 function isBackupDue() {
-  if (backupCfg.freq === 'off' || !sessions.length) return false;
+  if (backupCfg.freq === 'off' || !(sessions.length + bwSessions.length)) return false;
   if (!backupCfg.lastBackup) return true;
   const threshold = backupCfg.freq === 'daily' ? 86400000 : 604800000;
   return Date.now() - backupCfg.lastBackup >= threshold;
@@ -1944,7 +2472,7 @@ function checkBackupDue() {
 }
 
 async function runBackupNow(silent = false) {
-  if (!sessions.length) { if (!silent) alert('No sessions to back up.'); return; }
+  if (!(sessions.length + bwSessions.length)) { if (!silent) alert('No sessions to back up.'); return; }
   const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const filename = 'halteres-backup-' + stamp + '.csv';
   const csv = buildCSV();
@@ -2019,9 +2547,10 @@ document.addEventListener('keydown', (ev) => {
     return;
   }
   const k = ev.key.toLowerCase();
-  if (k === 'escape') { closeSettings(); closeEdit(); }
+  if (k === 'escape') { closeSettings(); closeEdit(); closeBwEdit(); }
   else if (k === 'l') logSession();
-  else if (k === 't') toggleTest();
+  else if (k === 't') { if (cfg.mode === 'kb') toggleTest(); }
+  else if (k === 'b') setMode(cfg.mode === 'bw' ? 'kb' : 'bw');
   else if (k === 'n') { document.getElementById('note-input').focus(); ev.preventDefault(); }
   else if (k === 's') openSettings();
   else if (k === 'e') exportCSV();
@@ -2036,6 +2565,7 @@ if ('serviceWorker' in navigator) {
 }
 
 setTheme(storageGet(THEME_KEY) || 'auto');
+buildBwForm();
 renderAll();
 syncBee();
 renderBackupUI();

@@ -14,7 +14,7 @@ locally in the browser, and works offline.
 | [meridian](meridian/) | Time tracker and prediction calibration | [open](https://drakemorrison.github.io/aristeia/meridian/) |
 | [gnomon](gnomon/) | One-tap timestamped activity log for shadowing sessions | [open](https://drakemorrison.github.io/aristeia/gnomon/) |
 | [pharmakon](pharmakon/) | Stimulant-cycling tracker: nicotine/caffeine alternation with honest violation flagging | [open](https://drakemorrison.github.io/aristeia/pharmakon/) |
-| [halteres](halteres/) | Simple & Sinister kettlebell log: swings, get-ups, step-loading, and timed tests | [open](https://drakemorrison.github.io/aristeia/halteres/) |
+| [halteres](halteres/) | Simple & Sinister kettlebell log: swings, get-ups, step-loading, and timed tests, plus bodyweight strength-aerobics off days | [open](https://drakemorrison.github.io/aristeia/halteres/) |
 | [nbacking](nbacking/) | Dual n-back working memory training with local stats and Beeminder integration | [open](https://drakemorrison.github.io/aristeia/nbacking/) |
 | [peira](peira/) | Blinded, randomised N-of-1 self-experiments: lots drawn per period, jar-based blinding, Bayes factors instead of p-values | [open](https://drakemorrison.github.io/aristeia/peira/) |
 

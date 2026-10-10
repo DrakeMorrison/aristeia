@@ -21,6 +21,12 @@ Progress happens by **step-loading in pairs**: move two sets at a time from your
 
 And when you've been at the same load for **four weeks with at least 60% of days practiced**, a notice appears telling you it's time to move up — with a one-tap button that adds the next pair to today's plan. Any change in your logged work (a pair added, a bell graduated, even a step back) resets that clock.
 
+## Off days: bodyweight strength aerobics
+
+Some days the bells aren't there. Switch to the **bodyweight** tab (or press `B`) and log a strength-aerobics session instead. It uses pistols, one-arm push-ups and pull-ups, worked in **ladders**: 1 rep of each exercise in turn, then 2 of each, then 3 of each, then back to 1. One climb to the top rung is one ladder. Keep every set far from failure and rest until you can breathe through your nose again. The work stays aerobic and you finish fresher than you started.
+
+Each exercise card has a top rung (default 3) and a free-text **variation** (feet-elevated, +8 kg, archer…). Below the cards is a ladder counter and an optional duration. Like the kettlebell form, everything is prefilled from your last session. A strength-aerobics card under Progression shows, for each exercise, the current variation, how many sessions you've done at it, and your last and best volume at it. The intended way to progress is a harder variation, not grinding out more reps. These days show orange in the horizon strip and appear in the log and CSV. They post to Beeminder too: 1 with the per-session metric, 0 with swing reps or tonnage, so the day still shows on the goal. They don't count toward S&S attendance, the move-up clock or the stats strip, so an off day never moves your kettlebell progression.
+
 Test rarely. The standard is 100 swings in 5:00, one minute of rest, then 10 get-ups in 10:00 with the goal bell — **Simple** at 32 kg, **Sinister** at 48 kg (both configurable, so the women's standards or any custom goal work too).
 
 ## Features
@@ -30,14 +36,15 @@ Test rarely. The standard is 100 swings in 5:00, one minute of rest, then 10 get
 - **Two-hand days** — a one-hand / two-hand toggle on the swings card that flips to two-hand when it's due, with a countdown in the today card
 - **One-tap logging** — bell chips per exercise, a step-load counter, an optional timed-test mode with m:ss entries, and a note
 - **Progression cards** — current bell → next bell with a 10-set progress bar, best full session, last test time, and the goal standard; a banner when both standards are met
-- **Horizon strip** — the last 28 days at a glance: one-hand sessions, partial sessions, two-hand days, and test days
+- **Horizon strip** — the last 28 days at a glance: one-hand sessions, partial sessions, two-hand days, test days, and bodyweight days
+- **Bodyweight mode** — strength-aerobics ladders (pistols, one-arm push-ups, pull-ups) for off days, with per-exercise variation tracking
 - **Stats** — sessions this week, 4-week average per week, total sessions, total tonnage
 - **Honest log** — reverse-chronological sessions with test badges (green when the time standard was met); tap to edit time/work/times or delete
 - **Beeminder** — optionally posts a datapoint per session (1, swing reps, or tonnage) straight from the browser; edits re-post, deletes zero out, offline sessions queue until you're back
 - **Import / Export** — CSV for portability and analysis elsewhere
 - **PWA** — installable, works offline
 - **Light and dark themes**
-- **Keyboard shortcuts** — `L` log session, `T` toggle timed test, `N` focus note, `S` settings, `E` export, `I` import, `Escape` close
+- **Keyboard shortcuts** — `L` log session, `T` toggle timed test, `B` kettlebell / bodyweight, `N` focus note, `S` settings, `E` export, `I` import, `Escape` close
 
 ## Usage
 
@@ -45,6 +52,6 @@ Open `index.html` (or serve the directory), set your bells in settings (default 
 
 ## Data
 
-Everything stays in your browser via `localStorage`. Nothing is sent anywhere — unless you configure the Beeminder integration in settings, in which case session datapoints (and your auth token, stored locally) go directly from your browser to `beeminder.com` via its CORS-enabled API. Each session maps to one datapoint by `requestid`, so editing a session updates its datapoint and deleting one zeroes it out. Use Export CSV to back up or move your data — columns are `id,timestamp,iso,swings,getups,test,swings_time,getups_time,note,two_hand`, with work encoded as `weight×count` terms (`24x8+28x2` = 8 sets at 24 kg and 2 at 28 kg) test times in seconds, and `two_hand` as 0/1 (older exports without the column import fine).
+Everything stays in your browser via `localStorage`. Nothing is sent anywhere — unless you configure the Beeminder integration in settings, in which case session datapoints (and your auth token, stored locally) go directly from your browser to `beeminder.com` via its CORS-enabled API. Each session maps to one datapoint by `requestid`, so editing a session updates its datapoint and deleting one zeroes it out. Use Export CSV to back up or move your data — columns are `id,timestamp,iso,swings,getups,test,swings_time,getups_time,note,two_hand`, with work encoded as `weight×count` terms (`24x8+28x2` = 8 sets at 24 kg and 2 at 28 kg) test times in seconds, and `two_hand` as 0/1 (older exports without the column import fine). Bodyweight sessions share the file as `kind=bw` rows, with `ladders`, `duration` (seconds), and a `<exercise>_top` / `<exercise>_variation` pair per exercise (empty top = skipped).
 
 *This is a personal logging tool, not coaching or medical advice.*

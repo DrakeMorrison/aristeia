@@ -1773,9 +1773,10 @@ function renderForm() {
 
 function renderProgress() {
   const el = document.getElementById('prog-cards');
+  const banner = document.getElementById('std-banner');
+  if (cfg.mode === 'bw') { el.innerHTML = ''; banner.innerHTML = ''; return; }
   let html = '';
   const achievedBoth = EX_IDS.map(x => goalAchievedDay(x));
-  const banner = document.getElementById('std-banner');
   if (achievedBoth.every(d => d != null)) {
     const name = goalName(cfg.goal.sw);
     banner.innerHTML = '<div class="std-banner">✦ ' + esc(name) + ' standard achieved · ' +

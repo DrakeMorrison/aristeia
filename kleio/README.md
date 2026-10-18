@@ -49,7 +49,7 @@ Decks can be switched off; their progress is kept. To add a deck, paste JSON int
 ]
 ```
 
-`title` and `y` (negative for BCE) are required. `m`, `d`, `c` (circa), `region`, `deck`, `blurb`, and `details` are optional. Events with no month count as ties with anything else in the same year. The panel's **Copy a prompt for an AI** button copies a prompt that asks for exactly this format.
+`title` and `y` (negative for BCE) are required. `y2` makes the card a span (a reign, a war, a geological period); spans are placed by their start year. Years can be as old as the Big Bang, and the editor accepts "541 million BC" or "200,000 BC". `m`, `d`, `c` (circa), `region`, `deck`, `blurb`, and `details` are optional. Events with no month count as ties with anything else in the same year. The panel's **Copy a prompt for an AI** button copies a prompt that asks for exactly this format.
 
 ## Logs, Beeminder, backup
 

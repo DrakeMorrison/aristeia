@@ -483,7 +483,7 @@
     <div class="settings-note">
       Paste a JSON array of cards, or a <code>{"cards": [...]}</code> object.
       Each card needs <code>title</code> and <code>y</code> (negative for BCE);
-      <code>m</code>, <code>d</code>, <code>c</code> (circa), <code>region</code>,
+      <code>y2</code> (end year of a span), <code>m</code>, <code>d</code>, <code>c</code> (circa), <code>region</code>,
       <code>deck</code>, <code>blurb</code> and <code>details</code>
       (<code>[{"q", "a"}]</code>) are optional. Cards already present are skipped.
     </div>
@@ -509,8 +509,12 @@
       <input type="text" id="ce-title" autocomplete="off">
     </div>
     <div class="settings-row">
-      <label>Year (e.g. 1453, 44 BCE) / month / day</label>
+      <label>Year (e.g. 1453, 44 BCE, 541 million BC) / end year, for spans</label>
       <input type="text" class="half" id="ce-year" autocomplete="off">
+      <input type="text" class="half" id="ce-end" autocomplete="off" placeholder="end (optional)">
+    </div>
+    <div class="settings-row">
+      <label>Month / day (optional)</label>
       <input type="number" class="third" id="ce-month" min="1" max="12" placeholder="m">
       <input type="number" class="third" id="ce-day" min="1" max="31" placeholder="d">
     </div>
@@ -651,8 +655,10 @@ const STRIKE_OPTIONS = [1, 3, 5];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const AGAIN = 0, HARD = 1, GOOD = 2;
 // Placing a card one gap off counts as "hard" rather than "again" only if
-// the year was this close to the gap you picked.
+// the year was this close to the gap you picked: 25 years, or 5% of how
+// long ago it was for deep time (541 million BCE ± 27 million).
 const NEAR_YEARS = 25;
+const nearYears = c => Math.max(NEAR_YEARS, Math.abs(2000 - c.y) * 0.05);
 
 // ── Starter deck ─────────────────────────────────────────────────
 // [year (negative = BCE), month, day, circa, title, region, context, question, answer]
@@ -895,13 +901,16 @@ function clampInt(v, lo, hi) {
 const str = (v, n) => typeof v === 'string' ? v.trim().slice(0, n) : '';
 const isDayKey = v => typeof v === 'string' && /^\d{4}-\d\d-\d\d$/.test(v);
 
-// "1453" → 1453, "-44" / "44 BCE" / "44 bc" → -44, "AD 79" → 79.
+// "1453" → 1453, "-44" / "44 BCE" / "44 bc" → -44, "AD 79" → 79,
+// "200,000 BC" → -200000, "13.7 billion BC" → -13700000000.
+const SCALE = { thousand: 1e3, million: 1e6, billion: 1e9 };
 function parseYear(s) {
-  const m = String(s).trim().match(/^(ad|ce)?\s*(-?\d{1,5})\s*(bce|bc|b\.c\.e?\.?|ce|ad|a\.d\.)?$/i);
+  const m = String(s).trim().match(/^(ad|ce)?\s*(-?[\d,]*\.?\d+)\s*(thousand|million|billion)?\s*(years ago|bce|bc|b\.c\.e?\.?|ce|ad|a\.d\.)?$/i);
   if (!m) return null;
-  let y = Number(m[2]);
-  if (m[3] && /^b/i.test(m[3])) y = -Math.abs(y);
-  return y;
+  let y = Number(m[2].replace(/,/g, '')) * (m[3] ? SCALE[m[3].toLowerCase()] : 1);
+  if (!isFinite(y)) return null;
+  if (m[4] && /^(b|y)/i.test(m[4])) y = -Math.abs(y);
+  return Math.round(y);
 }
 
 // ── Sanitizing ───────────────────────────────────────────────────
@@ -914,7 +923,12 @@ function sanitizeCard(raw, deckFallback) {
   let y = raw.y ?? raw.year ?? date.y;
   if (typeof y === 'string') y = parseYear(y);
   y = finiteOrNull(y);
-  if (!title || y == null || Math.abs(y) > 100000) return null;
+  if (!title || y == null || Math.abs(y) > 2e10) return null;
+  // optional end year, for spans like a reign or a war; placement uses the start
+  let y2 = raw.y2 ?? raw.end;
+  if (typeof y2 === 'string') y2 = parseYear(y2);
+  y2 = finiteOrNull(y2);
+  if (y2 != null && (y2 <= y || Math.abs(y2) > 2e10)) y2 = null;
   const m = clampInt(raw.m ?? raw.month ?? date.m, 0, 12) || 0;
   const d = m ? clampInt(raw.d ?? raw.day ?? date.d, 0, 31) || 0 : 0;
   let details = Array.isArray(raw.details) ? raw.details : [];
@@ -927,10 +941,12 @@ function sanitizeCard(raw, deckFallback) {
   return {
     id: str(raw.id, 100) || 'u:' + Math.round(y) + ':' + slug(title),
     title, y: Math.round(y), m, d,
+    y2: y2 == null ? null : Math.round(y2),
+    dl: str(raw.dl, 40),
     c: !!(raw.c ?? raw.circa),
     region: str(raw.region, 60),
     deck: str(raw.deck, 60) || deckFallback || 'Imported',
-    blurb: str(raw.blurb ?? raw.context, 500),
+    blurb: str(raw.blurb ?? raw.context, 1000),
     details,
   };
 }
@@ -1082,9 +1098,29 @@ function cmpCards(a, b) {
   return a.d - b.d;
 }
 
-function fmtYear(y) { return y < 0 ? -y + ' BCE' : String(y); }
+// 541000000 → "541 million", 13700000000 → "13.7 billion", 46000 → "46,000"
+function fmtMag(n) {
+  for (const [w, v] of [['billion', 1e9], ['million', 1e6]]) {
+    if (n >= v) return +(n / v).toFixed(2) + ' ' + w;
+  }
+  return n >= 10000 ? n.toLocaleString('en-US') : String(n);
+}
+function fmtYear(y) { return y < 0 ? fmtMag(-y) + ' BCE' : String(y); }
+function fmtYears(n) { return fmtMag(n) + ' year' + (n === 1 ? '' : 's'); }
 function fmtDate(c, full) {
   const pre = c.c ? 'c. ' : '';
+  // dl is a display label for dates that aren't one year or a span, e.g. "1903, 1911"
+  if (c.dl) return c.dl;
+  if (c.y2 != null) {
+    if (c.y2 < 0) {
+      // "420–360 million BCE" when both ends share a scale word
+      const [a, b] = [fmtMag(-c.y), fmtMag(-c.y2)];
+      const wa = a.split(' ')[1], wb = b.split(' ')[1];
+      if (wa === wb) return pre + a.split(' ')[0] + '–' + b + ' BCE';
+      return pre + a + ' – ' + b + ' BCE';
+    }
+    return pre + (c.y < 0 ? fmtYear(c.y) + ' – ' + c.y2 + ' CE' : c.y + '–' + c.y2);
+  }
   if (full && c.m) return pre + (c.d ? c.d + ' ' : '') + MONTHS[c.m - 1] + ' ' + fmtYear(c.y);
   return pre + fmtYear(c.y);
 }
@@ -1316,7 +1352,7 @@ function place(gap) {
     if (lo && card.y < lo.y) err = lo.y - card.y;
     else if (hi && card.y > hi.y) err = card.y - hi.y;
   }
-  const wg = off === 0 ? GOOD : off === 1 && err <= NEAR_YEARS ? HARD : AGAIN;
+  const wg = off === 0 ? GOOD : off === 1 && err <= nearYears(card) ? HARD : AGAIN;
   const wasNew = !srs[card.id];
 
   play.line.splice(at, 0, card.id);
@@ -1424,13 +1460,13 @@ function renderPlay() {
     let html = '<div class="d-region">' + esc(shownCard.region || shownCard.deck) + '</div>' +
       '<div class="d-title">' + esc(shownCard.title) + '</div>';
     if (play.phase === 'place') {
-      html += '<div class="d-date">????</div>' +
+      html += '<div class="d-date">' + (shownCard.y2 != null ? '???? – ???? · placed by its start' : '????') + '</div>' +
         '<div class="d-hint">Tap the gap where it belongs · ↑ ↓ Enter</div>';
     } else {
       const r = play.res;
       const verdict = r.off === 0 ? '<div class="verdict ok">✓ right gap</div>'
         : '<div class="verdict ' + (r.wg === HARD ? 'near' : 'bad') + '">✕ ' + r.off + ' gap' + (r.off === 1 ? '' : 's') + ' off' +
-          (r.err ? ' · ' + r.err + ' year' + (r.err === 1 ? '' : 's') : '') + (play.mode === 'run' ? ' · strike' : '') + '</div>';
+          (r.err ? ' · ' + fmtYears(r.err) : '') + (play.mode === 'run' ? ' · strike' : '') + '</div>';
       html += '<div class="d-date known">' + esc(fmtDate(shownCard, true)) + '</div>' +
         '<div class="d-reveal">' + verdict;
       if (r.di >= 0) {
@@ -1801,6 +1837,7 @@ function openEdit(id) {
   document.getElementById('edit-head').textContent = c ? 'EDIT CARD' : 'NEW CARD';
   document.getElementById('ce-title').value = c ? c.title : '';
   document.getElementById('ce-year').value = c ? fmtYear(c.y) : '';
+  document.getElementById('ce-end').value = c && c.y2 != null ? fmtYear(c.y2) : '';
   document.getElementById('ce-month').value = c && c.m ? c.m : '';
   document.getElementById('ce-day').value = c && c.d ? c.d : '';
   document.getElementById('ce-circa').checked = !!(c && c.c);
@@ -1831,7 +1868,9 @@ function saveEdit() {
   const raw = {
     id: editId || undefined,
     title: document.getElementById('ce-title').value,
-    y, m: document.getElementById('ce-month').value, d: document.getElementById('ce-day').value,
+    y, y2: parseYear(document.getElementById('ce-end').value),
+    dl: editId && cardMap.get(editId) ? cardMap.get(editId).dl : '',
+    m: document.getElementById('ce-month').value, d: document.getElementById('ce-day').value,
     c: document.getElementById('ce-circa').checked,
     region: document.getElementById('ce-region').value,
     deck: document.getElementById('ce-deck').value || 'My cards',
@@ -1888,8 +1927,10 @@ function importData(obj) {
   const list = Array.isArray(obj) ? obj : obj && Array.isArray(obj.cards) ? obj.cards : null;
   if (!list) return 'No cards found. Expected a JSON array of cards.';
   const incoming = sanitizeCards(list, 'Imported');
-  const haveKey = new Set(cards.map(c => c.y + '|' + c.title.toLowerCase()));
-  const added = incoming.filter(c => !cardMap.has(c.id) && !haveKey.has(c.y + '|' + c.title.toLowerCase()));
+  // the same event can live in two decks; only skip repeats within one deck
+  const key = c => c.deck + '|' + c.y + '|' + c.title.toLowerCase();
+  const haveKey = new Set(cards.map(key));
+  const added = incoming.filter(c => !cardMap.has(c.id) && !haveKey.has(key(c)));
   custom = custom.concat(added);
   saveCustom();
   rebuildCards();
@@ -1939,7 +1980,7 @@ function importPasted() {
 
 const AI_PROMPT = 'Write 40 cards for my history timeline app about TOPIC, as a JSON array and nothing else. ' +
   'Each card is an object: {"title": short name of the event, "y": year as an integer (negative for BCE), ' +
-  '"m": month 1–12 (omit if unknown), "d": day of month (omit if unknown), "c": true only if the date is approximate, ' +
+  '"y2": end year, only for spans such as a reign or a war (placed by the start), "m": month 1–12 (omit if unknown), "d": day of month (omit if unknown), "c": true only if the date is approximate, ' +
   '"region": where it happened, "deck": "TOPIC", "blurb": one sentence of context that does not give away the year, ' +
   '"details": [{"q": a question about who, where or what resulted, "a": a short answer}]}. ' +
   'Use well-attested events and dates only, spread across the period, and avoid two events in the same year unless the month and day are known.';

@@ -1,0 +1,2279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1d2021">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Kleio</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 20px; }
+
+  :root {
+    --bg: #1d2021;
+    --surface: #282828;
+    --surface2: #32302f;
+    --border: #504945;
+    --text: #ebdbb2;
+    --text-dim: #d5c4a1;
+    --muted: #928374;
+    --accent: #b8bb26;
+    --accent-dim: #98971a;
+    --accent2: #fabd2f;
+    --accent2-dim: #d79921;
+    --danger: #fb4934;
+    --danger-dim: #cc241d;
+    --orange: #fe8019;
+    --info: #83a598;
+    --info-dim: #458588;
+    --mono: 'IBM Plex Mono', monospace;
+    --display: 'Cinzel', serif;
+    --data: 'Cormorant Garamond', serif;
+  }
+
+  body.light {
+    --bg: #f9f5d7;
+    --surface: #ebdbb2;
+    --surface2: #d5c4a1;
+    --border: #bdae93;
+    --text: #282828;
+    --text-dim: #3c3836;
+    --muted: #7c6f64;
+    --accent: #79740e;
+    --accent-dim: #98971a;
+    --accent2: #b57614;
+    --accent2-dim: #d79921;
+    --danger: #9d0006;
+    --danger-dim: #cc241d;
+    --orange: #d65d0e;
+    --info: #076678;
+    --info-dim: #458588;
+  }
+
+  body {
+    font-family: var(--mono);
+    font-size: 1rem;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .app {
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  header h1 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.4rem;
+    letter-spacing: 0.12em;
+    color: var(--text);
+  }
+  header h1 .mark { color: var(--accent2); }
+  .header-btns { display: flex; gap: 0.5rem; }
+  .icon-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    padding: 0.25rem 0.55rem;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .icon-btn:hover { color: var(--text); border-color: var(--muted); }
+
+  /* ── Today card ─────────────────────────────────────────────── */
+  .today-card {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0.8rem 0.9rem 0.9rem;
+    margin-bottom: 1rem;
+  }
+  .today-date {
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  .today-status {
+    font-family: var(--data);
+    font-size: 1.45rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--text);
+    margin-bottom: 0.55rem;
+    font-variant-numeric: lining-nums;
+  }
+  .today-status.due { color: var(--accent2); }
+  .today-status.done { color: var(--accent); }
+  .plan-rows { display: flex; flex-direction: column; gap: 0.25rem; }
+  .plan-row { display: flex; justify-content: space-between; gap: 0.6rem; font-size: 0.72rem; color: var(--muted); }
+  .plan-row .plan-what { color: var(--text-dim); text-align: right; }
+
+  /* ── Mode buttons ───────────────────────────────────────────── */
+  .modes { display: grid; grid-template-columns: 1fr; gap: 0.5rem; margin-bottom: 0.6rem; }
+  .mode-btn {
+    font-family: var(--mono); font-size: 0.8rem; text-align: left;
+    padding: 0.65rem 0.7rem; background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); cursor: pointer; touch-action: manipulation;
+    display: flex; flex-direction: column; gap: 0.2rem;
+    transition: border-color 0.15s;
+  }
+  .mode-btn:hover { border-color: var(--muted); }
+  .mode-btn small { font-size: 0.58rem; color: var(--muted); letter-spacing: 0.03em; }
+  .mode-btn.primary { grid-column: 1 / -1; border-color: var(--accent2-dim); color: var(--accent2); font-size: 0.9rem; padding: 0.8rem 0.9rem; }
+  .mode-btn.primary.done { border-color: var(--accent-dim); color: var(--accent); }
+  .mode-btn .key { color: var(--muted); font-size: 0.6rem; }
+
+  /* ── Horizon / stats ────────────────────────────────────────── */
+  .horizon { display: flex; gap: 3px; margin-bottom: 0.3rem; }
+  .day-cell {
+    flex: 1;
+    aspect-ratio: 1;
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+  }
+  .day-cell.rev { background: var(--accent); border-color: var(--accent-dim); }
+  .day-cell.oth { background: var(--accent2); border-color: var(--accent2-dim); }
+  .day-cell.today { outline: 2px solid var(--text-dim); outline-offset: 1px; }
+  .horizon-legend { display: flex; justify-content: space-between; font-size: 0.56rem; color: var(--muted); margin-bottom: 1.2rem; letter-spacing: 0.04em; }
+  .horizon-legend .lg-rev { color: var(--accent); }
+  .horizon-legend .lg-oth { color: var(--accent2); }
+
+  .stats-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+  }
+  .stat-cell { background: var(--surface); padding: 0.6rem 0.5rem; text-align: center; }
+  .stat-cell .stat-val {
+    font-family: var(--data);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--text);
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+  .stat-cell .stat-val.accent { color: var(--accent); }
+  .stat-cell .stat-label {
+    font-size: 0.56rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.2rem;
+  }
+
+  /* ── Sections ───────────────────────────────────────────────── */
+  .section-title {
+    font-family: var(--display);
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    margin: 1.5rem 0 0.6rem;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  /* ── Log list ───────────────────────────────────────────────── */
+  .log-list { border: 1px solid var(--border); }
+  .log-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.72rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-wrap: wrap;
+  }
+  .log-row:last-child { border-bottom: none; }
+  .log-row .l-day { color: var(--muted); flex: 0 0 auto; font-size: 0.62rem; letter-spacing: 0.05em; text-transform: uppercase; }
+  .log-row .l-work { color: var(--text); flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+  .log-row .l-bm { flex: 0 0 auto; font-size: 0.62rem; }
+  .log-row .l-bm.ok { color: var(--accent); }
+  .log-row .l-bm.pending { color: var(--muted); }
+  .mode-tag {
+    flex: 0 0 auto; font-size: 0.56rem; letter-spacing: 0.05em; text-transform: uppercase;
+    border: 1px solid var(--border); border-radius: 2px; padding: 0.1rem 0.35rem; white-space: nowrap;
+  }
+  .mode-tag.review { color: var(--accent); border-color: var(--accent-dim); }
+  .mode-tag.run { color: var(--accent2); border-color: var(--accent2-dim); }
+  .log-row .l-del {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-family: var(--mono); font-size: 0.75rem; padding: 0 0.2rem; flex: 0 0 auto;
+  }
+  .log-row .l-del:hover { color: var(--danger); }
+  .log-empty { padding: 0.8rem; font-size: 0.72rem; color: var(--muted); text-align: center; background: var(--surface); }
+  .show-more {
+    width: 100%; font-family: var(--mono); font-size: 0.68rem;
+    background: var(--surface); border: none; border-top: 1px solid var(--border);
+    color: var(--muted); padding: 0.5rem; cursor: pointer;
+  }
+  .show-more:hover { color: var(--text); }
+
+  /* ── Buttons ────────────────────────────────────────────────── */
+  .btn {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    padding: 0.7rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { border-color: var(--accent-dim); color: var(--accent); }
+  .btn.gold { border-color: var(--accent2-dim); color: var(--accent2); }
+  .btn.danger { border-color: var(--danger-dim); color: var(--danger); }
+  .btn-tiny { font-size: 0.7rem; padding: 0.35rem 0.6rem; }
+  button:focus-visible, .gap-btn:focus-visible { outline: 2px solid var(--accent2); outline-offset: 2px; }
+
+  /* ── Play ───────────────────────────────────────────────────── */
+  .play-bar {
+    display: flex; align-items: baseline; gap: 0.8rem; flex-wrap: wrap;
+    font-size: 0.66rem; color: var(--muted); margin-bottom: 0.7rem;
+  }
+  .play-bar .p-mode { font-family: var(--display); font-size: 0.85rem; letter-spacing: 0.12em; color: var(--text); text-transform: uppercase; }
+  .play-bar .p-hud { flex: 1 1 auto; display: flex; gap: 0.8rem; flex-wrap: wrap; }
+  .play-bar .p-hud b { color: var(--text); font-weight: 700; }
+  .play-bar .strikes { color: var(--danger); letter-spacing: 0.1em; }
+
+  .drawn-wrap { position: sticky; top: 0; z-index: 5; background: var(--bg); padding-bottom: 0.7rem; }
+  .drawn {
+    background: var(--surface2); border: 1px solid var(--accent2-dim);
+    padding: 0.85rem 0.95rem; display: flex; flex-direction: column; gap: 0.35rem;
+  }
+  .drawn .d-region { font-size: 0.6rem; color: var(--info); letter-spacing: 0.08em; text-transform: uppercase; }
+  .drawn .d-title { font-family: var(--data); font-size: 1.4rem; font-weight: 700; line-height: 1.15; color: var(--accent2); }
+  .drawn .d-date { font-size: 1rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .drawn .d-date.known { color: var(--text); }
+  .drawn .d-reveal { border-top: 1px dashed var(--border); padding-top: 0.55rem; margin-top: 0.2rem; display: flex; flex-direction: column; gap: 0.5rem; }
+  .verdict { font-size: 0.68rem; }
+  .verdict.ok { color: var(--accent); }
+  .verdict.near { color: var(--accent2); }
+  .verdict.bad { color: var(--danger); }
+  .d-q { font-family: var(--data); font-size: 1.12rem; font-style: italic; color: var(--text-dim); line-height: 1.3; }
+  .d-a { font-family: var(--data); font-size: 1.15rem; font-weight: 600; color: var(--text); line-height: 1.3; }
+  .d-blurb { font-family: var(--data); font-size: 1rem; color: var(--text-dim); line-height: 1.35; }
+  .d-btns { display: flex; gap: 0.45rem; flex-wrap: wrap; }
+  .d-btns .btn { flex: 1 1 auto; }
+  .d-hint { font-size: 0.6rem; color: var(--muted); }
+
+  .timeline { list-style: none; position: relative; padding-left: 1.1rem; }
+  .timeline::before { content: ""; position: absolute; left: 0.35rem; top: 0.5rem; bottom: 0.5rem; width: 1px; background: var(--border); }
+  .ev { position: relative; display: grid; grid-template-columns: 6.4rem 1fr; gap: 0.6rem; align-items: baseline; padding: 0.3rem 0; }
+  .ev::before {
+    content: ""; position: absolute; left: -0.95rem; top: 0.62rem; width: 0.45rem; height: 0.45rem;
+    border-radius: 50%; background: var(--bg); border: 1px solid var(--muted);
+  }
+  .ev .e-y { font-size: 0.68rem; color: var(--accent2); text-align: right; font-variant-numeric: tabular-nums; }
+  .ev .e-t { font-family: var(--data); font-size: 1.02rem; line-height: 1.25; }
+  .ev.fresh::before { background: var(--accent); border-color: var(--accent); }
+  .ev.fresh .e-t { color: var(--accent); }
+  .ev.wrong::before { background: var(--danger); border-color: var(--danger); }
+  .ev.wrong .e-t { color: var(--danger); }
+  .gap-btn {
+    display: block; width: 100%; text-align: left; font-family: var(--mono);
+    font-size: 0.6rem; letter-spacing: 0.06em; color: var(--muted);
+    background: transparent; border: 1px dashed var(--border);
+    padding: 0.4rem 0.6rem; margin: 0.15rem 0; cursor: pointer; touch-action: manipulation;
+  }
+  .gap-btn:hover, .gap-btn.cur { border-color: var(--accent2); color: var(--accent2); background: var(--surface); }
+  @media (prefers-reduced-motion: no-preference) {
+    .ev.fresh, .ev.wrong { animation: drop 0.35s ease-out; }
+    @keyframes drop { from { opacity: 0.2; transform: translateX(-6px); } }
+  }
+
+  .summary { display: flex; flex-direction: column; gap: 0.6rem; }
+  .summary .s-big { font-family: var(--data); font-size: 1.6rem; font-weight: 700; color: var(--accent2); line-height: 1.15; font-variant-numeric: lining-nums; }
+  .summary .s-rows { display: flex; flex-direction: column; gap: 0.25rem; }
+
+  /* ── Overlays ───────────────────────────────────────────────── */
+  .overlay {
+    position: fixed; inset: 0;
+    background: color-mix(in srgb, var(--bg) 70%, transparent);
+    backdrop-filter: blur(4px);
+    display: none;
+    z-index: 20;
+    overflow-y: auto;
+  }
+  .overlay.visible { display: block; }
+  .panel {
+    max-width: 28rem;
+    margin: 3rem auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.2rem 1.4rem 1.6rem;
+  }
+  .panel.wide { max-width: 34rem; }
+  .panel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem; }
+  .panel-head h2 { font-family: var(--display); font-size: 0.95rem; letter-spacing: 0.12em; }
+  .settings-section-title {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted); margin: 1.2rem 0 0.5rem; padding-top: 0.9rem;
+    border-top: 1px solid var(--border);
+  }
+  .settings-section-title:first-of-type { margin-top: 0; border-top: none; padding-top: 0; }
+  .settings-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.55rem; flex-wrap: wrap; }
+  .settings-row label { font-size: 0.72rem; color: var(--text-dim); flex: 1 1 100%; }
+  .settings-row input[type="text"], .settings-row input[type="number"], .settings-row input[type="search"],
+  .settings-row select, .settings-row textarea {
+    font-family: var(--mono); font-size: 0.8rem;
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    padding: 0.4rem 0.5rem; flex: 1 1 100%; min-width: 0;
+  }
+  .settings-row textarea { resize: vertical; min-height: 4.5rem; line-height: 1.45; }
+  .settings-row input.half { flex: 1 1 40%; }
+  .settings-row input.third { flex: 1 1 25%; }
+  .settings-row input:focus, .settings-row select:focus, .settings-row textarea:focus { outline: none; border-color: var(--accent-dim); }
+  .settings-note { font-size: 0.62rem; color: var(--muted); line-height: 1.5; margin-bottom: 0.5rem; }
+  .btn-group { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
+  .btn-group .btn.sel { border-color: var(--accent-dim); color: var(--accent); }
+  .edit-actions { display: flex; gap: 0.5rem; margin-top: 1.1rem; flex-wrap: wrap; }
+  .edit-actions .primary { flex: 1; }
+  .settings-row .chk { display: flex; align-items: center; gap: 0.4rem; font-size: 0.72rem; color: var(--text-dim); flex: 1 1 100%; }
+
+  .deck-row { display: flex; align-items: baseline; gap: 0.6rem; font-size: 0.72rem; padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
+  .deck-row:last-child { border-bottom: none; }
+  .deck-row .dk-name { flex: 1 1 auto; color: var(--text); }
+  .deck-row .dk-count { color: var(--muted); font-size: 0.62rem; }
+  .deck-row.off .dk-name { color: var(--muted); text-decoration: line-through; }
+  .card-list { border: 1px solid var(--border); max-height: 22rem; overflow-y: auto; }
+  .card-row {
+    display: grid; grid-template-columns: 5rem 1fr auto; gap: 0.5rem; align-items: baseline;
+    padding: 0.4rem 0.6rem; font-size: 0.7rem; background: var(--bg); border-bottom: 1px solid var(--border);
+    cursor: pointer; width: 100%; text-align: left; font-family: var(--mono); color: var(--text); border-left: none; border-right: none; border-top: none;
+  }
+  .card-row:hover { background: var(--surface2); }
+  .card-row .c-y { color: var(--accent2); text-align: right; font-variant-numeric: tabular-nums; }
+  .card-row .c-t { font-family: var(--data); font-size: 0.95rem; overflow-wrap: anywhere; }
+  .card-row .c-t small { font-family: var(--mono); font-size: 0.56rem; color: var(--muted); margin-left: 0.3rem; }
+  .pill { font-size: 0.56rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  .pill.new { color: var(--info); }
+  .pill.due { color: var(--accent2); }
+  /* ── Backup reminder ────────────────────────────────────────── */
+  #backup-reminder {
+    display: none; margin-bottom: 1.25rem; padding: 0.75rem 1rem;
+    border: 1px solid var(--accent2-dim);
+    background: color-mix(in srgb, var(--accent2) 8%, transparent);
+  }
+  #backup-reminder .br-title { font-family: var(--mono); font-size: 0.62rem; color: var(--accent2); letter-spacing: 0.1em; margin-bottom: 0.4rem; }
+  #backup-reminder .br-text { font-size: 0.62rem; color: var(--text-dim); line-height: 1.5; margin-bottom: 0.75rem; }
+
+  footer { margin-top: auto; padding-top: 2rem; font-size: 0.6rem; color: var(--muted); text-align: center; letter-spacing: 0.05em; }
+
+  @media (max-width: 480px) {
+    html { font-size: 17px; }
+    .today-status { font-size: 1.25rem; }
+    .horizon { gap: 2px; }
+    .ev { grid-template-columns: 5.6rem 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>KL<span class="mark">E</span>IO</h1>
+    <div class="header-btns">
+      <button class="icon-btn" onclick="toggleThemeQuick()" title="Theme">◐</button>
+      <button class="icon-btn" onclick="openCards()" title="Cards [C]">☰</button>
+      <button class="icon-btn" onclick="openSettings()" title="Settings [S]">⚙</button>
+    </div>
+  </header>
+
+  <div id="home">
+    <div id="backup-reminder">
+      <div class="br-title">BACKUP REMINDER</div>
+      <div class="br-text" id="backup-reminder-text"></div>
+      <div class="btn-group">
+        <button class="btn btn-tiny" onclick="runBackupNow()">↓ Backup Now</button>
+        <button class="btn btn-tiny" onclick="snoozeReminder()">Later</button>
+        <button class="btn btn-tiny" onclick="dismissReminder()">Dismiss</button>
+      </div>
+    </div>
+
+    <div class="today-card">
+      <div class="today-date" id="today-date"></div>
+      <div class="today-status" id="today-status"></div>
+      <div class="plan-rows" id="plan-rows"></div>
+    </div>
+
+    <div class="modes">
+      <button class="mode-btn primary" id="btn-review" onclick="startPlay('review')"></button>
+      <button class="mode-btn" onclick="startPlay('run')"><span>Run <span class="key">[G]</span></span><small id="run-sub"></small></button>
+    </div>
+
+    <div class="section-title">Horizon</div>
+    <div class="horizon" id="horizon"></div>
+    <div class="horizon-legend"><span>−27d</span><span><span class="lg-rev">■</span> review · <span class="lg-oth">■</span> run only</span><span>today ▲</span></div>
+
+    <div class="stats-strip">
+      <div class="stat-cell"><div class="stat-val accent" id="stat-streak">0</div><div class="stat-label">Day streak</div></div>
+      <div class="stat-cell"><div class="stat-val" id="stat-learned">0</div><div class="stat-label">Learned</div></div>
+      <div class="stat-cell"><div class="stat-val" id="stat-when">–</div><div class="stat-label">When · 30d</div></div>
+      <div class="stat-cell"><div class="stat-val" id="stat-what">–</div><div class="stat-label">What · 30d</div></div>
+    </div>
+
+    <div class="section-title"><span>Sessions</span><span id="log-count" style="font-family:var(--mono);font-size:0.6rem;letter-spacing:0.05em"></span></div>
+    <div class="log-list" id="log-list"></div>
+  </div>
+
+  <div id="play" style="display:none">
+    <div class="play-bar">
+      <span class="p-mode" id="p-mode"></span>
+      <span class="p-hud" id="p-hud"></span>
+      <button class="icon-btn" onclick="endPlay()" title="End session [Q]">end</button>
+    </div>
+    <div class="drawn-wrap"><div class="drawn" id="drawn"></div></div>
+    <ol class="timeline" id="timeline" aria-label="Your timeline"></ol>
+  </div>
+
+  <footer>everything stays in this browser · <a href="../" style="color:inherit">aristeia</a></footer>
+</div>
+
+<div class="overlay" id="cards-overlay" onclick="if(event.target===this) closeCards()">
+  <div class="panel wide">
+    <div class="panel-head">
+      <h2>CARDS</h2>
+      <button class="icon-btn" onclick="closeCards()">✕</button>
+    </div>
+    <div class="settings-section-title">Decks</div>
+    <div class="settings-note">Tap a deck to switch it off or on. Switched-off decks never appear in any mode; their progress is kept.</div>
+    <div id="deck-list"></div>
+
+    <div class="settings-section-title">Browse</div>
+    <div class="settings-row">
+      <input type="search" id="card-search" placeholder="search title, place, deck" autocomplete="off" oninput="renderCardList()">
+    </div>
+    <div class="card-list" id="card-list"></div>
+    <div class="settings-row btn-group" style="margin-top:0.55rem">
+      <button class="btn btn-tiny primary" onclick="openEdit(null)">＋ New card</button>
+    </div>
+
+    <div class="settings-section-title">Import a deck</div>
+    <div class="settings-note">
+      Paste a JSON array of cards, or a <code>{"cards": [...]}</code> object.
+      Each card needs <code>title</code> and <code>y</code> (negative for BCE);
+      <code>m</code>, <code>d</code>, <code>c</code> (circa), <code>region</code>,
+      <code>deck</code>, <code>blurb</code> and <code>details</code>
+      (<code>[{"q", "a"}]</code>) are optional. Cards already present are skipped.
+    </div>
+    <div class="settings-row">
+      <textarea id="import-text" rows="5" placeholder='[{"title": "Treaty of Kanagawa", "y": 1854, "m": 3, "d": 31, "region": "Japan", "deck": "Meiji", "details": [{"q": "Who signed for the US?", "a": "Matthew Perry"}]}]'></textarea>
+    </div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny primary" onclick="importPasted()">↑ Add cards</button>
+      <button class="btn btn-tiny" onclick="copyPrompt()">⧉ Copy a prompt for an AI</button>
+      <span class="settings-note" id="import-status" style="margin:0"></span>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="edit-overlay" onclick="if(event.target===this) closeEdit()">
+  <div class="panel">
+    <div class="panel-head">
+      <h2 id="edit-head">EDIT CARD</h2>
+      <button class="icon-btn" onclick="closeEdit()">✕</button>
+    </div>
+    <div class="settings-row">
+      <label for="ce-title">Event</label>
+      <input type="text" id="ce-title" autocomplete="off">
+    </div>
+    <div class="settings-row">
+      <label>Year (e.g. 1453, 44 BCE) / month / day</label>
+      <input type="text" class="half" id="ce-year" autocomplete="off">
+      <input type="number" class="third" id="ce-month" min="1" max="12" placeholder="m">
+      <input type="number" class="third" id="ce-day" min="1" max="31" placeholder="d">
+    </div>
+    <div class="settings-row">
+      <span class="chk"><input type="checkbox" id="ce-circa"> approximate date (c.)</span>
+    </div>
+    <div class="settings-row">
+      <label>Region / deck</label>
+      <input type="text" class="half" id="ce-region" autocomplete="off" placeholder="region">
+      <input type="text" class="half" id="ce-deck" autocomplete="off" placeholder="deck">
+    </div>
+    <div class="settings-row">
+      <label for="ce-blurb">Context, shown after the reveal</label>
+      <textarea id="ce-blurb" rows="2"></textarea>
+    </div>
+    <div class="settings-row">
+      <label for="ce-details">Detail questions, one per line: question | answer</label>
+      <textarea id="ce-details" rows="3"></textarea>
+    </div>
+    <div class="settings-note" id="ce-srs"></div>
+    <div class="edit-actions">
+      <button class="btn primary" onclick="saveEdit()">✓ Save</button>
+      <button class="btn" id="ce-reset" onclick="resetCardProgress()">↺ Reset progress</button>
+      <button class="btn danger" id="ce-delete" onclick="deleteEdit()">✕ Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="settings-overlay" onclick="if(event.target===this) closeSettings()">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>SETTINGS</h2>
+      <button class="icon-btn" onclick="closeSettings()">✕</button>
+    </div>
+
+    <div class="settings-section-title">How it works</div>
+    <div class="settings-note">
+      Each card holds two memories, scheduled separately: <b>when</b> (graded by
+      where you placed it: right gap = good, one gap off and within 25 years =
+      hard, otherwise again) and <b>what</b> (the detail question, graded by you).
+      Intervals grow SM-2 style. A card is due when either memory is. Runs only
+      reschedule memories that are due or new, but a miss always counts.
+    </div>
+
+    <div class="settings-section-title">New cards per day</div>
+    <div class="settings-row btn-group" id="new-per-day"></div>
+
+    <div class="settings-section-title">Strikes per run</div>
+    <div class="settings-row btn-group" id="strikes-opts"></div>
+
+    <div class="settings-section-title">Beeminder</div>
+    <div class="settings-note">
+      Posts a datapoint per finished session, straight from this browser to
+      beeminder.com. Deleting a session zeroes its datapoint; offline sessions
+      queue until you're back. Get your token at
+      beeminder.com/api/v1/auth_token.json (it stays in this browser only).
+      Leave any field empty to disable.
+    </div>
+    <div class="settings-row">
+      <label>Username / goal slug</label>
+      <input type="text" class="half" id="bee-user" autocomplete="off" placeholder="username" onchange="beeChanged()">
+      <input type="text" class="half" id="bee-slug" autocomplete="off" placeholder="goal" onchange="beeChanged()">
+    </div>
+    <div class="settings-row">
+      <label for="bee-token">Auth token</label>
+      <input type="text" id="bee-token" autocomplete="off" onchange="beeChanged()">
+    </div>
+    <div class="settings-row">
+      <label>Datapoint value / which sessions</label>
+      <select id="bee-metric" onchange="beeChanged()" style="flex:1 1 40%">
+        <option value="session">1 per session</option>
+        <option value="cards">cards played</option>
+        <option value="correct">cards placed right</option>
+      </select>
+      <select id="bee-modes" onchange="beeChanged()" style="flex:1 1 40%">
+        <option value="all">every mode</option>
+        <option value="review">reviews only</option>
+      </select>
+    </div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" onclick="syncBee()">⇄ Sync now</button>
+      <span class="settings-note" id="bee-status" style="margin:0"></span>
+    </div>
+
+    <div class="settings-section-title">Data</div>
+    <div class="settings-note">Everything is stored in this browser only. JSON holds your own cards, all progress and the session log (not the Beeminder token); importing one merges it in. CSV is the session log, for analysis elsewhere.</div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" onclick="exportJSON()">↓ Export JSON</button>
+      <button class="btn btn-tiny" onclick="importJSON()">↑ Import JSON [I]</button>
+      <button class="btn btn-tiny" onclick="exportCSV()">↓ Export CSV</button>
+    </div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" id="restore-btn" onclick="restoreStarter()"></button>
+      <button class="btn btn-tiny danger" onclick="clearProgress()">✕ Reset progress</button>
+      <button class="btn btn-tiny danger" onclick="clearAll()">✕ Clear all</button>
+    </div>
+    <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="handleImportFile(this.files[0])">
+
+    <div class="settings-section-title">Backup</div>
+    <div class="settings-note" id="backup-note"></div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" id="backup-off" onclick="setBackupFreq('off')">Off</button>
+      <button class="btn btn-tiny" id="backup-daily" onclick="setBackupFreq('daily')">Daily</button>
+      <button class="btn btn-tiny" id="backup-weekly" onclick="setBackupFreq('weekly')">Weekly</button>
+      <button class="btn btn-tiny" onclick="runBackupNow()">↓ Backup Now</button>
+    </div>
+
+    <div class="settings-section-title">Theme</div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" id="theme-auto" onclick="setTheme('auto')">Auto</button>
+      <button class="btn btn-tiny" id="theme-dark" onclick="setTheme('dark')">Dark</button>
+      <button class="btn btn-tiny" id="theme-light" onclick="setTheme('light')">Light</button>
+    </div>
+
+    <div class="settings-section-title">Keys</div>
+    <div class="settings-note">
+      Home: R review · G run · C cards · S settings.<br>
+      Playing: ↑ ↓ pick a gap · Enter place · Space show answer · 1 forgot · 2 knew it · Q end.
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const CARDS_KEY = 'kleio_cards';
+const HIDDEN_KEY = 'kleio_hidden';
+const SRS_KEY = 'kleio_srs';
+const LOG_KEY = 'kleio_sessions';
+const CFG_KEY = 'kleio_config';
+const LIVE_KEY = 'kleio_live';
+const THEME_KEY = 'kleio_theme';
+const BEE_KEY = 'kleio_beeminder';
+const BEEQ_KEY = 'kleio_beeledger';
+const BACKUP_KEY = 'kleio_backup_cfg';
+const BEE_METRICS = ['session', 'cards', 'correct'];
+const NEW_PER_DAY_OPTIONS = [5, 10, 20, 30];
+const STRIKE_OPTIONS = [1, 3, 5];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const AGAIN = 0, HARD = 1, GOOD = 2;
+// Placing a card one gap off counts as "hard" rather than "again" only if
+// the year was this close to the gap you picked.
+const NEAR_YEARS = 25;
+
+// ── Starter deck ─────────────────────────────────────────────────
+// [year (negative = BCE), month, day, circa, title, region, context, question, answer]
+// Ids derive from year + title, so don't retitle a shipped card — that
+// orphans its progress.
+const WORLD = [
+  [-2560, 0, 0, 1, 'Great Pyramid of Giza completed', 'Egypt', 'Built as a royal tomb in the Fourth Dynasty; the tallest human-made structure for nearly four thousand years.', 'For which pharaoh was it built?', 'Khufu (Cheops).'],
+  [-1754, 0, 0, 1, 'Code of Hammurabi', 'Babylon', 'One of the oldest written law codes, carved on a basalt stele.', 'Which god is shown giving Hammurabi the laws on the stele?', 'Shamash, god of the sun and justice.'],
+  [-1274, 0, 0, 1, 'Battle of Kadesh', 'Levant', 'Egyptian and Hittite chariot armies clash; a peace treaty, among the earliest known, follows years later.', 'Which pharaoh led the Egyptians?', 'Ramesses II.'],
+  [-776, 0, 0, 0, 'First recorded Olympic Games', 'Greece', 'The traditional starting point of Greek dating by Olympiads.', 'At which sanctuary were the games held?', 'Olympia, sacred to Zeus.'],
+  [-753, 4, 21, 0, 'Traditional founding of Rome', 'Italy', 'The date fixed by the scholar Varro for the legend of twins raised by a she-wolf.', 'Which twin killed the other?', 'Romulus killed Remus.'],
+  [-586, 0, 0, 1, 'Babylon destroys the First Temple', 'Judah', 'Jerusalem falls and much of its population is deported: the start of the Babylonian exile.', 'Which king of Babylon took Jerusalem?', 'Nebuchadnezzar II.'],
+  [-539, 10, 0, 0, 'Cyrus the Great takes Babylon', 'Mesopotamia', 'The Persian conquest ends the Neo-Babylonian Empire.', 'What policy is the Cyrus Cylinder associated with?', 'Letting deported peoples, including the Jews, return home.'],
+  [-509, 0, 0, 0, 'Roman Republic founded', 'Italy', 'Traditional date of the expulsion of Rome’s last king.', 'Who was the last king of Rome?', 'Lucius Tarquinius Superbus.'],
+  [-490, 9, 0, 0, 'Battle of Marathon', 'Attica', 'An Athenian and Plataean army defeats a Persian landing force.', 'Whose invasion of Greece was turned back?', 'Darius I’s Achaemenid Persia.'],
+  [-480, 8, 0, 0, 'Battle of Thermopylae', 'Greece', 'A small Greek force holds a coastal pass against Xerxes for three days.', 'Which Spartan king commanded and died there?', 'Leonidas I.'],
+  [-431, 0, 0, 0, 'Peloponnesian War begins', 'Greece', 'Athens and its empire against Sparta and its allies, for 27 years.', 'Which historian chronicled it?', 'Thucydides.'],
+  [-399, 0, 0, 0, 'Trial and death of Socrates', 'Athens', 'Convicted of impiety and corrupting the young.', 'How was he executed?', 'By drinking hemlock.'],
+  [-331, 10, 1, 0, 'Battle of Gaugamela', 'Mesopotamia', 'Alexander defeats the main Persian army decisively.', 'Which Persian king fled the field?', 'Darius III.'],
+  [-323, 6, 0, 0, 'Death of Alexander the Great', 'Babylon', 'He dies at 32; his empire is divided among his generals.', 'What are those successor generals called?', 'The Diadochi.'],
+  [-261, 0, 0, 1, 'Kalinga War', 'India', 'A bloody Mauryan conquest on India’s east coast.', 'Which emperor turned to Buddhism in remorse afterwards?', 'Ashoka.'],
+  [-221, 0, 0, 0, 'Qin unifies China', 'China', 'The Warring States period ends under a single ruler.', 'What title did Ying Zheng take?', 'Qin Shi Huang, “First Emperor”.'],
+  [-218, 0, 0, 0, 'Hannibal crosses the Alps', 'Alps', 'A Carthaginian army, with war elephants, invades Italy in the Second Punic War.', 'Which Roman disaster followed two years later?', 'Cannae, 216 BCE.'],
+  [-146, 0, 0, 0, 'Destruction of Carthage', 'North Africa', 'Rome ends the Third Punic War; Corinth is sacked the same year.', 'Which Roman general led the siege?', 'Scipio Aemilianus.'],
+  [-49, 1, 10, 0, 'Caesar crosses the Rubicon', 'Italy', 'Bringing a legion into Italy starts a civil war.', 'Who was his chief opponent in that war?', 'Pompey the Great.'],
+  [-44, 3, 15, 0, 'Assassination of Julius Caesar', 'Rome', 'Stabbed by senators at a meeting in the Theatre of Pompey.', 'What is the date traditionally called?', 'The Ides of March.'],
+  [-31, 9, 2, 0, 'Battle of Actium', 'Greece', 'Octavian defeats Antony and Cleopatra at sea.', 'Who commanded Octavian’s fleet?', 'Marcus Vipsanius Agrippa.'],
+  [9, 9, 0, 0, 'Battle of the Teutoburg Forest', 'Germania', 'Three Roman legions are destroyed in an ambush.', 'Who led the Germanic coalition?', 'Arminius.'],
+  [30, 0, 0, 1, 'Crucifixion of Jesus', 'Judaea', 'Executed in Jerusalem under Roman rule.', 'Which Roman prefect ordered it?', 'Pontius Pilate.'],
+  [79, 0, 0, 0, 'Eruption of Vesuvius', 'Italy', 'Pompeii and Herculaneum are buried under ash and pyroclastic flows.', 'Who wrote the eyewitness letters describing it?', 'Pliny the Younger.'],
+  [105, 0, 0, 0, 'Cai Lun reports papermaking', 'China', 'The traditional date for the invention of paper at the imperial court.', 'Which dynasty ruled China?', 'The Eastern Han.'],
+  [313, 0, 0, 0, 'Edict of Milan', 'Roman Empire', 'An agreement granting toleration to Christians.', 'Which two emperors agreed it?', 'Constantine and Licinius.'],
+  [320, 0, 0, 1, 'Gupta Empire founded', 'India', 'The start of what is often called India’s classical age.', 'Who founded it?', 'Chandragupta I.'],
+  [330, 5, 11, 0, 'Constantinople dedicated', 'Thrace', 'Constantine’s new capital, built on the site of Byzantium.', 'What was the city officially renamed in 1930?', 'Istanbul.'],
+  [410, 8, 24, 0, 'Visigoths sack Rome', 'Italy', 'The first fall of the city to a foreign enemy in 800 years.', 'Who led the Visigoths?', 'Alaric I.'],
+  [476, 9, 0, 0, 'Last Western Roman emperor deposed', 'Italy', 'The conventional end of the Western Roman Empire.', 'Who deposed Romulus Augustulus?', 'Odoacer.'],
+  [537, 12, 27, 0, 'Hagia Sophia consecrated', 'Constantinople', 'The largest cathedral in the world for nearly a thousand years.', 'Which emperor built it?', 'Justinian I.'],
+  [622, 0, 0, 0, 'The Hijra', 'Arabia', 'Muhammad and his followers leave Mecca; year one of the Islamic calendar.', 'To which city did they migrate?', 'Yathrib, later called Medina.'],
+  [732, 10, 0, 0, 'Battle of Tours', 'Francia', 'Frankish forces halt an Umayyad raid north of the Pyrenees.', 'Who led the Franks?', 'Charles Martel.'],
+  [751, 0, 0, 0, 'Battle of Talas', 'Central Asia', 'Abbasid and Tang Chinese armies clash.', 'What technology is traditionally said to have spread west through captured prisoners?', 'Papermaking.'],
+  [762, 0, 0, 0, 'Baghdad founded', 'Mesopotamia', 'The round city becomes the Abbasid capital.', 'Which caliph founded it?', 'Al-Mansur.'],
+  [793, 6, 8, 0, 'Viking raid on Lindisfarne', 'England', 'The conventional start of the Viking Age.', 'What was attacked?', 'A monastery on a tidal island off Northumbria.'],
+  [800, 12, 25, 0, 'Charlemagne crowned emperor', 'Rome', 'Crowned in St Peter’s on Christmas Day.', 'Which pope crowned him?', 'Leo III.'],
+  [868, 5, 11, 0, 'Diamond Sutra printed', 'China', 'The oldest surviving dated printed book, made by woodblock.', 'Where was it found?', 'In the Mogao Caves near Dunhuang.'],
+  [1000, 0, 0, 1, 'Norse reach Vinland', 'North America', 'Norse explorers land in North America nearly 500 years before Columbus.', 'What is the confirmed Norse site in Newfoundland?', 'L’Anse aux Meadows.'],
+  [1010, 0, 0, 1, 'The Tale of Genji', 'Japan', 'A Heian court novel, often called the world’s first novel.', 'Who wrote it?', 'Murasaki Shikibu.'],
+  [1054, 0, 0, 0, 'East–West Schism', 'Christendom', 'Mutual excommunications split the Latin and Greek churches.', 'Which patriarch of Constantinople was excommunicated?', 'Michael Cerularius.'],
+  [1066, 10, 14, 0, 'Battle of Hastings', 'England', 'William of Normandy defeats the English army.', 'Which English king died in the battle?', 'Harold Godwinson.'],
+  [1088, 0, 0, 0, 'University of Bologna founded', 'Italy', 'Traditionally the oldest university in continuous operation.', 'Which subject made it famous?', 'Law.'],
+  [1099, 7, 15, 0, 'Crusaders take Jerusalem', 'Levant', 'The climax of the First Crusade.', 'Which pope had called the crusade?', 'Urban II, at Clermont in 1095.'],
+  [1150, 0, 0, 1, 'Angkor Wat completed', 'Cambodia', 'A vast temple complex for the Khmer capital, first dedicated to Vishnu.', 'Which king built it?', 'Suryavarman II.'],
+  [1187, 10, 2, 0, 'Saladin retakes Jerusalem', 'Levant', 'The city surrenders after the crusader field army is destroyed.', 'At which battle that summer was the army destroyed?', 'The Horns of Hattin.'],
+  [1206, 0, 0, 0, 'Temüjin proclaimed Genghis Khan', 'Mongolia', 'The Mongol tribes unite under one ruler.', 'What kind of assembly proclaimed him?', 'A kurultai, on the Onon River.'],
+  [1215, 6, 15, 0, 'Magna Carta sealed', 'England', 'Rebel barons force the king to accept limits on his power.', 'Which king sealed it, and where?', 'King John, at Runnymede.'],
+  [1258, 2, 10, 0, 'Mongols sack Baghdad', 'Mesopotamia', 'The Abbasid caliph is killed and the city ruined.', 'Which Mongol prince led the siege?', 'Hülegü.'],
+  [1271, 0, 0, 0, 'Marco Polo sets out for China', 'Venice', 'His later account shaped European ideas of Asia for centuries.', 'Whose court did he serve?', 'Kublai Khan’s.'],
+  [1324, 0, 0, 0, 'Mansa Musa’s pilgrimage', 'Mali', 'His gold spending in Cairo was said to depress its value there for years.', 'Which empire did he rule?', 'The Mali Empire.'],
+  [1337, 0, 0, 0, 'Hundred Years’ War begins', 'France', 'England and France fight, on and off, until 1453.', 'Which two royal houses fought it?', 'Plantagenet (England) and Valois (France).'],
+  [1347, 10, 0, 0, 'Black Death reaches Europe', 'Sicily', 'Plague kills perhaps a third to a half of Europe within five years.', 'Which port is the traditional entry point?', 'Messina, via Genoese galleys from Caffa.'],
+  [1368, 0, 0, 0, 'Ming dynasty founded', 'China', 'The Mongol Yuan are driven north.', 'Who founded it?', 'Zhu Yuanzhang, the Hongwu Emperor.'],
+  [1405, 0, 0, 0, 'Zheng He’s first voyage', 'Indian Ocean', 'The first of seven Ming treasure fleets.', 'Which emperor sponsored the voyages?', 'The Yongle Emperor.'],
+  [1429, 5, 8, 0, 'Joan of Arc relieves Orléans', 'France', 'The siege is lifted and the war turns in France’s favour.', 'Which king did she then see crowned at Reims?', 'Charles VII.'],
+  [1438, 0, 0, 1, 'Pachacuti begins the Inca Empire', 'Andes', 'Cusco’s ruler starts a rapid expansion along the Andes.', 'What did the Inca call their empire?', 'Tawantinsuyu.'],
+  [1453, 5, 29, 0, 'Fall of Constantinople', 'Anatolia', 'Ottoman forces breach the land walls after a 53-day siege.', 'Which sultan took the city?', 'Mehmed II.'],
+  [1455, 0, 0, 1, 'Gutenberg Bible printed', 'Mainz', 'The first major book printed in Europe with movable metal type.', 'In what language is it printed?', 'Latin (the Vulgate).'],
+  [1492, 1, 2, 0, 'Fall of Granada', 'Iberia', 'The last Muslim state in Iberia surrenders to Castile and Aragon.', 'Which dynasty ruled Granada?', 'The Nasrids.'],
+  [1492, 10, 12, 0, 'Columbus reaches the Americas', 'Caribbean', 'Landfall in the Bahamas on his first voyage.', 'Which monarchs sponsored the voyage?', 'Ferdinand and Isabella.'],
+  [1498, 5, 20, 0, 'Vasco da Gama reaches India', 'India', 'The first sea voyage from Europe to India, around Africa.', 'At which port did he land?', 'Calicut.'],
+  [1517, 10, 31, 0, 'Luther’s Ninety-five Theses', 'Saxony', 'His challenge to the sale of indulgences starts the Reformation.', 'In which town?', 'Wittenberg.'],
+  [1519, 9, 20, 0, 'Magellan’s fleet sets sail', 'Spain', 'The expedition becomes the first circumnavigation of the globe.', 'Who completed it after Magellan was killed?', 'Juan Sebastián Elcano.'],
+  [1521, 8, 13, 0, 'Fall of Tenochtitlan', 'Mexico', 'Cortés and his Indigenous allies take the Aztec capital.', 'Which Aztec ruler was captured?', 'Cuauhtémoc.'],
+  [1526, 4, 21, 0, 'First Battle of Panipat', 'India', 'Field guns and cavalry defeat the Delhi Sultanate.', 'Who won and founded the Mughal Empire?', 'Babur.'],
+  [1532, 11, 16, 0, 'Pizarro captures Atahualpa', 'Peru', 'A small Spanish force seizes the Inca ruler in an ambush.', 'In which town?', 'Cajamarca.'],
+  [1534, 11, 0, 0, 'Act of Supremacy', 'England', 'Henry VIII is declared head of the Church of England.', 'Which pope refused to annul his first marriage?', 'Clement VII.'],
+  [1543, 0, 0, 0, 'Copernicus publishes De revolutionibus', 'Poland', 'A Sun-centred model of the cosmos, printed as he died.', 'Which landmark anatomy book appeared the same year?', 'Vesalius’s De humani corporis fabrica.'],
+  [1571, 10, 7, 0, 'Battle of Lepanto', 'Mediterranean', 'The Holy League fleet defeats the Ottoman navy.', 'Which future novelist was wounded there?', 'Miguel de Cervantes.'],
+  [1588, 8, 0, 0, 'Spanish Armada defeated', 'English Channel', 'Fireships and storms wreck Philip II’s invasion fleet.', 'Who commanded the Armada?', 'The Duke of Medina Sidonia.'],
+  [1600, 10, 21, 0, 'Battle of Sekigahara', 'Japan', 'The decisive battle of Japan’s unification.', 'Who won and later founded a shogunate?', 'Tokugawa Ieyasu.'],
+  [1600, 12, 31, 0, 'East India Company chartered', 'England', 'A trading monopoly that becomes a ruling power in India.', 'Which monarch granted the charter?', 'Elizabeth I.'],
+  [1607, 5, 14, 0, 'Jamestown founded', 'Virginia', 'The first permanent English settlement in North America.', 'Which crop saved its economy?', 'Tobacco.'],
+  [1618, 5, 23, 0, 'Defenestration of Prague', 'Bohemia', 'Protestant nobles throw imperial officials from a castle window, starting the Thirty Years’ War.', 'What happened to the men thrown out?', 'They survived the fall.'],
+  [1620, 11, 0, 0, 'Mayflower lands in New England', 'Massachusetts', 'English Separatists found Plymouth Colony.', 'What agreement did the passengers sign before landing?', 'The Mayflower Compact.'],
+  [1633, 0, 0, 0, 'Galileo tried by the Inquisition', 'Rome', 'He is forced to recant and spends his last years under house arrest.', 'Which book led to the trial?', 'Dialogue Concerning the Two Chief World Systems.'],
+  [1644, 6, 0, 0, 'Qing enter Beijing', 'China', 'Manchu forces take the capital after the Ming collapse.', 'Whose rebel army had taken Beijing weeks earlier?', 'Li Zicheng’s.'],
+  [1648, 10, 24, 0, 'Peace of Westphalia', 'Holy Roman Empire', 'Treaties at Osnabrück and Münster settle Europe’s religious wars.', 'Which war did it end?', 'The Thirty Years’ War (and the Eighty Years’ War).'],
+  [1649, 1, 30, 0, 'Execution of Charles I', 'England', 'The king is beheaded outside the Banqueting House in Whitehall.', 'Who later ruled as Lord Protector?', 'Oliver Cromwell.'],
+  [1666, 9, 2, 0, 'Great Fire of London', 'England', 'The fire burns for four days and destroys most of the medieval City.', 'Where did it start?', 'A bakery in Pudding Lane.'],
+  [1683, 9, 12, 0, 'Relief of Vienna', 'Austria', 'The second Ottoman siege of the city is broken.', 'Which Polish king led the relief?', 'John III Sobieski.'],
+  [1687, 7, 5, 0, 'Newton publishes the Principia', 'England', 'Sets out the laws of motion and universal gravitation.', 'Who paid for its printing?', 'Edmond Halley.'],
+  [1688, 11, 0, 0, 'Glorious Revolution', 'England', 'James II is deposed by an invasion from the Netherlands.', 'Who took the throne jointly?', 'William III and Mary II.'],
+  [1707, 5, 1, 0, 'Acts of Union take effect', 'Britain', 'England and Scotland unite as the Kingdom of Great Britain.', 'Which monarch reigned?', 'Queen Anne.'],
+  [1755, 11, 1, 0, 'Lisbon earthquake', 'Portugal', 'Earthquake, tsunami and fire destroy the city.', 'On which holy day did it strike?', 'All Saints’ Day.'],
+  [1757, 6, 23, 0, 'Battle of Plassey', 'Bengal', 'The start of British rule in India.', 'Who led the East India Company force?', 'Robert Clive.'],
+  [1769, 1, 5, 0, 'Watt patents the separate condenser', 'Britain', 'A far more efficient steam engine, central to the Industrial Revolution.', 'Whose engine design did it improve?', 'Thomas Newcomen’s.'],
+  [1776, 3, 9, 0, 'The Wealth of Nations published', 'Britain', 'The founding text of classical economics.', 'Who wrote it?', 'Adam Smith.'],
+  [1776, 7, 4, 0, 'Declaration of Independence', 'United States', 'Thirteen colonies declare independence from Britain.', 'Who was its principal author?', 'Thomas Jefferson.'],
+  [1788, 1, 26, 0, 'First Fleet lands at Sydney Cove', 'Australia', 'A British penal colony is founded.', 'Who commanded the fleet?', 'Arthur Phillip.'],
+  [1789, 7, 14, 0, 'Storming of the Bastille', 'France', 'A Paris crowd takes the royal fortress and prison.', 'Which national day marks it?', 'Bastille Day, 14 July.'],
+  [1791, 8, 22, 0, 'Haitian Revolution begins', 'Saint-Domingue', 'An enslaved people’s uprising that ends in an independent Haiti in 1804.', 'Who became its foremost leader?', 'Toussaint Louverture.'],
+  [1804, 12, 2, 0, 'Napoleon crowned emperor', 'France', 'He crowns himself in the presence of the pope.', 'In which cathedral?', 'Notre-Dame de Paris.'],
+  [1805, 10, 21, 0, 'Battle of Trafalgar', 'Atlantic', 'The British fleet defeats a combined French and Spanish fleet.', 'Which admiral died in the victory?', 'Horatio Nelson.'],
+  [1812, 6, 24, 0, 'Napoleon invades Russia', 'Russia', 'The Grande Armée crosses the Neman; few return.', 'Which great battle was fought before Moscow?', 'Borodino.'],
+  [1815, 6, 18, 0, 'Battle of Waterloo', 'Low Countries', 'Napoleon’s final defeat.', 'Which Prussian commander arrived to decide it?', 'Gebhard von Blücher.'],
+  [1824, 12, 9, 0, 'Battle of Ayacucho', 'Peru', 'Effectively ends Spanish rule in South America.', 'Which general won it?', 'Antonio José de Sucre.'],
+  [1825, 9, 27, 0, 'Stockton and Darlington Railway opens', 'England', 'The first public railway to use steam locomotives.', 'Whose locomotive pulled the first train?', 'George Stephenson’s Locomotion No. 1.'],
+  [1839, 9, 0, 0, 'First Opium War begins', 'China', 'Britain fights China over the opium trade.', 'Which treaty ended it and ceded Hong Kong?', 'The Treaty of Nanking, 1842.'],
+  [1848, 2, 21, 0, 'Communist Manifesto published', 'London', 'Published weeks before revolutions sweep Europe.', 'Who wrote it?', 'Karl Marx and Friedrich Engels.'],
+  [1853, 7, 8, 0, 'Perry’s ships arrive in Japan', 'Japan', 'US warships force Japan to open its ports.', 'What did the Japanese call the ships?', 'The Black Ships.'],
+  [1857, 5, 10, 0, 'Indian Rebellion begins', 'India', 'Company sepoys mutiny; the Crown takes over India the next year.', 'In which town did it break out?', 'Meerut.'],
+  [1859, 11, 24, 0, 'On the Origin of Species published', 'England', 'Darwin sets out evolution by natural selection.', 'Whose letter pushed Darwin to publish?', 'Alfred Russel Wallace’s.'],
+  [1861, 3, 3, 0, 'Russia emancipates the serfs', 'Russia', 'Some 23 million privately owned serfs are freed.', 'Which tsar issued the manifesto?', 'Alexander II.'],
+  [1861, 4, 12, 0, 'American Civil War begins', 'United States', 'Confederate guns open fire in Charleston harbour.', 'Which fort was attacked?', 'Fort Sumter.'],
+  [1865, 4, 14, 0, 'Lincoln assassinated', 'United States', 'Shot days after Lee’s surrender; he dies the next morning.', 'Where was he shot?', 'Ford’s Theatre, Washington.'],
+  [1868, 1, 3, 0, 'Meiji Restoration', 'Japan', 'The Tokugawa shogunate falls and rapid modernisation begins.', 'Which institution was restored to power?', 'The emperor.'],
+  [1869, 3, 0, 0, 'Mendeleev’s periodic table', 'Russia', 'Elements arranged by atomic weight and recurring properties.', 'What did the table famously predict?', 'Undiscovered elements, such as gallium and germanium.'],
+  [1869, 11, 17, 0, 'Suez Canal opens', 'Egypt', 'A sea route between Europe and Asia that avoids Africa.', 'Who led the project?', 'Ferdinand de Lesseps.'],
+  [1871, 1, 18, 0, 'German Empire proclaimed', 'France', 'Prussia’s king becomes German emperor during the siege of Paris.', 'Where was it proclaimed?', 'The Hall of Mirrors at Versailles.'],
+  [1876, 3, 7, 0, 'Bell patents the telephone', 'United States', 'Patent granted three days before the first call.', 'Whom did Bell summon in the first call?', 'His assistant, Thomas Watson.'],
+  [1884, 11, 15, 0, 'Berlin Conference opens', 'Germany', 'European powers set rules for carving up Africa.', 'Who hosted it?', 'Otto von Bismarck.'],
+  [1896, 3, 1, 0, 'Battle of Adwa', 'Ethiopia', 'Ethiopia defeats an Italian invasion and keeps its independence.', 'Which emperor led Ethiopia?', 'Menelik II.'],
+  [1903, 12, 17, 0, 'Wright brothers’ first flight', 'United States', 'The first controlled, sustained powered flight lasts 12 seconds.', 'Where?', 'Kill Devil Hills, near Kitty Hawk, North Carolina.'],
+  [1905, 0, 0, 0, 'Einstein’s miracle year', 'Switzerland', 'Four papers: photoelectric effect, Brownian motion, special relativity, E = mc².', 'Which paper won him the Nobel Prize?', 'The photoelectric effect.'],
+  [1905, 5, 27, 0, 'Battle of Tsushima', 'Korea Strait', 'Japan destroys the Russian Baltic Fleet.', 'Who commanded the Japanese fleet?', 'Admiral Tōgō Heihachirō.'],
+  [1911, 10, 10, 0, 'Xinhai Revolution begins', 'China', 'An uprising in Wuchang that ends two thousand years of imperial rule.', 'Who was the last emperor?', 'Puyi.'],
+  [1912, 4, 15, 0, 'Titanic sinks', 'Atlantic', 'More than 1,500 die after it strikes an iceberg.', 'Which voyage was it on?', 'Its maiden voyage, Southampton to New York.'],
+  [1914, 6, 28, 0, 'Franz Ferdinand assassinated', 'Balkans', 'The killing of the Austro-Hungarian heir sets off the July Crisis.', 'In which city, and by whom?', 'Sarajevo, by Gavrilo Princip.'],
+  [1916, 7, 1, 0, 'Battle of the Somme begins', 'France', 'The bloodiest day in British military history opens a five-month battle.', 'About how many British casualties were there on the first day?', 'About 57,000, including about 19,000 dead.'],
+  [1917, 11, 7, 0, 'October Revolution', 'Russia', 'The Bolsheviks seize power in Petrograd.', 'Why is it called October if it happened in November?', 'Russia still used the Julian calendar: it was 25 October there.'],
+  [1918, 11, 11, 0, 'Armistice ends the First World War', 'France', 'Fighting stops at the eleventh hour.', 'Where was it signed?', 'In a railway carriage in the Forest of Compiègne.'],
+  [1919, 6, 28, 0, 'Treaty of Versailles signed', 'France', 'The peace settlement with Germany.', 'What anniversary did the signing date mark?', 'Five years to the day since Franz Ferdinand’s assassination.'],
+  [1922, 11, 4, 0, 'Tutankhamun’s tomb found', 'Egypt', 'The first step of a nearly intact royal tomb is uncovered.', 'Who found it?', 'Howard Carter.'],
+  [1928, 9, 0, 0, 'Fleming discovers penicillin', 'London', 'A mould contaminating a culture plate kills bacteria.', 'Which bacteria were on the plate?', 'Staphylococcus.'],
+  [1929, 10, 29, 0, 'Wall Street Crash', 'United States', 'Black Tuesday deepens the collapse that leads into the Great Depression.', 'What is the day called?', 'Black Tuesday.'],
+  [1930, 3, 12, 0, 'Salt March begins', 'India', 'A 24-day march against the British salt tax.', 'Where did it end?', 'Dandi, on the Arabian Sea coast.'],
+  [1933, 1, 30, 0, 'Hitler appointed chancellor', 'Germany', 'The Nazi seizure of power begins.', 'Which president appointed him?', 'Paul von Hindenburg.'],
+  [1936, 7, 17, 0, 'Spanish Civil War begins', 'Spain', 'A military uprising against the Republic.', 'Which painting depicts a bombing from the war?', 'Picasso’s Guernica.'],
+  [1939, 9, 1, 0, 'Germany invades Poland', 'Poland', 'Britain and France declare war two days later.', 'Which pact, signed a week earlier, divided Poland?', 'The Molotov–Ribbentrop Pact.'],
+  [1941, 12, 7, 0, 'Attack on Pearl Harbor', 'Hawaii', 'A Japanese carrier strike brings the US into the war.', 'Which admiral planned it?', 'Isoroku Yamamoto.'],
+  [1942, 8, 23, 0, 'Battle of Stalingrad begins', 'Russia', 'Five months of fighting turn the war in the east.', 'Which German field marshal surrendered there?', 'Friedrich Paulus.'],
+  [1944, 6, 6, 0, 'D-Day landings', 'Normandy', 'The largest seaborne invasion in history.', 'What was the overall operation called?', 'Operation Overlord.'],
+  [1945, 7, 16, 0, 'Trinity nuclear test', 'United States', 'The first detonation of a nuclear weapon.', 'Where was it detonated?', 'The Jornada del Muerto desert, New Mexico.'],
+  [1945, 8, 6, 0, 'Atomic bombing of Hiroshima', 'Japan', 'Nagasaki follows three days later.', 'What was the bomber called?', 'Enola Gay.'],
+  [1947, 8, 15, 0, 'Indian independence and partition', 'South Asia', 'British India is split into India and Pakistan amid mass violence.', 'Who drew the border?', 'Cyril Radcliffe.'],
+  [1948, 5, 14, 0, 'State of Israel declared', 'Middle East', 'Declared as the British Mandate ends.', 'Who read the declaration?', 'David Ben-Gurion.'],
+  [1949, 10, 1, 0, 'People’s Republic of China proclaimed', 'China', 'The Communists win the civil war.', 'Where did Mao proclaim it?', 'Tiananmen Gate, Beijing.'],
+  [1950, 6, 25, 0, 'Korean War begins', 'Korea', 'North Korea invades the South.', 'Along which line was the peninsula divided?', 'The 38th parallel.'],
+  [1953, 4, 25, 0, 'Structure of DNA published', 'England', 'Watson and Crick describe the double helix in Nature.', 'Whose X-ray image was key evidence?', 'Rosalind Franklin’s Photo 51.'],
+  [1957, 3, 6, 0, 'Ghana becomes independent', 'West Africa', 'The first sub-Saharan colony to win independence from Britain.', 'Who was its first prime minister?', 'Kwame Nkrumah.'],
+  [1957, 10, 4, 0, 'Sputnik 1 launched', 'Soviet Union', 'The first artificial satellite starts the Space Race.', 'How long did its radio keep transmitting?', 'About three weeks, until its batteries died.'],
+  [1961, 4, 12, 0, 'Gagarin orbits the Earth', 'Soviet Union', 'The first human in space; one orbit in 108 minutes.', 'What was his spacecraft called?', 'Vostok 1.'],
+  [1961, 8, 13, 0, 'Berlin Wall built', 'Germany', 'East Germany seals the border to West Berlin overnight.', 'Which East German leader ordered it?', 'Walter Ulbricht.'],
+  [1962, 10, 16, 0, 'Cuban Missile Crisis', 'Caribbean', 'Thirteen days at the brink of nuclear war.', 'Which US missiles were quietly removed as part of the deal?', 'The Jupiter missiles in Turkey.'],
+  [1963, 11, 22, 0, 'Kennedy assassinated', 'United States', 'Shot while riding in a motorcade.', 'In which city?', 'Dallas.'],
+  [1966, 5, 16, 0, 'Cultural Revolution begins', 'China', 'Mao launches a decade of purges and upheaval.', 'Which student groups spearheaded it?', 'The Red Guards.'],
+  [1969, 7, 20, 0, 'Apollo 11 lands on the Moon', 'United States', 'Armstrong and Aldrin walk on the Moon.', 'Which crew member stayed in lunar orbit?', 'Michael Collins.'],
+  [1975, 4, 30, 0, 'Fall of Saigon', 'Vietnam', 'North Vietnamese forces take the South’s capital.', 'What was the city renamed?', 'Ho Chi Minh City.'],
+  [1979, 2, 11, 0, 'Iranian Revolution triumphs', 'Iran', 'The monarchy falls and an Islamic republic follows.', 'Who returned from exile to lead it?', 'Ayatollah Ruhollah Khomeini.'],
+  [1986, 4, 26, 0, 'Chernobyl disaster', 'Soviet Union', 'A reactor explosion releases radioactive material across Europe.', 'Which reactor exploded?', 'Reactor No. 4.'],
+  [1989, 6, 4, 0, 'Tiananmen Square crackdown', 'China', 'The army clears weeks of pro-democracy protests.', 'What is the famous image from the next day called?', '“Tank Man”.'],
+  [1989, 11, 9, 0, 'Berlin Wall opens', 'Germany', 'Crowds pour through the border crossings overnight.', 'Whose garbled press conference set it off?', 'Günter Schabowski’s.'],
+  [1991, 8, 6, 0, 'First website goes public', 'CERN', 'The World Wide Web becomes available outside CERN.', 'Who built it?', 'Tim Berners-Lee.'],
+  [1991, 12, 26, 0, 'Soviet Union dissolved', 'Soviet Union', 'Fifteen republics become independent states.', 'Which leader resigned the day before?', 'Mikhail Gorbachev.'],
+  [1994, 4, 7, 0, 'Rwandan genocide begins', 'Rwanda', 'Hutu extremists kill hundreds of thousands of Tutsi.', 'About how long did it last?', 'About 100 days.'],
+  [1994, 4, 27, 0, 'South Africa’s first free election', 'South Africa', 'The end of apartheid rule.', 'Who became president?', 'Nelson Mandela.'],
+  [2001, 9, 11, 0, 'September 11 attacks', 'United States', 'Hijacked airliners strike the World Trade Center and the Pentagon.', 'Which group carried them out?', 'Al-Qaeda.'],
+  [2008, 9, 15, 0, 'Lehman Brothers collapses', 'United States', 'The largest bankruptcy in US history turns a credit crunch into a global crisis.', 'Which bank bought its US business?', 'Barclays.'],
+];
+
+function slug(s) {
+  return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+}
+
+function starterCard(row) {
+  const [y, m, d, c, title, region, blurb, q, a] = row;
+  const id = 'w:' + y + ':' + slug(title);
+  return { id, title, y, m, d, c: !!c, region, deck: 'World history', blurb, details: [{ q, a }] };
+}
+const BUILTIN = WORLD.map(starterCard);
+const BUILTIN_IDS = new Set(BUILTIN.map(c => c.id));
+
+// ── Storage (meridian-style) ─────────────────────────────────────
+// Mobile WebKit can detach localStorage while the app is suspended in the
+// background — every read/write then throws until the process is killed.
+// All storage goes through these helpers so a dead backend degrades to
+// in-memory state (retried on resume) instead of killing whatever handler
+// touched storage first.
+const pendingWrites = new Map();
+// Keys whose reads threw — the value we're holding for them is a fallback,
+// not the truth, so re-read them once storage comes back.
+const failedReads = new Set();
+
+function storageGet(key) {
+  try { const v = localStorage.getItem(key); failedReads.delete(key); return v; }
+  catch (e) {
+    failedReads.add(key);
+    return pendingWrites.has(key) ? pendingWrites.get(key) : null;
+  }
+}
+
+function storageSet(key, val) {
+  pendingWrites.set(key, val);
+  try {
+    if (val == null) localStorage.removeItem(key);
+    else localStorage.setItem(key, val);
+    pendingWrites.delete(key);
+  } catch (e) {}
+}
+
+function flushPendingWrites() {
+  for (const [key, val] of [...pendingWrites]) {
+    try {
+      if (val == null) localStorage.removeItem(key);
+      else localStorage.setItem(key, val);
+      pendingWrites.delete(key);
+    } catch (e) { break; }
+  }
+}
+
+function loadJSON(key, fallback) {
+  const raw = storageGet(key);
+  if (raw == null) return fallback;
+  try { return JSON.parse(raw); }
+  catch (e) {
+    // keep the unreadable raw value around for manual recovery instead of silently losing it
+    storageSet(key + '_corrupt', raw);
+    return fallback;
+  }
+}
+
+function finiteOrNull(v) {
+  return typeof v === 'number' && isFinite(v) ? v : null;
+}
+
+function clampInt(v, lo, hi) {
+  const n = finiteOrNull(typeof v === 'string' && v.trim() !== '' ? Number(v) : v);
+  return n == null ? null : Math.max(lo, Math.min(hi, Math.round(n)));
+}
+
+const str = (v, n) => typeof v === 'string' ? v.trim().slice(0, n) : '';
+const isDayKey = v => typeof v === 'string' && /^\d{4}-\d\d-\d\d$/.test(v);
+
+// "1453" → 1453, "-44" / "44 BCE" / "44 bc" → -44, "AD 79" → 79.
+function parseYear(s) {
+  const m = String(s).trim().match(/^(ad|ce)?\s*(-?\d{1,5})\s*(bce|bc|b\.c\.e?\.?|ce|ad|a\.d\.)?$/i);
+  if (!m) return null;
+  let y = Number(m[2]);
+  if (m[3] && /^b/i.test(m[3])) y = -Math.abs(y);
+  return y;
+}
+
+// ── Sanitizing ───────────────────────────────────────────────────
+// A malformed card must never take down the deck — repair what's
+// recoverable, drop only garbage. Also the validation gate for imports.
+function sanitizeCard(raw, deckFallback) {
+  if (!raw || typeof raw !== 'object') return null;
+  const title = str(raw.title, 140);
+  const date = raw.date && typeof raw.date === 'object' ? raw.date : {};
+  let y = raw.y ?? raw.year ?? date.y;
+  if (typeof y === 'string') y = parseYear(y);
+  y = finiteOrNull(y);
+  if (!title || y == null || Math.abs(y) > 100000) return null;
+  const m = clampInt(raw.m ?? raw.month ?? date.m, 0, 12) || 0;
+  const d = m ? clampInt(raw.d ?? raw.day ?? date.d, 0, 31) || 0 : 0;
+  let details = Array.isArray(raw.details) ? raw.details : [];
+  if (!details.length && (raw.q || raw.question)) details = [{ q: raw.q || raw.question, a: raw.a || raw.answer }];
+  details = details
+    .filter(x => x && typeof x === 'object')
+    .map(x => ({ q: str(x.q ?? x.question, 300), a: str(x.a ?? x.answer, 300) }))
+    .filter(x => x.q && x.a)
+    .slice(0, 8);
+  return {
+    id: str(raw.id, 100) || 'u:' + Math.round(y) + ':' + slug(title),
+    title, y: Math.round(y), m, d,
+    c: !!(raw.c ?? raw.circa),
+    region: str(raw.region, 60),
+    deck: str(raw.deck, 60) || deckFallback || 'Imported',
+    blurb: str(raw.blurb ?? raw.context, 500),
+    details,
+  };
+}
+
+function sanitizeCards(raw, deckFallback) {
+  if (!Array.isArray(raw)) return [];
+  const byId = new Map();
+  for (const r of raw) {
+    const c = sanitizeCard(r, deckFallback);
+    if (c) byId.set(c.id, c);
+  }
+  return [...byId.values()];
+}
+
+function sanitizeTrace(t) {
+  if (!t || typeof t !== 'object') return null;
+  const s = finiteOrNull(t.s);
+  if (s == null || !isDayKey(t.due)) return null;
+  const e = finiteOrNull(t.e);
+  return {
+    s: Math.max(0, Math.min(3650, s)),
+    e: e == null ? 2.5 : Math.max(1.3, Math.min(3, e)),
+    n: clampInt(t.n, 0, 1e6) || 0,
+    l: clampInt(t.l, 0, 1e6) || 0,
+    due: t.due,
+    last: isDayKey(t.last) ? t.last : t.due,
+  };
+}
+
+// srs = {cardId: {w: trace|null, a: trace|null, f: first-seen dayKey}};
+// w is the "when" memory (placement), a the "what" memory (detail).
+function sanitizeSrs(raw) {
+  const out = {};
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+  for (const [id, v] of Object.entries(raw)) {
+    if (!v || typeof v !== 'object') continue;
+    const w = sanitizeTrace(v.w), a = sanitizeTrace(v.a);
+    if (!w && !a) continue;
+    out[id] = { w, a, f: isDayKey(v.f) ? v.f : (w || a).last };
+  }
+  return out;
+}
+
+const MODES = ['review', 'run'];
+
+// Session = {id, t, end, mode, n, ok, det, rec, nw, st, r} with
+// r = [[cardId, whenGrade, whatGrade|-1, gapsOff]].
+function sanitizeSessions(raw) {
+  if (!Array.isArray(raw)) return [];
+  const byId = new Map();
+  for (const s of raw) {
+    if (!s || typeof s !== 'object') continue;
+    const id = finiteOrNull(s.id), t = finiteOrNull(s.t) ?? id;
+    if (id == null || t == null || !MODES.includes(s.mode)) continue;
+    const num = v => clampInt(v, 0, 1e6) || 0;
+    const r = Array.isArray(s.r)
+      ? s.r.filter(x => Array.isArray(x) && x.length === 4 && typeof x[0] === 'string' && x.slice(1).every(v => typeof v === 'number' && isFinite(v)))
+      : [];
+    byId.set(id, {
+      id, t, end: finiteOrNull(s.end) ?? t, mode: s.mode,
+      n: num(s.n), ok: num(s.ok), det: num(s.det), rec: num(s.rec), nw: num(s.nw), st: num(s.st), r,
+    });
+  }
+  return [...byId.values()].sort((a, b) => a.t - b.t);
+}
+
+function sanitizeCfg(raw) {
+  const c = raw && typeof raw === 'object' ? raw : {};
+  return {
+    newPerDay: NEW_PER_DAY_OPTIONS.includes(c.newPerDay) ? c.newPerDay : 10,
+    strikes: STRIKE_OPTIONS.includes(c.strikes) ? c.strikes : 3,
+    off: Array.isArray(c.off) ? c.off.filter(x => typeof x === 'string').slice(0, 200) : [],
+  };
+}
+
+function sanitizeBee(raw) {
+  return {
+    user: str(raw && raw.user, 100),
+    token: str(raw && raw.token, 200),
+    slug: str(raw && raw.slug, 100),
+    metric: raw && BEE_METRICS.includes(raw.metric) ? raw.metric : 'session',
+    modes: raw && raw.modes === 'review' ? 'review' : 'all',
+  };
+}
+
+// The Beeminder ledger: one item per session ever posted (or queued), keyed
+// by requestid. `synced: false` means it still needs a POST — Beeminder
+// upserts by requestid, so re-posting updates the datapoint instead of
+// duplicating it.
+function sanitizeBeeLedger(raw) {
+  if (!Array.isArray(raw)) return [];
+  const byRid = new Map();
+  for (const d of raw) {
+    if (!d || typeof d !== 'object' || typeof d.rid !== 'string' || !d.rid) continue;
+    const value = finiteOrNull(d.value), ts = finiteOrNull(d.ts);
+    if (value == null || ts == null) continue;
+    byRid.set(d.rid, {
+      rid: d.rid, value, ts,
+      comment: typeof d.comment === 'string' ? d.comment : '',
+      synced: !!d.synced,
+    });
+  }
+  return [...byRid.values()];
+}
+
+let custom = sanitizeCards(loadJSON(CARDS_KEY, []));
+let hidden = new Set((loadJSON(HIDDEN_KEY, []) || []).filter?.(x => typeof x === 'string') || []);
+let srs = sanitizeSrs(loadJSON(SRS_KEY, {}));
+let sessions = sanitizeSessions(loadJSON(LOG_KEY, []));
+let cfg = sanitizeCfg(loadJSON(CFG_KEY, null));
+let bee = sanitizeBee(loadJSON(BEE_KEY, null));
+let beeLedger = sanitizeBeeLedger(loadJSON(BEEQ_KEY, []));
+
+function saveCustom() { storageSet(CARDS_KEY, JSON.stringify(custom)); }
+function saveHidden() { storageSet(HIDDEN_KEY, JSON.stringify([...hidden])); }
+function saveSrs() { storageSet(SRS_KEY, JSON.stringify(srs)); }
+function saveSessions() {
+  sessions.sort((a, b) => a.t - b.t);
+  storageSet(LOG_KEY, JSON.stringify(sessions));
+}
+function saveCfg() { storageSet(CFG_KEY, JSON.stringify(cfg)); }
+function saveBee() { storageSet(BEE_KEY, JSON.stringify(bee)); }
+function saveBeeLedger() { storageSet(BEEQ_KEY, JSON.stringify(beeLedger)); }
+
+// ── Cards ────────────────────────────────────────────────────────
+// The effective deck is the starter deck minus deleted ones, overlaid with
+// your own cards (an edited starter card is stored as your card, same id).
+let cards = [], cardMap = new Map();
+
+const sortKey = c => c.y * 10000 + c.m * 100 + c.d;
+function rebuildCards() {
+  const byId = new Map();
+  for (const c of BUILTIN) if (!hidden.has(c.id)) byId.set(c.id, c);
+  for (const c of custom) if (!hidden.has(c.id)) byId.set(c.id, c);
+  cards = [...byId.values()].sort((a, b) => sortKey(a) - sortKey(b) || a.title.localeCompare(b.title));
+  cardMap = byId;
+}
+rebuildCards();
+
+const deckOn = c => !cfg.off.includes(c.deck);
+const playable = () => cards.filter(deckOn);
+
+// Chronological comparison where unknown months/days count as ties: "1492"
+// sits anywhere among other 1492 events.
+function cmpCards(a, b) {
+  if (a.y !== b.y) return a.y - b.y;
+  if (!a.m || !b.m || a.m === b.m && (!a.d || !b.d)) return 0;
+  if (a.m !== b.m) return a.m - b.m;
+  return a.d - b.d;
+}
+
+function fmtYear(y) { return y < 0 ? -y + ' BCE' : String(y); }
+function fmtDate(c, full) {
+  const pre = c.c ? 'c. ' : '';
+  if (full && c.m) return pre + (c.d ? c.d + ' ' : '') + MONTHS[c.m - 1] + ' ' + fmtYear(c.y);
+  return pre + fmtYear(c.y);
+}
+
+// ── Time helpers ─────────────────────────────────────────────────
+function dayKey(t) {
+  const d = new Date(t);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+const todayKey = () => dayKey(Date.now());
+
+// Day arithmetic is anchored to local noon so DST's 23h/25h days round away
+// instead of shifting a whole day.
+function keyToNoon(key) {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d, 12).getTime();
+}
+function dayDiff(keyA, keyB) { return Math.round((keyToNoon(keyB) - keyToNoon(keyA)) / 86400000); }
+function addDays(key, n) { return dayKey(keyToNoon(key) + n * 86400000); }
+
+function fmtClock(t) {
+  const d = new Date(t);
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
+function fmtDayLabel(key) {
+  const today = todayKey();
+  if (key === today) return 'Today';
+  if (key === addDays(today, -1)) return 'Yesterday';
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+const pick = a => a[Math.floor(Math.random() * a.length)];
+
+// ── Scheduling ───────────────────────────────────────────────────
+// SM-2 style: stability s is the interval in days, ease e multiplies it on
+// each good review. A lapse resets to one day.
+function schedule(tr, g, today) {
+  const t = tr ? { ...tr } : { s: 0, e: 2.5, n: 0, l: 0 };
+  if (g === AGAIN) {
+    if (tr) t.l++;
+    t.n = 0;
+    t.e = Math.max(1.3, t.e - 0.2);
+    t.s = 1;
+  } else {
+    if (t.n === 0) t.s = g === GOOD ? 2 : 1;
+    else if (t.n === 1) t.s = g === GOOD ? Math.max(4, t.s * t.e) : Math.max(2, t.s * 1.2);
+    else t.s = g === GOOD ? t.s * t.e : Math.max(t.s + 1, t.s * 1.2);
+    if (g === HARD) t.e = Math.max(1.3, t.e - 0.15);
+    t.s = Math.min(3650, t.s);
+    t.n++;
+  }
+  // a little fuzz so cards learned together don't stay clumped forever
+  const days = t.s >= 4 ? t.s * (0.95 + Math.random() * 0.1) : t.s;
+  t.due = addDays(today, Math.max(1, Math.round(days)));
+  t.last = today;
+  return t;
+}
+
+const traceDue = (tr, today) => !tr || tr.due <= today;
+function cardDue(c, today) {
+  const e = srs[c.id];
+  if (!e) return false;
+  return traceDue(e.w, today) || (c.details.length > 0 && traceDue(e.a, today));
+}
+function cardNextDue(c) {
+  const e = srs[c.id];
+  if (!e) return null;
+  const dues = [e.w ? e.w.due : null, c.details.length ? (e.a ? e.a.due : null) : undefined].filter(x => x !== undefined);
+  if (dues.includes(null)) return todayKey();
+  return dues.sort()[0];
+}
+
+// Grade one memory. Runs draw cards that may not be due; those only
+// move the schedule on a miss, so a lucky early hit can't inflate an interval.
+function applyGrade(c, trace, g) {
+  const today = todayKey();
+  const e = srs[c.id] || { w: null, a: null, f: today };
+  if (traceDue(e[trace], today) || g === AGAIN) e[trace] = schedule(e[trace], g, today);
+  srs[c.id] = e;
+  saveSrs();
+}
+
+function newSeenToday() {
+  const today = todayKey();
+  let n = 0;
+  for (const id in srs) if (srs[id].f === today) n++;
+  return n;
+}
+const newLeftToday = () => Math.max(0, cfg.newPerDay - newSeenToday());
+
+function dueCards() {
+  const today = todayKey();
+  return playable().filter(c => cardDue(c, today));
+}
+function newCards() { return playable().filter(c => !srs[c.id]); }
+
+// ── Sessions ─────────────────────────────────────────────────────
+function sessionFor(id) { return sessions.find(s => s.id === id) || null; }
+
+function ensureSession(st) {
+  let s = sessionFor(st.id);
+  if (!s) {
+    s = { id: st.id, t: st.id, end: Date.now(), mode: st.mode, n: 0, ok: 0, det: 0, rec: 0, nw: 0, st: 0, r: [] };
+    sessions.push(s);
+  }
+  return s;
+}
+
+function sessionSummary(s) {
+  const bits = [s.n + ' card' + (s.n === 1 ? '' : 's'), s.ok + '/' + s.n + ' placed'];
+  if (s.det) bits.push(s.rec + '/' + s.det + ' details');
+  if (s.nw) bits.push(s.nw + ' new');
+  if (s.mode === 'run') bits.push(s.st + ' strike' + (s.st === 1 ? '' : 's'));
+  return bits.join(' · ');
+}
+
+let view = 'home';
+let play = null; // the session in progress
+
+function saveLive() {
+  storageSet(LIVE_KEY, play ? JSON.stringify({ play }) : null);
+}
+
+function showView(v) {
+  view = v;
+  document.getElementById('home').style.display = v === 'home' ? '' : 'none';
+  document.getElementById('play').style.display = v === 'play' ? '' : 'none';
+  window.scrollTo(0, 0);
+}
+
+// ── Play (review / run) ──────────────────────────────────────────
+function anchorsFor(mode, queue) {
+  const inQueue = new Set(queue);
+  if (mode === 'run') return [pick(playable()).id];
+  // Review: a few cards you already know, so the first placement isn't free.
+  const known = shuffle(playable().filter(c => srs[c.id] && !inQueue.has(c.id))).slice(0, 3);
+  if (known.length) return known.sort(cmpSort).map(c => c.id);
+  const other = playable().filter(c => !inQueue.has(c.id));
+  return other.length ? [pick(other).id] : [];
+}
+const cmpSort = (a, b) => sortKey(a) - sortKey(b);
+
+function startPlay(mode) {
+  if (play) return;
+  let queue = [];
+  if (mode === 'review') {
+    const fresh = shuffle(newCards()).slice(0, newLeftToday());
+    queue = shuffle(dueCards().concat(fresh)).map(c => c.id);
+    if (!queue.length) { alert('Nothing due and no new cards left today. Try a run.'); return; }
+  } else if (mode === 'run') {
+    if (playable().length < 2) { alert('A run needs at least two cards in your switched-on decks.'); return; }
+  }
+  play = {
+    id: Date.now(), mode, queue, line: anchorsFor(mode, queue),
+    cur: null, phase: 'place', strikes: 0, res: null, cursor: 0,
+  };
+  showView('play');
+  nextCard();
+}
+
+// Run mode draws freely from the deck. Once the timeline is long enough it
+// leans toward cards that land in narrow gaps, so the run gets harder.
+function drawRun() {
+  const inLine = new Set(play.line);
+  const pool = playable().filter(c => !inLine.has(c.id));
+  if (!pool.length) return null;
+  const today = todayKey();
+  const due = pool.filter(c => cardDue(c, today));
+  const cands = due.length && Math.random() < 0.5 ? due : pool;
+  if (play.line.length < 6 || Math.random() < 0.3) return pick(cands).id;
+  const line = play.line.map(id => cardMap.get(id)).filter(Boolean);
+  const width = c => {
+    let i = line.findIndex(x => cmpSort(x, c) > 0);
+    if (i === -1) i = line.length;
+    const lo = i > 0 ? line[i - 1].y : line[0].y - 1000;
+    const hi = i < line.length ? line[i].y : line[line.length - 1].y + 1000;
+    return hi - lo;
+  };
+  return shuffle(cands.slice()).slice(0, 6).sort((a, b) => width(a) - width(b))[0].id;
+}
+
+function nextCard() {
+  play.line = play.line.filter(id => cardMap.has(id));
+  play.res = null;
+  let id = null;
+  if (play.mode === 'run') {
+    if (play.strikes < cfg.strikes) id = drawRun();
+  } else {
+    while (play.queue.length && !cardMap.has(play.queue[0])) play.queue.shift();
+    id = play.queue.shift() || null;
+  }
+  if (!id) { finishPlay(); return; }
+  play.cur = id;
+  play.phase = 'place';
+  play.cursor = Math.floor(play.line.length / 2);
+  saveLive();
+  renderPlay();
+}
+
+function place(gap) {
+  if (!play || play.phase !== 'place') return;
+  const card = cardMap.get(play.cur);
+  if (!card) { nextCard(); return; }
+  const line = play.line.map(id => cardMap.get(id));
+  const okGaps = [];
+  for (let i = 0; i <= line.length; i++) {
+    const lo = i > 0 ? line[i - 1] : null, hi = i < line.length ? line[i] : null;
+    if ((!lo || cmpCards(lo, card) <= 0) && (!hi || cmpCards(card, hi) <= 0)) okGaps.push(i);
+  }
+  if (!okGaps.length) { // only reachable through odd tie chains; fall back to sort order
+    let i = line.findIndex(x => cmpSort(x, card) > 0);
+    okGaps.push(i === -1 ? line.length : i);
+  }
+  let at = okGaps[0];
+  for (const g of okGaps) if (Math.abs(g - gap) < Math.abs(at - gap)) at = g;
+  const off = Math.abs(at - gap);
+  let err = 0;
+  if (off) {
+    const lo = gap > 0 ? line[gap - 1] : null, hi = gap < line.length ? line[gap] : null;
+    if (lo && card.y < lo.y) err = lo.y - card.y;
+    else if (hi && card.y > hi.y) err = card.y - hi.y;
+  }
+  const wg = off === 0 ? GOOD : off === 1 && err <= NEAR_YEARS ? HARD : AGAIN;
+  const wasNew = !srs[card.id];
+
+  play.line.splice(at, 0, card.id);
+  if (off && play.mode === 'run') play.strikes++;
+  play.res = { id: card.id, off, err, wg, di: card.details.length ? Math.floor(Math.random() * card.details.length) : -1, shown: false };
+  play.phase = card.details.length ? 'flip' : 'answer';
+  applyGrade(card, 'w', wg);
+
+  const s = ensureSession(play);
+  s.n++;
+  if (!off) s.ok++;
+  if (off && play.mode === 'run') s.st++;
+  if (wasNew) s.nw++;
+  s.r.push([card.id, wg, -1, off]);
+  s.end = Date.now();
+  saveSessions();
+  saveLive();
+  renderPlay();
+}
+
+function showAnswer() {
+  if (!play || play.phase !== 'flip') return;
+  play.phase = 'answer';
+  saveLive();
+  renderPlay();
+}
+
+function gradeDetail(knew) {
+  if (!play || play.phase !== 'answer') return;
+  const card = cardMap.get(play.res.id);
+  if (card && play.res.di >= 0) {
+    applyGrade(card, 'a', knew ? GOOD : AGAIN);
+    const s = ensureSession(play);
+    s.det++;
+    if (knew) s.rec++;
+    const last = s.r[s.r.length - 1];
+    if (last && last[0] === card.id) last[2] = knew ? GOOD : AGAIN;
+    s.end = Date.now();
+    saveSessions();
+  }
+  nextCard();
+}
+
+function finishPlay() {
+  play.phase = 'over';
+  play.cur = null;
+  const s = sessionFor(play.id);
+  if (s) { s.end = Date.now(); saveSessions(); queueBeeUpsert(s); }
+  saveLive();
+  renderPlay();
+}
+
+function endPlay() {
+  if (!play) return;
+  if (play.phase === 'over') { closePlay(); return; }
+  // A placed card whose detail is still open keeps its "when" grade; the
+  // card being placed is put back untouched.
+  finishPlay();
+}
+
+function closePlay() {
+  play = null;
+  saveLive();
+  showView('home');
+  renderAll();
+}
+
+function bestRun() {
+  return sessions.filter(s => s.mode === 'run').reduce((m, s) => Math.max(m, s.ok), 0);
+}
+
+function renderPlay() {
+  if (!play) return;
+  const s = sessionFor(play.id) || { n: 0, ok: 0, det: 0, rec: 0, st: 0 };
+  document.getElementById('p-mode').textContent = play.mode;
+  let hud = '<span>placed <b>' + s.ok + '/' + s.n + '</b></span>';
+  if (s.det) hud += '<span>details <b>' + s.rec + '/' + s.det + '</b></span>';
+  if (play.mode === 'run') {
+    hud += '<span class="strikes">' + '✕'.repeat(play.strikes) + '·'.repeat(Math.max(0, cfg.strikes - play.strikes)) + '</span>';
+  } else if (play.phase !== 'over') {
+    hud += '<span>left <b>' + (play.queue.length + (play.phase === 'place' ? 1 : 0)) + '</b></span>';
+  }
+  document.getElementById('p-hud').innerHTML = hud;
+
+  const drawn = document.getElementById('drawn');
+  if (play.phase === 'over') {
+    const rows = [];
+    if (play.mode === 'run') {
+      const best = bestRun();
+      rows.push(['streak', s.ok + (s.ok >= best && s.ok > 0 ? ' · new best' : ' · best ' + best)]);
+    }
+    rows.push(['placed right', s.ok + ' of ' + s.n]);
+    if (s.det) rows.push(['details recalled', s.rec + ' of ' + s.det]);
+    if (s.nw) rows.push(['new cards', String(s.nw)]);
+    const left = dueCards().length;
+    rows.push(['still due today', String(left)]);
+    drawn.innerHTML = '<div class="summary"><div class="d-region">' + (play.mode === 'run' && play.strikes >= cfg.strikes ? 'out of strikes' : 'session done') + '</div>' +
+      '<div class="s-big">' + (s.n ? Math.round(100 * s.ok / s.n) + '% placed right' : 'No cards played') + '</div>' +
+      '<div class="s-rows">' + rows.map(([k, v]) => '<div class="plan-row"><span>' + k + '</span><span class="plan-what">' + esc(v) + '</span></div>').join('') + '</div>' +
+      '<div class="d-btns"><button class="btn primary" onclick="closePlay()">✓ Done [Enter]</button>' +
+      (play.mode === 'run' ? '<button class="btn gold" onclick="againPlay()">↻ Again</button>' : '') + '</div></div>';
+  } else {
+    const shownCard = cardMap.get(play.phase === 'place' ? play.cur : play.res.id);
+    if (!shownCard) { nextCard(); return; }
+    let html = '<div class="d-region">' + esc(shownCard.region || shownCard.deck) + '</div>' +
+      '<div class="d-title">' + esc(shownCard.title) + '</div>';
+    if (play.phase === 'place') {
+      html += '<div class="d-date">????</div>' +
+        '<div class="d-hint">Tap the gap where it belongs · ↑ ↓ Enter</div>';
+    } else {
+      const r = play.res;
+      const verdict = r.off === 0 ? '<div class="verdict ok">✓ right gap</div>'
+        : '<div class="verdict ' + (r.wg === HARD ? 'near' : 'bad') + '">✕ ' + r.off + ' gap' + (r.off === 1 ? '' : 's') + ' off' +
+          (r.err ? ' · ' + r.err + ' year' + (r.err === 1 ? '' : 's') : '') + (play.mode === 'run' ? ' · strike' : '') + '</div>';
+      html += '<div class="d-date known">' + esc(fmtDate(shownCard, true)) + '</div>' +
+        '<div class="d-reveal">' + verdict;
+      if (r.di >= 0) {
+        const det = shownCard.details[r.di] || shownCard.details[0];
+        html += '<div class="d-q">' + esc(det.q) + '</div>';
+        if (play.phase === 'flip') {
+          html += '<div class="d-btns"><button class="btn gold" onclick="showAnswer()">Show answer [Space]</button></div>';
+        } else {
+          html += '<div class="d-a">' + esc(det.a) + '</div>' +
+            (shownCard.blurb ? '<div class="d-blurb">' + esc(shownCard.blurb) + '</div>' : '') +
+            '<div class="d-btns"><button class="btn danger" onclick="gradeDetail(false)">Forgot [1]</button>' +
+            '<button class="btn primary" onclick="gradeDetail(true)">Knew it [2]</button></div>';
+        }
+      } else {
+        html += (shownCard.blurb ? '<div class="d-blurb">' + esc(shownCard.blurb) + '</div>' : '') +
+          '<div class="d-btns"><button class="btn primary" onclick="gradeDetail(true)">Next [Enter]</button></div>';
+      }
+      html += '</div>';
+    }
+    drawn.innerHTML = html;
+  }
+
+  const tl = document.getElementById('timeline');
+  const placing = play.phase === 'place';
+  const line = play.line.map(id => cardMap.get(id)).filter(Boolean);
+  const gapLabel = i => !line.length ? 'start the timeline'
+    : i === 0 ? 'before ' + fmtDate(line[0])
+    : i === line.length ? 'after ' + fmtDate(line[line.length - 1])
+    : 'between ' + fmtDate(line[i - 1]) + ' and ' + fmtDate(line[i]);
+  let html = '';
+  for (let i = 0; i <= line.length; i++) {
+    if (placing) {
+      html += '<li><button class="gap-btn' + (i === play.cursor ? ' cur' : '') + '" onclick="place(' + i + ')">＋ ' + esc(gapLabel(i)) + '</button></li>';
+    }
+    if (i < line.length) {
+      const c = line[i];
+      let cls = 'ev';
+      if (play.res && play.res.id === c.id && play.phase !== 'over') cls += play.res.off ? ' wrong' : ' fresh';
+      html += '<li class="' + cls + '" title="' + esc(c.blurb) + '"><span class="e-y">' + esc(fmtDate(c, true)) + '</span><span class="e-t">' + esc(c.title) + '</span></li>';
+    }
+  }
+  tl.innerHTML = html;
+  const focus = placing ? tl.querySelector('.gap-btn.cur') : tl.querySelector('.ev.fresh, .ev.wrong');
+  if (focus) focus.scrollIntoView({ block: 'nearest' });
+}
+
+function againPlay() {
+  const mode = play.mode;
+  play = null;
+  saveLive();
+  startPlay(mode);
+}
+
+function moveCursor(d) {
+  if (!play || play.phase !== 'place') return;
+  play.cursor = Math.max(0, Math.min(play.line.length, play.cursor + d));
+  renderPlay();
+}
+
+// ── Beeminder sync ───────────────────────────────────────────────
+// One-way: sessions become datapoints. The requestid is derived from the
+// session id, so a session maps to exactly one datapoint for life — a
+// session that keeps going re-posts (upsert), deletes re-post with value 0.
+// Unsent items wait in the ledger until the network and Beeminder cooperate.
+function beeConfigured() { return !!(bee.user && bee.token && bee.slug); }
+function beeRid(s) { return 'kleio' + String(s.id).replace(/\D/g, '').slice(0, 30); }
+function beeEligible(s) { return s.n > 0 && (bee.modes === 'all' || s.mode === 'review'); }
+
+function beeValue(s) {
+  if (bee.metric === 'cards') return s.n;
+  if (bee.metric === 'correct') return s.ok;
+  return 1;
+}
+
+function beeComment(s) { return 'kleio: ' + s.mode + ' · ' + sessionSummary(s); }
+
+function queueBeeUpsert(s) {
+  if (!beeConfigured() || !beeEligible(s)) return;
+  const item = { rid: beeRid(s), value: beeValue(s), ts: Math.floor(s.t / 1000), comment: beeComment(s), synced: false };
+  const old = beeLedger.find(x => x.rid === item.rid);
+  if (old && old.synced && old.value === item.value && old.comment === item.comment) return;
+  beeLedger = beeLedger.filter(x => x.rid !== item.rid).concat(item);
+  saveBeeLedger();
+  syncBee();
+}
+
+function queueBeeDelete(s) {
+  const rid = beeRid(s);
+  const item = beeLedger.find(x => x.rid === rid);
+  if (!item) return;
+  if (!item.synced) {
+    // never reached Beeminder — just forget it
+    beeLedger = beeLedger.filter(x => x.rid !== rid);
+  } else {
+    item.value = 0;
+    item.comment = 'kleio: session deleted';
+    item.synced = false;
+  }
+  saveBeeLedger();
+  syncBee();
+}
+
+let beeSyncing = false;
+let beeStatus = '';
+
+function renderBeeStatus() {
+  const el = document.getElementById('bee-status');
+  if (!el) return;
+  if (!beeConfigured()) { el.textContent = 'not configured'; return; }
+  const pending = beeLedger.filter(x => !x.synced).length;
+  el.textContent = (pending ? pending + ' pending · ' : '') + (beeStatus || 'idle');
+}
+
+async function syncBee() {
+  renderBeeStatus();
+  if (beeSyncing || !beeConfigured() || !navigator.onLine) return;
+  const pending = beeLedger.filter(x => !x.synced);
+  if (!pending.length) return;
+  beeSyncing = true;
+  beeStatus = 'syncing…';
+  renderBeeStatus();
+  try {
+    for (const item of pending) {
+      const res = await fetch('https://www.beeminder.com/api/v1/users/' + encodeURIComponent(bee.user) +
+        '/goals/' + encodeURIComponent(bee.slug) + '/datapoints.json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          auth_token: bee.token,
+          value: String(item.value),
+          comment: item.comment,
+          timestamp: String(item.ts),
+          requestid: item.rid,
+        }),
+      });
+      if (!res.ok) {
+        beeStatus = res.status === 401 ? '✕ bad auth token'
+          : res.status === 404 ? '✕ user or goal not found'
+          : '✕ HTTP ' + res.status + ' — will retry';
+        beeSyncing = false;
+        renderBeeStatus();
+        renderLog();
+        return;
+      }
+      item.synced = true;
+      saveBeeLedger();
+    }
+    beeStatus = '✓ synced';
+  } catch (e) {
+    beeStatus = '✕ unreachable — will retry';
+  }
+  beeSyncing = false;
+  renderBeeStatus();
+  renderLog();
+}
+
+window.addEventListener('online', syncBee);
+
+function beeChanged() {
+  bee = sanitizeBee({
+    user: document.getElementById('bee-user').value,
+    slug: document.getElementById('bee-slug').value,
+    token: document.getElementById('bee-token').value,
+    metric: document.getElementById('bee-metric').value,
+    modes: document.getElementById('bee-modes').value,
+  });
+  saveBee();
+  beeStatus = '';
+  renderBeeStatus();
+  syncBee();
+}
+
+// ── Rendering ────────────────────────────────────────────────────
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+function renderToday() {
+  const today = todayKey();
+  document.getElementById('today-date').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+  const due = dueCards().length;
+  const fresh = Math.min(newLeftToday(), newCards().length);
+  const status = document.getElementById('today-status');
+  const btn = document.getElementById('btn-review');
+  status.className = 'today-status';
+  if (due + fresh) {
+    status.textContent = (due ? due + ' due' : '') + (due && fresh ? ' · ' : '') + (fresh ? fresh + ' new' : '');
+    status.classList.add('due');
+    btn.className = 'mode-btn primary';
+    btn.innerHTML = '<span>Review <span class="key">[R]</span></span><small>' + (due + fresh) + ' card' + (due + fresh === 1 ? '' : 's') + ' · place each on a timeline, then recall one detail</small>';
+  } else {
+    status.textContent = 'All caught up';
+    status.classList.add('done');
+    btn.className = 'mode-btn primary done';
+    btn.innerHTML = '<span>Review <span class="key">[R]</span></span><small>nothing due · come back tomorrow, or play a run</small>';
+  }
+  // what's coming up in the next week
+  const counts = new Map();
+  for (const c of playable()) {
+    const nd = cardNextDue(c);
+    if (nd && nd > today && dayDiff(today, nd) <= 7) counts.set(nd, (counts.get(nd) || 0) + 1);
+  }
+  const tomorrow = counts.get(addDays(today, 1)) || 0;
+  const week = [...counts.values()].reduce((a, b) => a + b, 0);
+  const total = playable().length, learned = playable().filter(c => srs[c.id]).length;
+  document.getElementById('plan-rows').innerHTML =
+    '<div class="plan-row"><span>tomorrow</span><span class="plan-what">' + tomorrow + ' due</span></div>' +
+    '<div class="plan-row"><span>next 7 days</span><span class="plan-what">' + week + ' due</span></div>' +
+    '<div class="plan-row"><span>deck</span><span class="plan-what">' + learned + ' of ' + total + ' met</span></div>';
+  const best = bestRun();
+  document.getElementById('run-sub').textContent = best ? 'best streak ' + best : cfg.strikes + ' strikes and out';
+}
+
+function renderHorizon() {
+  const el = document.getElementById('horizon');
+  const todayK = todayKey();
+  const byDay = new Map();
+  for (const s of sessions) {
+    if (!s.n) continue;
+    const dk = dayKey(s.t);
+    const cur = byDay.get(dk) || { rev: false, sum: [] };
+    if (s.mode === 'review') cur.rev = true;
+    cur.sum.push(s.mode + ' ' + s.n);
+    byDay.set(dk, cur);
+  }
+  let html = '';
+  for (let off = -27; off <= 0; off++) {
+    const key = addDays(todayK, off);
+    const d = byDay.get(key);
+    let cls = 'day-cell' + (d ? (d.rev ? ' rev' : ' oth') : '') + (key === todayK ? ' today' : '');
+    const title = fmtDayLabel(key) + ': ' + (d ? d.sum.join(' · ') : 'nothing');
+    html += '<div class="' + cls + '" title="' + esc(title) + '"></div>';
+  }
+  el.innerHTML = html;
+}
+
+function streakDays() {
+  const days = new Set(sessions.filter(s => s.n).map(s => dayKey(s.t)));
+  let k = todayKey();
+  if (!days.has(k)) k = addDays(k, -1);
+  let n = 0;
+  while (days.has(k)) { n++; k = addDays(k, -1); }
+  return n;
+}
+
+function renderStats() {
+  document.getElementById('stat-streak').textContent = streakDays();
+  document.getElementById('stat-learned').textContent = Object.keys(srs).filter(id => cardMap.has(id)).length;
+  const since = Date.now() - 30 * 86400000;
+  let wn = 0, wok = 0, an = 0, aok = 0;
+  for (const s of sessions) {
+    if (s.t < since) continue;
+    for (const [, wg, ag] of s.r) {
+      wn++; if (wg === GOOD) wok++;
+      if (ag >= 0) { an++; if (ag === GOOD) aok++; }
+    }
+  }
+  document.getElementById('stat-when').textContent = wn ? Math.round(100 * wok / wn) + '%' : '–';
+  document.getElementById('stat-what').textContent = an ? Math.round(100 * aok / an) + '%' : '–';
+}
+
+let logLimit = 10;
+function renderLog() {
+  const el = document.getElementById('log-list');
+  const played = sessions.filter(s => s.n);
+  document.getElementById('log-count').textContent = played.length ? played.length + ' total' : '';
+  if (!played.length) {
+    el.innerHTML = '<div class="log-empty">No sessions yet. Start with a review.</div>';
+    return;
+  }
+  const ledger = new Map(beeLedger.map(x => [x.rid, x]));
+  const rows = played.slice().reverse().slice(0, logLimit).map(s => {
+    let bm = '';
+    if (beeConfigured() && beeEligible(s)) {
+      const item = ledger.get(beeRid(s));
+      bm = item && item.synced ? '<span class="l-bm ok" title="posted to Beeminder">◆</span>' : '<span class="l-bm pending" title="not yet posted">◇</span>';
+    }
+    return '<div class="log-row"><span class="l-day">' + esc(fmtDayLabel(dayKey(s.t))) + ' ' + fmtClock(s.t) + '</span>' +
+      '<span class="mode-tag ' + s.mode + '">' + s.mode + '</span>' +
+      '<span class="l-work">' + esc(sessionSummary(s)) + '</span>' + bm +
+      '<button class="l-del" title="Delete session" onclick="deleteSession(' + s.id + ')">✕</button></div>';
+  });
+  if (played.length > logLimit) rows.push('<button class="show-more" onclick="logLimit += 20; renderLog()">show more</button>');
+  el.innerHTML = rows.join('');
+}
+
+function deleteSession(id) {
+  const s = sessionFor(id);
+  if (!s) return;
+  if (!confirm('Delete this ' + s.mode + ' session from the log? Card schedules stay as they are.')) return;
+  sessions = sessions.filter(x => x.id !== id);
+  saveSessions();
+  queueBeeDelete(s);
+  renderAll();
+}
+
+function renderAll() {
+  renderToday();
+  renderHorizon();
+  renderStats();
+  renderLog();
+  renderBeeStatus();
+  if (view === 'play') renderPlay();
+}
+
+// ── Cards panel ──────────────────────────────────────────────────
+function openCards() {
+  renderDecks();
+  renderCardList();
+  document.getElementById('import-status').textContent = '';
+  document.getElementById('cards-overlay').classList.add('visible');
+}
+function closeCards() { document.getElementById('cards-overlay').classList.remove('visible'); }
+
+function renderDecks() {
+  const today = todayKey();
+  const by = new Map();
+  for (const c of cards) {
+    const d = by.get(c.deck) || { n: 0, fresh: 0, due: 0 };
+    d.n++;
+    if (!srs[c.id]) d.fresh++;
+    else if (cardDue(c, today)) d.due++;
+    by.set(c.deck, d);
+  }
+  const names = [...by.keys()].sort();
+  const el = document.getElementById('deck-list');
+  el.innerHTML = names.map((n, i) => {
+    const d = by.get(n);
+    return '<div class="deck-row' + (cfg.off.includes(n) ? ' off' : '') + '"><span class="dk-name">' + esc(n) + '</span>' +
+      '<span class="dk-count">' + d.n + ' cards · ' + d.fresh + ' new · ' + d.due + ' due</span>' +
+      '<button class="btn btn-tiny" data-deck="' + i + '">' + (cfg.off.includes(n) ? 'off' : 'on') + '</button></div>';
+  }).join('') || '<div class="settings-note">No cards.</div>';
+  el.querySelectorAll('button[data-deck]').forEach(b => b.addEventListener('click', () => {
+    const n = names[Number(b.dataset.deck)];
+    cfg.off = cfg.off.includes(n) ? cfg.off.filter(x => x !== n) : cfg.off.concat(n);
+    saveCfg();
+    renderDecks();
+    renderAll();
+  }));
+}
+
+let cardListLimit = 80;
+function renderCardList() {
+  const q = document.getElementById('card-search').value.trim().toLowerCase();
+  const today = todayKey();
+  const list = q ? cards.filter(c => (c.title + ' ' + c.region + ' ' + c.deck + ' ' + fmtYear(c.y)).toLowerCase().includes(q)) : cards;
+  const el = document.getElementById('card-list');
+  const rows = list.slice(0, cardListLimit).map(c => {
+    const e = srs[c.id];
+    let pill = '<span class="pill new">new</span>';
+    if (e) {
+      const nd = cardNextDue(c);
+      pill = nd <= today ? '<span class="pill due">due</span>' : '<span class="pill">' + dayDiff(today, nd) + 'd</span>';
+    }
+    return '<button class="card-row" data-id="' + esc(c.id) + '"><span class="c-y">' + esc(fmtDate(c)) + '</span>' +
+      '<span class="c-t">' + esc(c.title) + '<small>' + esc(c.deck) + '</small></span>' + pill + '</button>';
+  });
+  if (list.length > cardListLimit) rows.push('<button class="show-more" onclick="cardListLimit += 200; renderCardList()">show ' + (list.length - cardListLimit) + ' more</button>');
+  el.innerHTML = rows.join('') || '<div class="log-empty">No cards match.</div>';
+  el.querySelectorAll('.card-row').forEach(b => b.addEventListener('click', () => openEdit(b.dataset.id)));
+}
+
+// ── Card editor ──────────────────────────────────────────────────
+let editId = null;
+
+function openEdit(id) {
+  const c = id ? cardMap.get(id) : null;
+  if (id && !c) return;
+  editId = id;
+  document.getElementById('edit-head').textContent = c ? 'EDIT CARD' : 'NEW CARD';
+  document.getElementById('ce-title').value = c ? c.title : '';
+  document.getElementById('ce-year').value = c ? fmtYear(c.y) : '';
+  document.getElementById('ce-month').value = c && c.m ? c.m : '';
+  document.getElementById('ce-day').value = c && c.d ? c.d : '';
+  document.getElementById('ce-circa').checked = !!(c && c.c);
+  document.getElementById('ce-region').value = c ? c.region : '';
+  document.getElementById('ce-deck').value = c ? c.deck : (custom.length ? custom[custom.length - 1].deck : 'My cards');
+  document.getElementById('ce-blurb').value = c ? c.blurb : '';
+  document.getElementById('ce-details').value = c ? c.details.map(x => x.q + ' | ' + x.a).join('\n') : '';
+  const e = c && srs[c.id];
+  const trace = (name, t) => !t ? name + ': not reviewed' : name + ': every ' + Math.round(t.s) + 'd, next ' + fmtDayLabel(t.due) + ', ' + t.l + ' lapse' + (t.l === 1 ? '' : 's');
+  document.getElementById('ce-srs').textContent = e ? trace('When', e.w) + ' · ' + trace('What', e.a) : (c ? 'Not met yet.' : '');
+  document.getElementById('ce-reset').style.display = e ? '' : 'none';
+  document.getElementById('ce-delete').style.display = c ? '' : 'none';
+  document.getElementById('edit-overlay').classList.add('visible');
+  document.getElementById('ce-title').focus();
+}
+
+function closeEdit() {
+  editId = null;
+  document.getElementById('edit-overlay').classList.remove('visible');
+}
+
+function saveEdit() {
+  const y = parseYear(document.getElementById('ce-year').value);
+  const details = document.getElementById('ce-details').value.split('\n').map(l => {
+    const i = l.indexOf('|');
+    return i < 0 ? null : { q: l.slice(0, i), a: l.slice(i + 1) };
+  }).filter(Boolean);
+  const raw = {
+    id: editId || undefined,
+    title: document.getElementById('ce-title').value,
+    y, m: document.getElementById('ce-month').value, d: document.getElementById('ce-day').value,
+    c: document.getElementById('ce-circa').checked,
+    region: document.getElementById('ce-region').value,
+    deck: document.getElementById('ce-deck').value || 'My cards',
+    blurb: document.getElementById('ce-blurb').value,
+    details,
+  };
+  const c = sanitizeCard(raw, 'My cards');
+  if (!c) { alert('A card needs an event name and a year, like 1453 or 44 BCE.'); return; }
+  if (!editId) {
+    let id = c.id, n = 2;
+    while (cardMap.has(id)) id = c.id + '-' + n++;
+    c.id = id;
+  }
+  custom = custom.filter(x => x.id !== c.id).concat(c);
+  saveCustom();
+  rebuildCards();
+  closeEdit();
+  renderDecks();
+  renderCardList();
+  renderAll();
+}
+
+function deleteEdit() {
+  const c = cardMap.get(editId);
+  if (!c) return;
+  if (!confirm('Delete “' + c.title + '” and its progress?' + (BUILTIN_IDS.has(c.id) ? ' (Starter cards can be restored from settings.)' : ''))) return;
+  custom = custom.filter(x => x.id !== c.id);
+  if (BUILTIN_IDS.has(c.id)) { hidden.add(c.id); saveHidden(); }
+  delete srs[c.id];
+  saveCustom();
+  saveSrs();
+  rebuildCards();
+  closeEdit();
+  renderDecks();
+  renderCardList();
+  renderAll();
+}
+
+function resetCardProgress() {
+  const c = cardMap.get(editId);
+  if (!c || !confirm('Forget your progress on “' + c.title + '”? It becomes a new card again.')) return;
+  delete srs[c.id];
+  saveSrs();
+  openEdit(c.id);
+  renderCardList();
+  renderAll();
+}
+
+// ── Import ───────────────────────────────────────────────────────
+// Accepts a bare array of cards, {cards: [...]}, or a full Kleio export
+// (which merges progress and sessions too).
+function importData(obj) {
+  if (obj && typeof obj === 'object' && !Array.isArray(obj) && obj.app === 'kleio') return mergeBackup(obj);
+  const list = Array.isArray(obj) ? obj : obj && Array.isArray(obj.cards) ? obj.cards : null;
+  if (!list) return 'No cards found. Expected a JSON array of cards.';
+  const incoming = sanitizeCards(list, 'Imported');
+  const haveKey = new Set(cards.map(c => c.y + '|' + c.title.toLowerCase()));
+  const added = incoming.filter(c => !cardMap.has(c.id) && !haveKey.has(c.y + '|' + c.title.toLowerCase()));
+  custom = custom.concat(added);
+  saveCustom();
+  rebuildCards();
+  renderAll();
+  const bad = list.length - incoming.length;
+  return 'Added ' + added.length + ' card' + (added.length === 1 ? '' : 's') +
+    (incoming.length - added.length ? ' · ' + (incoming.length - added.length) + ' already present' : '') +
+    (bad ? ' · ' + bad + ' unreadable (need title and y)' : '') + '.';
+}
+
+function mergeBackup(obj) {
+  const inCards = sanitizeCards(obj.cards || []);
+  const have = new Set(custom.map(c => c.id));
+  const addedCards = inCards.filter(c => !have.has(c.id));
+  custom = custom.concat(addedCards);
+  if (Array.isArray(obj.hidden)) for (const id of obj.hidden) if (typeof id === 'string') hidden.add(id);
+  // per card, keep whichever side was reviewed more recently
+  const inSrs = sanitizeSrs(obj.srs);
+  const lastOf = e => [e.w && e.w.last, e.a && e.a.last].filter(Boolean).sort().pop() || '';
+  let srsN = 0;
+  for (const [id, e] of Object.entries(inSrs)) {
+    if (!srs[id] || lastOf(e) > lastOf(srs[id])) { srs[id] = e; srsN++; }
+  }
+  const inSessions = sanitizeSessions(obj.sessions);
+  const haveS = new Set(sessions.map(s => s.id));
+  const addedS = inSessions.filter(s => !haveS.has(s.id));
+  sessions = sessions.concat(addedS);
+  saveCustom(); saveHidden(); saveSrs(); saveSessions();
+  rebuildCards();
+  renderAll();
+  return 'Merged backup: ' + addedCards.length + ' cards, ' + srsN + ' card schedules, ' + addedS.length + ' sessions.';
+}
+
+function importPasted() {
+  const text = document.getElementById('import-text').value.trim();
+  const status = document.getElementById('import-status');
+  if (!text) { status.textContent = 'Paste some JSON first.'; return; }
+  let obj;
+  // tolerate a code fence around the JSON, as AI answers often have
+  try { obj = JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g, '')); }
+  catch (e) { status.textContent = 'That isn’t valid JSON: ' + e.message; return; }
+  status.textContent = importData(obj);
+  document.getElementById('import-text').value = '';
+  renderDecks();
+  renderCardList();
+}
+
+const AI_PROMPT = 'Write 40 cards for my history timeline app about TOPIC, as a JSON array and nothing else. ' +
+  'Each card is an object: {"title": short name of the event, "y": year as an integer (negative for BCE), ' +
+  '"m": month 1–12 (omit if unknown), "d": day of month (omit if unknown), "c": true only if the date is approximate, ' +
+  '"region": where it happened, "deck": "TOPIC", "blurb": one sentence of context that does not give away the year, ' +
+  '"details": [{"q": a question about who, where or what resulted, "a": a short answer}]}. ' +
+  'Use well-attested events and dates only, spread across the period, and avoid two events in the same year unless the month and day are known.';
+
+function copyPrompt() {
+  const status = document.getElementById('import-status');
+  navigator.clipboard.writeText(AI_PROMPT).then(
+    () => { status.textContent = 'Prompt copied. Replace TOPIC, then paste the answer above.'; },
+    () => { document.getElementById('import-text').value = AI_PROMPT; status.textContent = 'Couldn’t reach the clipboard; the prompt is in the box to copy by hand.'; }
+  );
+}
+
+// ── Export / import files ────────────────────────────────────────
+const csvQuote = s => '"' + String(s).replace(/"/g, '""') + '"';
+
+function downloadBlob(text, type, filename) {
+  const blob = new Blob([text], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function buildJSON() {
+  return JSON.stringify({
+    app: 'kleio', exported: new Date().toISOString(),
+    cards: custom, hidden: [...hidden], srs, sessions, config: cfg,
+  }, null, 2);
+}
+function exportJSON() { downloadBlob(buildJSON(), 'application/json', 'kleio-' + todayKey() + '.json'); }
+
+function buildCSV() {
+  const rows = ['id,start,end,mode,cards,correct,details,recalled,new,strikes'];
+  for (const s of sessions) {
+    if (!s.n) continue;
+    rows.push([s.id, new Date(s.t).toISOString(), new Date(s.end).toISOString(), s.mode,
+      s.n, s.ok, s.det, s.rec, s.nw, s.st].join(','));
+  }
+  return rows.join('\n') + '\n';
+}
+function exportCSV() {
+  if (!sessions.some(s => s.n)) { alert('No sessions to export.'); return; }
+  downloadBlob(buildCSV(), 'text/csv', 'kleio-sessions-' + todayKey() + '.csv');
+}
+
+function importJSON() { document.getElementById('import-file').click(); }
+function handleImportFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let parsed;
+    try { parsed = JSON.parse(String(reader.result)); } catch (e) { alert('Not a valid JSON file.'); return; }
+    alert(importData(parsed));
+  };
+  reader.readAsText(file);
+  document.getElementById('import-file').value = '';
+}
+
+function restoreStarter() {
+  if (!hidden.size) return;
+  hidden.clear();
+  saveHidden();
+  rebuildCards();
+  renderSettings();
+  renderAll();
+}
+
+function clearProgress() {
+  if (!confirm('Forget all progress and delete all ' + sessions.length + ' sessions? Your cards stay. Export first if you want a backup. (Datapoints already on Beeminder are left alone.)')) return;
+  srs = {};
+  sessions = [];
+  beeLedger = [];
+  saveSrs(); saveSessions(); saveBeeLedger();
+  renderAll();
+}
+
+function clearAll() {
+  if (!confirm('Delete ALL your own cards, progress and sessions, and restore the starter deck? Export first if you want a backup.')) return;
+  custom = []; hidden = new Set(); srs = {}; sessions = []; beeLedger = [];
+  cfg.off = [];
+  saveCustom(); saveHidden(); saveSrs(); saveSessions(); saveBeeLedger(); saveCfg();
+  rebuildCards();
+  renderSettings();
+  renderAll();
+}
+
+// ── Settings ─────────────────────────────────────────────────────
+function openSettings() {
+  renderSettings();
+  document.getElementById('settings-overlay').classList.add('visible');
+}
+function closeSettings() { document.getElementById('settings-overlay').classList.remove('visible'); }
+
+function renderSettings() {
+  document.getElementById('new-per-day').innerHTML = NEW_PER_DAY_OPTIONS.map(n =>
+    '<button class="btn btn-tiny' + (cfg.newPerDay === n ? ' sel' : '') + '" onclick="setNewPerDay(' + n + ')">' + n + '</button>').join('');
+  document.getElementById('strikes-opts').innerHTML = STRIKE_OPTIONS.map(n =>
+    '<button class="btn btn-tiny' + (cfg.strikes === n ? ' sel' : '') + '" onclick="setStrikes(' + n + ')">' + n + '</button>').join('');
+  document.getElementById('bee-user').value = bee.user;
+  document.getElementById('bee-slug').value = bee.slug;
+  document.getElementById('bee-token').value = bee.token;
+  document.getElementById('bee-metric').value = bee.metric;
+  document.getElementById('bee-modes').value = bee.modes;
+  const rb = document.getElementById('restore-btn');
+  rb.textContent = hidden.size ? '↺ Restore ' + hidden.size + ' deleted starter card' + (hidden.size === 1 ? '' : 's') : 'Starter deck complete';
+  rb.disabled = !hidden.size;
+  renderBeeStatus();
+  renderBackupUI();
+}
+
+function setNewPerDay(n) { cfg.newPerDay = n; saveCfg(); renderSettings(); renderAll(); }
+function setStrikes(n) { cfg.strikes = n; saveCfg(); renderSettings(); renderAll(); }
+
+// ── Backup (meridian-style) ──────────────────────────────────────
+// When a backup is due on open: browsers with the File System Access API
+// (desktop Chrome) get a silent auto-download; everywhere else an in-app
+// reminder — an unprompted download on mobile is worse than a nudge.
+function sanitizeBackupCfg(raw) {
+  const c = raw && typeof raw === 'object' ? raw : {};
+  return {
+    freq: c.freq === 'daily' || c.freq === 'weekly' ? c.freq : 'off',
+    lastBackup: finiteOrNull(c.lastBackup),
+    lastReminder: finiteOrNull(c.lastReminder),
+  };
+}
+let backupCfg = sanitizeBackupCfg(loadJSON(BACKUP_KEY, null));
+function saveBackupCfg() { storageSet(BACKUP_KEY, JSON.stringify(backupCfg)); }
+
+function setBackupFreq(freq) {
+  backupCfg.freq = freq;
+  saveBackupCfg();
+  renderBackupUI();
+  checkBackupDue();
+}
+
+function renderBackupUI() {
+  for (const f of ['off', 'daily', 'weekly']) {
+    document.getElementById('backup-' + f).classList.toggle('sel', backupCfg.freq === f);
+  }
+  const last = backupCfg.lastBackup ? new Date(backupCfg.lastBackup).toLocaleDateString() : 'never';
+  const noteEl = document.getElementById('backup-note');
+  if (backupCfg.freq === 'off') noteEl.textContent = 'Periodic timestamped JSON backups of your cards, progress and sessions. Last backup: ' + last + '.';
+  else if ('showSaveFilePicker' in window) noteEl.textContent = 'A timestamped JSON downloads automatically when you open the app and a ' + backupCfg.freq + ' backup is due. Last backup: ' + last + '.';
+  else noteEl.textContent = 'This browser can\'t save files unprompted, so you\'ll get an in-app reminder to back up on a ' + backupCfg.freq + ' basis. Last backup: ' + last + '.';
+}
+
+const hasData = () => sessions.length + custom.length + Object.keys(srs).length > 0;
+
+function isBackupDue() {
+  if (backupCfg.freq === 'off' || !hasData()) return false;
+  if (!backupCfg.lastBackup) return true;
+  const threshold = backupCfg.freq === 'daily' ? 86400000 : 604800000;
+  return Date.now() - backupCfg.lastBackup >= threshold;
+}
+
+function isReminderSnoozed() {
+  return backupCfg.lastReminder != null && Date.now() - backupCfg.lastReminder < 3600000;
+}
+
+function checkBackupDue() {
+  if (!isBackupDue()) return;
+  if ('showSaveFilePicker' in window) runBackupNow(true);
+  else if (!isReminderSnoozed()) showBackupReminder();
+}
+
+async function runBackupNow(silent = false) {
+  if (!hasData()) { if (!silent) alert('Nothing to back up yet.'); return; }
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const filename = 'kleio-backup-' + stamp + '.json';
+  const json = buildJSON();
+  if (!silent && 'showSaveFilePicker' in window) {
+    try {
+      const handle = await window.showSaveFilePicker({ suggestedName: filename, types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }] });
+      const writable = await handle.createWritable();
+      await writable.write(json);
+      await writable.close();
+    } catch (e) { return; } // user cancelled the picker
+  } else {
+    downloadBlob(json, 'application/json', filename);
+  }
+  backupCfg.lastBackup = Date.now();
+  saveBackupCfg();
+  hideBackupReminder();
+  renderBackupUI();
+}
+
+function showBackupReminder() {
+  const last = backupCfg.lastBackup ? new Date(backupCfg.lastBackup).toLocaleDateString() : 'never';
+  document.getElementById('backup-reminder-text').textContent =
+    'Your ' + backupCfg.freq + ' backup is overdue (last: ' + last + '). Export a JSON file to keep a local copy safe.';
+  document.getElementById('backup-reminder').style.display = 'block';
+}
+function hideBackupReminder() { document.getElementById('backup-reminder').style.display = 'none'; }
+function snoozeReminder() {
+  backupCfg.lastReminder = Date.now();
+  saveBackupCfg();
+  hideBackupReminder();
+}
+function dismissReminder() {
+  backupCfg.lastBackup = Date.now();
+  saveBackupCfg();
+  hideBackupReminder();
+  renderBackupUI();
+}
+
+// ── Theme (auto / dark / light) ──────────────────────────────────
+function setTheme(pref) {
+  storageSet(THEME_KEY, pref);
+  applyTheme(pref);
+  for (const p of ['auto', 'dark', 'light']) {
+    document.getElementById('theme-' + p).classList.toggle('sel', p === pref);
+  }
+}
+function applyTheme(pref) {
+  const dark = pref === 'dark' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.body.classList.toggle('light', !dark);
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if ((storageGet(THEME_KEY) || 'auto') === 'auto') applyTheme('auto');
+});
+function toggleThemeQuick() {
+  const dark = !document.body.classList.contains('light');
+  setTheme(dark ? 'light' : 'dark');
+}
+
+// ── Live session resume ──────────────────────────────────────────
+// The in-progress session is persisted after every step, so a killed or
+// reloaded app picks up on the same card.
+function restoreLive() {
+  const live = loadJSON(LIVE_KEY, null);
+  if (!live || typeof live !== 'object') return;
+  const p = live.play;
+  if (p && typeof p === 'object' && MODES.includes(p.mode) && Array.isArray(p.line) && Array.isArray(p.queue)) {
+    play = {
+      id: finiteOrNull(p.id) ?? Date.now(), mode: p.mode,
+      queue: p.queue.filter(id => typeof id === 'string'), line: p.line.filter(id => cardMap.has(id)),
+      cur: typeof p.cur === 'string' && cardMap.has(p.cur) ? p.cur : null,
+      phase: ['place', 'flip', 'answer', 'over'].includes(p.phase) ? p.phase : 'place',
+      strikes: clampInt(p.strikes, 0, 99) || 0, cursor: clampInt(p.cursor, 0, 9999) || 0,
+      res: p.res && typeof p.res === 'object' && cardMap.has(p.res.id) ? p.res : null,
+    };
+    if (play.phase === 'place' && !play.cur) { showView('play'); nextCard(); return; }
+    if ((play.phase === 'flip' || play.phase === 'answer') && !play.res) play.phase = 'over';
+    showView('play');
+  }
+}
+
+// ── Resume (meridian-style) ──────────────────────────────────────
+function recoverFailedReads() {
+  if (!failedReads.size) return;
+  const toRecover = new Set(failedReads);
+  const fresh = k => toRecover.has(k) && !pendingWrites.has(k);
+  if (fresh(CARDS_KEY)) custom = sanitizeCards(loadJSON(CARDS_KEY, []));
+  if (fresh(HIDDEN_KEY)) hidden = new Set((loadJSON(HIDDEN_KEY, []) || []).filter?.(x => typeof x === 'string') || []);
+  if (fresh(SRS_KEY)) srs = sanitizeSrs(loadJSON(SRS_KEY, {}));
+  if (fresh(LOG_KEY)) sessions = sanitizeSessions(loadJSON(LOG_KEY, []));
+  if (fresh(CFG_KEY)) cfg = sanitizeCfg(loadJSON(CFG_KEY, null));
+  if (fresh(BEE_KEY)) bee = sanitizeBee(loadJSON(BEE_KEY, null));
+  if (fresh(BEEQ_KEY)) beeLedger = sanitizeBeeLedger(loadJSON(BEEQ_KEY, []));
+  if (fresh(BACKUP_KEY)) backupCfg = sanitizeBackupCfg(loadJSON(BACKUP_KEY, null));
+  if (fresh(THEME_KEY)) setTheme(storageGet(THEME_KEY) || 'auto');
+  rebuildCards();
+  if (fresh(LIVE_KEY) && !play) restoreLive();
+}
+
+function resyncAfterResume() {
+  recoverFailedReads();
+  flushPendingWrites();
+  renderAll();
+  syncBee();
+}
+window.addEventListener('pageshow', (e) => { if (e.persisted) resyncAfterResume(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    // a session left open still counts toward the goal; finishing it later
+    // re-posts the same datapoint with the final numbers
+    const s = play ? sessionFor(play.id) : null;
+    if (s) queueBeeUpsert(s);
+    flushPendingWrites();
+  } else resyncAfterResume();
+});
+
+// ── Keyboard ─────────────────────────────────────────────────────
+const anyOverlay = () => document.querySelector('.overlay.visible');
+document.addEventListener('keydown', (ev) => {
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+    if (ev.key === 'Escape') document.activeElement.blur();
+    return;
+  }
+  if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+  const k = ev.key.toLowerCase();
+  if (k === 'escape') { closeSettings(); closeEdit(); closeCards(); return; }
+  if (anyOverlay()) return;
+  if (view === 'play' && play) {
+    if (k === 'q') endPlay();
+    else if (play.phase === 'place') {
+      if (k === 'arrowup' || k === 'k') { moveCursor(-1); ev.preventDefault(); }
+      else if (k === 'arrowdown' || k === 'j') { moveCursor(1); ev.preventDefault(); }
+      else if (k === 'enter') { place(play.cursor); ev.preventDefault(); }
+    } else if (play.phase === 'flip') {
+      if (k === ' ' || k === 'enter') { showAnswer(); ev.preventDefault(); }
+    } else if (play.phase === 'answer') {
+      const hasQ = play.res && play.res.di >= 0;
+      if (hasQ && k === '1') gradeDetail(false);
+      else if (hasQ && k === '2') gradeDetail(true);
+      else if (!hasQ && (k === 'enter' || k === ' ')) { gradeDetail(true); ev.preventDefault(); }
+    } else if (play.phase === 'over' && k === 'enter') { closePlay(); ev.preventDefault(); }
+    return;
+  }
+  if (k === 'r') startPlay('review');
+  else if (k === 'g') startPlay('run');
+  else if (k === 'c') openCards();
+  else if (k === 's') openSettings();
+  else if (k === 'i') importJSON();
+});
+
+// ── Service worker (PWA install + offline) ───────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+setTheme(storageGet(THEME_KEY) || 'auto');
+restoreLive();
+renderAll();
+syncBee();
+renderBackupUI();
+checkBackupDue();
+setInterval(checkBackupDue, 3600000);
+// roll the today card over at midnight if the app is left open
+setInterval(() => { if (view === 'home') renderToday(); }, 60000);
+</script>
+</body>
+</html>

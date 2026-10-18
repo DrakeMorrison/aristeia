@@ -17,6 +17,7 @@ locally in the browser, and works offline.
 | [halteres](halteres/) | Simple & Sinister kettlebell log: swings, get-ups, step-loading, and timed tests, plus bodyweight strength-aerobics off days | [open](https://drakemorrison.github.io/aristeia/halteres/) |
 | [nbacking](nbacking/) | Dual n-back working memory training with local stats and Beeminder integration | [open](https://drakemorrison.github.io/aristeia/nbacking/) |
 | [peira](peira/) | Blinded, randomised N-of-1 self-experiments: lots drawn per period, jar-based blinding, Bayes factors instead of p-values | [open](https://drakemorrison.github.io/aristeia/peira/) |
+| [kleio](kleio/) | History on a timeline: place each event, recall one detail, with spaced repetition, a Timeline-style run mode and Beeminder integration | [open](https://drakemorrison.github.io/aristeia/kleio/) |
 
 ## Architecture
 

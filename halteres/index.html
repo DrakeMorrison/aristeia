@@ -32,6 +32,8 @@
     --orange: #fe8019;
     --info: #83a598;
     --info-dim: #458588;
+    --purple: #d3869b;
+    --purple-dim: #b16286;
     --mono: 'IBM Plex Mono', monospace;
     --display: 'Cinzel', serif;
     --data: 'Cormorant Garamond', serif;
@@ -54,6 +56,8 @@
     --orange: #d65d0e;
     --info: #076678;
     --info-dim: #458588;
+    --purple: #8f3f71;
+    --purple-dim: #b16286;
   }
 
   body {
@@ -458,7 +462,7 @@
     background: var(--bg); border: 1px solid var(--border); color: var(--text);
     padding: 0.4rem 0.5rem; flex: 1 1 100%; min-width: 0;
   }
-  .settings-row input.half { flex: 1 1 40%; }
+  .settings-row input.half, .settings-row select.half { flex: 1 1 40%; }
   .settings-row input:focus, .settings-row select:focus { outline: none; border-color: var(--accent-dim); }
   .settings-note { font-size: 0.62rem; color: var(--muted); line-height: 1.5; margin-bottom: 0.5rem; }
   .btn-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
@@ -477,7 +481,7 @@
   #backup-reminder .br-text { font-size: 0.62rem; color: var(--text-dim); line-height: 1.5; margin-bottom: 0.75rem; }
 
   /* ── Mode tabs ──────────────────────────────────────────────── */
-  .mode-tabs { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--border); margin-bottom: 0.7rem; }
+  .mode-tabs { display: grid; grid-template-columns: 1fr 1fr 1fr; border: 1px solid var(--border); margin-bottom: 0.7rem; }
   .mode-tab {
     font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.05em; text-transform: uppercase;
     padding: 0.5rem 0.4rem; background: var(--surface); border: none; color: var(--muted);
@@ -487,6 +491,7 @@
   .mode-tab:hover { color: var(--text); }
   .mode-tab.active { background: var(--surface2); color: var(--accent); }
   .mode-tab.active.bw { color: var(--orange); }
+  .mode-tab.active.bb { color: var(--purple); }
 
   /* ── Bodyweight (strength aerobics) ─────────────────────────── */
   .ex-bw { color: var(--orange); }
@@ -514,6 +519,30 @@
   .horizon-legend .lg-bw { color: var(--orange); }
   .log-row .l-work .w-bw { color: var(--orange); }
 
+  /* ── Barbell (GZCLP) ────────────────────────────────────────── */
+  .ex-bb { color: var(--purple); }
+  .ex-tier { color: var(--muted); }
+  .bb-days { margin-bottom: 0.6rem; }
+  .bb-days .chip.active, .bb-card .chip.active { border-color: var(--purple-dim); color: var(--purple); }
+  .bb-card .chip { font-size: 0.62rem; padding: 0.25rem 0.5rem; }
+  .bb-card .chip.miss.active { border-color: var(--orange); color: var(--orange); }
+  .bb-line { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+  .bb-line .step-row { flex: 1 1 12rem; }
+  .bb-w {
+    font-family: var(--mono); font-size: 1rem; /* ≥16px prevents iOS zoom-on-focus */
+    width: 5rem; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    padding: 0.2rem 0.4rem; text-align: center;
+  }
+  .bb-w:focus { outline: none; border-color: var(--purple); }
+  .bb-plates { font-size: 0.6rem; color: var(--muted); line-height: 1.4; }
+  .bb-rows { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.45rem; }
+  .bb-row { display: flex; gap: 0.6rem; font-size: 0.72rem; flex-wrap: wrap; align-items: baseline; }
+  .bb-row .bb-what { color: var(--text-dim); }
+  .bb-row .bb-best { color: var(--muted); margin-left: auto; text-align: right; }
+  .day-cell.bb { background: var(--purple); border-color: var(--purple-dim); }
+  .horizon-legend .lg-bb { color: var(--purple); }
+  .log-row .l-work .w-bb { color: var(--purple); }
+
   footer { margin-top: auto; padding-top: 2rem; font-size: 0.6rem; color: var(--muted); text-align: center; letter-spacing: 0.05em; }
 
   @media (max-width: 480px) {
@@ -521,7 +550,7 @@
     .today-status { font-size: 1.25rem; }
     .horizon { gap: 2px; }
     .ex-cards { grid-template-columns: 1fr; }
-    .bw-row .bw-vol { flex-basis: 100%; margin-left: 0; text-align: left; }
+    .bw-row .bw-vol, .bb-row .bb-best { flex-basis: 100%; margin-left: 0; text-align: left; }
   }
 </style>
 </head>
@@ -546,6 +575,16 @@
   <div class="mode-tabs">
     <button class="mode-tab" id="mode-kb" onclick="setMode('kb')">kettlebell · S&amp;S</button>
     <button class="mode-tab bw" id="mode-bw" onclick="setMode('bw')">bodyweight · SA [B]</button>
+    <button class="mode-tab bb" id="mode-bb" onclick="setMode('bb')">barbell · GZCLP [G]</button>
+  </div>
+
+  <div id="bb-form" style="display:none">
+    <div class="chips bb-days" id="bb-days"></div>
+    <div class="ex-cards three" id="bb-cards"></div>
+    <div class="bw-rules">
+      The last set of each lift is as many reps as you can (the +), stopping a rep short of a grind ·
+      rest 3–5 min on T1, 2–3 on T2, 1–2 on T3 · a miss moves the lift to its next rep scheme.
+    </div>
   </div>
 
   <div id="bw-form" style="display:none">
@@ -602,10 +641,11 @@
   <div id="std-banner"></div>
   <div id="prog-cards"></div>
   <div id="bw-prog"></div>
+  <div id="bb-prog"></div>
 
   <div class="section-title">Horizon</div>
   <div class="horizon" id="horizon"></div>
-  <div class="horizon-legend"><span id="horizon-from"></span><span><span class="lg-prac">■</span> one-hand · <span class="lg-two">■</span> two-hand · <span class="lg-test">■</span> test · <span class="lg-bw">■</span> SA</span><span>today ▲</span></div>
+  <div class="horizon-legend"><span id="horizon-from"></span><span><span class="lg-prac">■</span> one-hand · <span class="lg-two">■</span> two-hand · <span class="lg-test">■</span> test · <span class="lg-bw">■</span> SA · <span class="lg-bb">■</span> bar</span><span>today ▲</span></div>
 
   <div class="stats-strip">
     <div class="stat-cell"><div class="stat-val accent" id="stat-week">0</div><div class="stat-label">This Week</div></div>
@@ -681,6 +721,29 @@
       Beeminder gets a datapoint for each one: 1 with the per-session
       metric, 0 with swing reps or tonnage, so the goal still shows the day.
       S&amp;S attendance, the move-up clock and stats ignore them.
+    </div>
+
+    <div class="settings-section-title">Barbell · GZCLP</div>
+    <div class="settings-note">
+      For weeks you can only lift about three times. Four workouts rotate
+      A1, B1, A2, B2, and the app picks whichever is next, however many
+      days have passed. Each workout has three tiers. T1 is a heavy main
+      lift at 5×3+. T2 is a second main lift at 3×10. T3 is an accessory
+      at 3×15+. The + means the last set goes for as many reps as you can.
+      Add weight every time you make all the reps: 5 kg / 10 lb on squat
+      and deadlift, 2.5 kg / 5 lb on bench and press. A miss keeps the
+      weight and moves to the next scheme: T1 5×3 → 6×2 → 10×1, T2 3×10 →
+      3×8 → 3×6. After a miss at the last scheme, T1 restarts at 5×3 with
+      85% of the weight. The original says to test a new 5-rep max and
+      take 85% of that, so override the weight if you do. T2 restarts at
+      3×10, 7.5–10 kg (15–20 lb) above where its last 3×10 run began. T3
+      adds weight once the last set reaches 25 reps. Barbell days are in
+      the log, horizon and CSV. Beeminder treats them like strength
+      aerobics days. The S&amp;S engine and stats ignore them.
+    </div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" id="bb-unit-kg" onclick="setBbUnit('kg')">kg</button>
+      <button class="btn btn-tiny" id="bb-unit-lb" onclick="setBbUnit('lb')">lb</button>
     </div>
 
     <div class="settings-section-title">Bells (kg)</div>
@@ -824,6 +887,29 @@
   </div>
 </div>
 
+<div class="overlay" id="bb-edit-overlay" onclick="if(event.target===this) closeBbEdit()">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>EDIT BARBELL</h2>
+      <button class="icon-btn" onclick="closeBbEdit()">✕</button>
+    </div>
+    <div class="settings-row">
+      <label>Time / workout</label>
+      <input type="datetime-local" class="half" id="bb-edit-time" step="1">
+      <select class="half" id="bb-edit-day" onchange="renderBbEditLifts()"></select>
+    </div>
+    <div id="bb-edit-lifts"></div>
+    <div class="settings-row">
+      <label>Note</label>
+      <input type="text" id="bb-edit-note" autocomplete="off">
+    </div>
+    <div class="edit-actions">
+      <button class="btn primary" onclick="saveBbEdit()">✓ Save</button>
+      <button class="btn danger" onclick="deleteBbEdit()">✕ Delete</button>
+    </div>
+  </div>
+</div>
+
 <script>
 'use strict';
 const DB_KEY = 'halteres_sessions';
@@ -865,6 +951,45 @@ const BW = {
 const BW_TOP_MAX = 10;
 const BW_LADDERS_MAX = 20;
 const BW_DEFAULT = { top: 3, ladders: 5 };
+
+// Barbell, GZCLP: four workouts in rotation, each a T1 main lift (heavy,
+// low reps), a T2 main lift (lighter, more reps) and a T3 accessory. The
+// rotation is by session, not by calendar, so a missed week costs nothing
+// but the week. Its own log, like bodyweight, so the S&S engine never sees it.
+const BB_KEY = 'halteres_barbell';
+const BB_DAYS = ['A1', 'B1', 'A2', 'B2'];
+const BB_PLAN = {
+  A1: [['squat', 1], ['bench', 2], ['pulldown', 3]],
+  B1: [['ohp', 1], ['deadlift', 2], ['row', 3]],
+  A2: [['bench', 1], ['squat', 2], ['pulldown', 3]],
+  B2: [['deadlift', 1], ['ohp', 2], ['row', 3]],
+};
+const BB_LIFTS = {
+  squat:    { name: 'squat',          short: 'sq',    lower: true,  bar: true },
+  bench:    { name: 'bench press',    short: 'bp',    lower: false, bar: true },
+  deadlift: { name: 'deadlift',       short: 'dl',    lower: true,  bar: true },
+  ohp:      { name: 'overhead press', short: 'ohp',   lower: false, bar: true },
+  pulldown: { name: 'lat pulldown',   short: 'pd',    lower: false, bar: false },
+  row:      { name: 'dumbbell row',   short: 'row',   lower: false, bar: false },
+};
+const BB_MAIN = ['squat', 'bench', 'deadlift', 'ohp'];
+const BB_ACC = ['pulldown', 'row'];
+// Rep schemes per tier, in the order a miss walks through them. The last
+// set of each is AMRAP.
+const BB_SCHEMES = {
+  1: [{ sets: 5, reps: 3 }, { sets: 6, reps: 2 }, { sets: 10, reps: 1 }],
+  2: [{ sets: 3, reps: 10 }, { sets: 3, reps: 8 }, { sets: 3, reps: 6 }],
+  3: [{ sets: 3, reps: 15 }],
+};
+const BB_T3_TARGET = 25; // T3 adds weight once the AMRAP set reaches this
+const BB_T1_RESET = 0.85;
+const BB_UNITS = {
+  kg: { inc: { upper: 2.5, lower: 5 }, t2Reset: { upper: 7.5, lower: 10 }, t3Inc: 2.5, round: 2.5, bar: 20,
+        plates: [25, 20, 15, 10, 5, 2.5, 1.25], start: { pulldown: 25, row: 10 } },
+  lb: { inc: { upper: 5, lower: 10 },   t2Reset: { upper: 15, lower: 20 },  t3Inc: 5,   round: 5,   bar: 45,
+        plates: [45, 35, 25, 10, 5, 2.5], start: { pulldown: 55, row: 25 } },
+};
+const LB_PER_KG = 2.20462;
 
 // ── Storage (meridian-style) ─────────────────────────────────────
 // Mobile WebKit can detach localStorage while the app is suspended in the
@@ -969,8 +1094,9 @@ function sanitizeCfg(raw) {
   }
   const the = raw ? finiteOrNull(raw.twoHandEvery) : null;
   const twoHandEvery = TWO_HAND_OPTIONS.includes(the) ? the : TWO_HAND_DEFAULT;
-  const mode = raw && raw.mode === 'bw' ? 'bw' : 'kb';
-  return { bells: bells.length ? bells : [16, 24, 32], goal, twoHandEvery, mode };
+  const mode = raw && (raw.mode === 'bw' || raw.mode === 'bb') ? raw.mode : 'kb';
+  const bbUnit = raw && raw.bbUnit === 'lb' ? 'lb' : 'kg';
+  return { bells: bells.length ? bells : [16, 24, 32], goal, twoHandEvery, mode, bbUnit };
 }
 
 function clampInt(v, lo, hi) {
@@ -998,6 +1124,40 @@ function sanitizeBwSessions(raw) {
     clean.push({
       id: finiteOrNull(e.id) ?? t, t, ladders, ex,
       dur: posSecsOrNull(e.dur),
+      note: typeof e.note === 'string' ? e.note.trim() : '',
+    });
+  }
+  clean.sort((a, b) => a.t - b.t);
+  return clean;
+}
+
+// Barbell session = {id, t, day, u, lifts: [{x, tier, st, w, ok, amrap}], note}.
+// st indexes BB_SCHEMES[tier]; ok = every prescribed rep made; amrap = reps
+// on the last set. A lift absent from lifts was skipped.
+function sanitizeBbSessions(raw) {
+  if (!Array.isArray(raw)) return [];
+  const clean = [];
+  for (const e of raw) {
+    if (!e || typeof e !== 'object') continue;
+    const t = finiteOrNull(e.t);
+    if (t == null || !BB_DAYS.includes(e.day)) continue;
+    const lifts = [];
+    const seen = new Set();
+    for (const l of Array.isArray(e.lifts) ? e.lifts : []) {
+      if (!l || !BB_LIFTS[l.x]) continue;
+      const tier = clampInt(l.tier, 1, 3);
+      if (!tier || (tier === 3) !== BB_ACC.includes(l.x) || seen.has(l.x + tier)) continue;
+      const w = finiteOrNull(l.w);
+      if (w == null || w <= 0 || w > 2000) continue;
+      const st = clampInt(l.st, 0, BB_SCHEMES[tier].length - 1) ?? 0;
+      const amrap = clampInt(l.amrap, 0, 99) ?? 0;
+      seen.add(l.x + tier);
+      lifts.push({ x: l.x, tier, st, w, amrap, ok: !!l.ok && (tier === 2 || amrap >= BB_SCHEMES[tier][st].reps) });
+    }
+    if (!lifts.length) continue;
+    lifts.sort((a, b) => a.tier - b.tier);
+    clean.push({
+      id: finiteOrNull(e.id) ?? t, t, day: e.day, u: e.u === 'lb' ? 'lb' : 'kg', lifts,
       note: typeof e.note === 'string' ? e.note.trim() : '',
     });
   }
@@ -1040,6 +1200,7 @@ let cfg = sanitizeCfg(loadJSON(CFG_KEY, null));
 let bee = sanitizeBee(loadJSON(BEE_KEY, null));
 let beeLedger = sanitizeBeeLedger(loadJSON(BEEQ_KEY, []));
 let bwSessions = sanitizeBwSessions(loadJSON(BW_KEY, []));
+let bbSessions = sanitizeBbSessions(loadJSON(BB_KEY, []));
 
 function saveSessions() {
   sessions.sort((a, b) => a.t - b.t);
@@ -1048,6 +1209,10 @@ function saveSessions() {
 function saveBwSessions() {
   bwSessions.sort((a, b) => a.t - b.t);
   storageSet(BW_KEY, JSON.stringify(bwSessions));
+}
+function saveBbSessions() {
+  bbSessions.sort((a, b) => a.t - b.t);
+  storageSet(BB_KEY, JSON.stringify(bbSessions));
 }
 function saveCfg() {
   storageSet(CFG_KEY, JSON.stringify(cfg));
@@ -1289,10 +1454,237 @@ function reseedBw() {
 }
 reseedBw();
 
+// ── Barbell engine ───────────────────────────────────────────────
+// Every plan is replayed from the log, so editing or deleting a session
+// re-derives everything after it. Weights logged in the other unit are
+// converted and rounded to this unit's plates.
+const fmtNum = w => String(Math.round(w * 100) / 100);
+function bbRound(w, step) { return Math.max(step, Math.round(w / step) * step); }
+function bbWeightIn(s, l) {
+  const u = cfg.bbUnit;
+  if (s.u === u) return l.w;
+  return bbRound(u === 'lb' ? l.w * LB_PER_KG : l.w / LB_PER_KG, BB_UNITS[u].round);
+}
+const bbSide = x => BB_LIFTS[x].lower ? 'lower' : 'upper';
+const bbAmrap = tier => tier !== 2; // T2 is straight sets
+function bbScheme(tier, st) { return BB_SCHEMES[tier][st]; }
+function fmtScheme(tier, st) {
+  const sc = bbScheme(tier, st);
+  return sc.sets + '×' + sc.reps + (bbAmrap(tier) ? '+' : '');
+}
+function bbDefaultW(x, tier) {
+  const U = BB_UNITS[cfg.bbUnit];
+  if (tier === 3) return U.start[x];
+  return x === 'deadlift' ? 2 * U.bar : U.bar;
+}
+
+// Every logged entry for one lift at one tier, oldest first.
+function bbHistory(x, tier) {
+  const out = [];
+  for (const s of bbSessions) for (const l of s.lifts) {
+    if (l.x === x && l.tier === tier) out.push({ s, l, w: bbWeightIn(s, l) });
+  }
+  return out;
+}
+
+// The next session of a lift at a tier, from its last entry: made it →
+// same scheme, more weight; missed → same weight, next scheme; missed the
+// last scheme → reset.
+function bbNext(x, tier) {
+  const hist = bbHistory(x, tier);
+  if (!hist.length) return { st: 0, w: bbDefaultW(x, tier) };
+  const { l, w } = hist[hist.length - 1];
+  const U = BB_UNITS[cfg.bbUnit];
+  if (tier === 3) return { st: 0, w: l.amrap >= BB_T3_TARGET ? w + U.t3Inc : w };
+  if (l.ok) return { st: l.st, w: w + U.inc[bbSide(x)] };
+  if (l.st < BB_SCHEMES[tier].length - 1) return { st: l.st + 1, w };
+  if (tier === 1) return { st: 0, w: bbRound(w * BB_T1_RESET, U.round), reset: true };
+  // T2 restarts 3×10 above where its latest 3×10 run began.
+  let start = null;
+  for (let i = hist.length - 1; i >= 0; i--) {
+    if (hist[i].l.st === 0) start = hist[i].w;
+    else if (start != null) break;
+  }
+  return { st: 0, w: (start ?? w) + U.t2Reset[bbSide(x)], reset: true };
+}
+
+function bbNextDay() {
+  const last = bbSessions[bbSessions.length - 1];
+  return last ? BB_DAYS[(BB_DAYS.indexOf(last.day) + 1) % BB_DAYS.length] : 'A1';
+}
+
+function bbPlates(w) {
+  const U = BB_UNITS[cfg.bbUnit];
+  if (w < U.bar) return 'lighter than the ' + U.bar + ' ' + cfg.bbUnit + ' bar';
+  let side = (w - U.bar) / 2;
+  const out = [];
+  for (const p of U.plates) while (side >= p - 1e-9) { out.push(p); side -= p; }
+  return (out.length ? 'per side ' + out.join(' + ') : 'empty bar') +
+    (side > 1e-6 ? ' (' + fmtNum(side) + ' short)' : '');
+}
+
+// Estimated one-rep max (Epley) from a set of r reps at w.
+function e1rm(w, r) { return r <= 1 ? w : w * (1 + r / 30); }
+
+function fmtBbLift(l, u) {
+  return BB_LIFTS[l.x].short + ' ' + fmtScheme(l.tier, l.st) + ' @' + fmtNum(l.w) + u +
+    (bbAmrap(l.tier) && l.amrap ? ' (' + l.amrap + ')' : '') + (l.ok || l.tier === 3 ? '' : ' ✕');
+}
+
+// Form state for one workout: {day, lifts: {slot: {x, tier, st, w, ok, amrap, on, reset}}}.
+let bbSel = null;
+let bbBuiltDay = null;
+const bbSlots = day => BB_PLAN[day].map(([x, tier]) => x + tier);
+const bbOnLifts = () => bbSlots(bbSel.day).map(k => bbSel.lifts[k]).filter(l => l.on);
+
+function reseedBb(day) {
+  day = day || bbNextDay();
+  const lifts = {};
+  for (const [x, tier] of BB_PLAN[day]) {
+    const n = bbNext(x, tier);
+    lifts[x + tier] = { x, tier, st: n.st, w: n.w, reset: !!n.reset, ok: true, amrap: bbScheme(tier, n.st).reps, on: true };
+  }
+  bbSel = { day, lifts };
+}
+reseedBb();
+
+function bbChanged() { renderForm(); renderToday(); }
+function setBbDay(day) { reseedBb(day); bbChanged(); }
+function toggleBbInclude(slot) { bbSel.lifts[slot].on = !bbSel.lifts[slot].on; bbChanged(); }
+function setBbStage(slot, st) {
+  const l = bbSel.lifts[slot];
+  l.st = st; l.ok = true; l.reset = false; l.amrap = bbScheme(l.tier, st).reps;
+  bbChanged();
+}
+function bumpBbW(slot, d) {
+  const l = bbSel.lifts[slot];
+  const step = BB_UNITS[cfg.bbUnit].round;
+  l.w = bbRound(l.w + d * step, step);
+  bbChanged();
+}
+function setBbOk(slot, ok) {
+  const l = bbSel.lifts[slot];
+  l.ok = ok;
+  const reps = bbScheme(l.tier, l.st).reps;
+  if (ok && l.amrap < reps) l.amrap = reps;
+  bbChanged();
+}
+function bumpBbAmrap(slot, d) {
+  const l = bbSel.lifts[slot];
+  l.amrap = Math.max(0, Math.min(99, l.amrap + d));
+  // A short last set is a miss; a full one only counts as made on T3, which
+  // has no made/missed toggle. On T1 a miss on an earlier set still stands.
+  const full = l.amrap >= bbScheme(l.tier, l.st).reps;
+  if (!full || l.tier === 3) l.ok = full;
+  bbChanged();
+}
+
+// Cards are rebuilt only when the workout changes; renders update their
+// contents around the weight input so a half-typed weight survives.
+function buildBbCards() {
+  const wrap = document.getElementById('bb-cards');
+  wrap.innerHTML = '';
+  for (const slot of bbSlots(bbSel.day)) {
+    const { x, tier } = bbSel.lifts[slot];
+    const card = document.createElement('div');
+    card.className = 'ex-card bb-card';
+    card.id = 'bbcard-' + slot;
+    card.innerHTML =
+      '<div class="ex-head"><span class="ex-name ex-bb"><span class="ex-tier">T' + tier + ' · </span>' + BB_LIFTS[x].name + '</span>' +
+      '<button class="ex-skip" onclick="toggleBbInclude(\'' + slot + '\')"></button></div>' +
+      (BB_SCHEMES[tier].length > 1 ? '<div class="chips bb-schemes"></div>' : '') +
+      '<div class="bb-line"><div class="step-row">' +
+      '<button type="button" class="step-btn" onclick="bumpBbW(\'' + slot + '\', -1)">−</button>' +
+      '<input type="text" class="bb-w" autocomplete="off" inputmode="decimal" enterkeyhint="done">' +
+      '<span class="step-label bb-unit"></span>' +
+      '<button type="button" class="step-btn" onclick="bumpBbW(\'' + slot + '\', 1)">＋</button></div></div>' +
+      (BB_LIFTS[x].bar ? '<div class="bb-plates"></div>' : '') +
+      '<div class="bb-line">' + (tier !== 3 ? '<div class="chips bb-result"></div>' : '') +
+      (bbAmrap(tier) ? '<div class="step-row">' +
+        '<button type="button" class="step-btn" onclick="bumpBbAmrap(\'' + slot + '\', -1)">−</button>' +
+        '<span class="step-label bb-amrap"></span>' +
+        '<button type="button" class="step-btn" onclick="bumpBbAmrap(\'' + slot + '\', 1)">＋</button></div>' : '') +
+      '</div>';
+    const input = card.querySelector('.bb-w');
+    input.addEventListener('input', () => {
+      const v = Number(input.value.replace(',', '.'));
+      if (isFinite(v) && v > 0 && v <= 2000) { bbSel.lifts[slot].w = v; renderBbForm(); renderToday(); }
+    });
+    input.addEventListener('blur', () => renderBbForm());
+    input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') input.blur(); });
+    wrap.appendChild(card);
+  }
+  bbBuiltDay = bbSel.day;
+}
+
+function renderBbForm() {
+  if (bbBuiltDay !== bbSel.day) buildBbCards();
+  const next = bbNextDay();
+  document.getElementById('bb-days').innerHTML = BB_DAYS.map(d =>
+    '<button type="button" class="chip' + (d === bbSel.day ? ' active' : '') + (d === next ? ' due' : '') +
+    '" onclick="setBbDay(\'' + d + '\')" title="' + esc(BB_PLAN[d].map(([x, t]) => 'T' + t + ' ' + BB_LIFTS[x].name).join(' · ')) + '">' + d + '</button>'
+  ).join('');
+
+  for (const slot of bbSlots(bbSel.day)) {
+    const l = bbSel.lifts[slot];
+    const card = document.getElementById('bbcard-' + slot);
+    card.classList.toggle('skipped', !l.on);
+    card.querySelector('.ex-skip').textContent = l.on ? 'skip ✕' : 'skipped — include ✓';
+    const schemes = card.querySelector('.bb-schemes');
+    if (schemes) {
+      schemes.innerHTML = BB_SCHEMES[l.tier].map((_, st) =>
+        '<button type="button" class="chip' + (st === l.st ? ' active' : '') +
+        '" onclick="setBbStage(\'' + slot + '\', ' + st + ')">' + fmtScheme(l.tier, st) + '</button>').join('');
+    }
+    const input = card.querySelector('.bb-w');
+    if (document.activeElement !== input) input.value = fmtNum(l.w);
+    card.querySelector('.bb-unit').textContent = cfg.bbUnit + (l.reset ? ' · reset' : '');
+    const plates = card.querySelector('.bb-plates');
+    if (plates) plates.textContent = bbPlates(l.w);
+    const reps = bbScheme(l.tier, l.st).reps;
+    const result = card.querySelector('.bb-result');
+    if (result) result.innerHTML =
+      '<button type="button" class="chip' + (l.ok ? ' active' : '') + '" onclick="setBbOk(\'' + slot + '\', true)">made ✓</button>' +
+      '<button type="button" class="chip miss' + (l.ok ? '' : ' active') + '" onclick="setBbOk(\'' + slot + '\', false)">missed ✕</button>';
+    const amrap = card.querySelector('.bb-amrap');
+    if (amrap) {
+      amrap.innerHTML = 'last set <span class="hv">' + l.amrap + '</span> reps' +
+        (l.tier === 3 ? ' · ' + BB_T3_TARGET + ' adds weight' : l.amrap < reps ? ' · short of ' + reps : '');
+    }
+  }
+
+  const on = bbOnLifts();
+  const btn = document.getElementById('log-session-btn');
+  btn.disabled = !on.length;
+  btn.textContent = on.length
+    ? '＋ log GZCLP ' + bbSel.day + ' — ' + on.map(l => BB_LIFTS[l.x].short + ' ' + fmtScheme(l.tier, l.st) + ' @' + fmtNum(l.w)).join(' · ')
+    : 'nothing to log — every lift skipped';
+}
+
+function logBb() {
+  const on = bbOnLifts();
+  if (!on.length) return;
+  const t = Date.now();
+  const noteEl = document.getElementById('note-input');
+  const [entry] = sanitizeBbSessions([{
+    id: t + Math.random(), t, day: bbSel.day, u: cfg.bbUnit,
+    lifts: on.map(({ x, tier, st, w, ok, amrap }) => ({ x, tier, st, w, ok, amrap: bbAmrap(tier) ? amrap : 0 })),
+    note: noteEl.value,
+  }]);
+  if (!entry) return;
+  bbSessions.push(entry);
+  queueBeeUpsert(entry);
+  noteEl.value = '';
+  noteEl.blur();
+  saveBbSessions();
+  reseedBb();
+  renderAll();
+}
+
 function setMode(mode) {
   cfg = sanitizeCfg({ ...cfg, mode });
   saveCfg();
-  if (mode === 'bw' && testMode) toggleTest();
+  if (mode !== 'kb' && testMode) toggleTest();
   renderAll();
 }
 
@@ -1398,6 +1790,7 @@ function toggleTest() {
 
 function logSession() {
   if (cfg.mode === 'bw') { logBw(); return; }
+  if (cfg.mode === 'bb') { logBb(); return; }
   if (!incl.sw && !incl.tgu) return;
   const t = Date.now();
   const noteEl = document.getElementById('note-input');
@@ -1433,10 +1826,11 @@ function beeConfigured() { return !!(bee.user && bee.token && bee.slug); }
 // Bodyweight sessions get their own prefix so their requestids can never
 // collide with a kettlebell session's.
 const isBw = s => !!s.ex;
-function beeRid(s) { return (isBw(s) ? 'halbw' : 'hal') + String(s.id).replace(/\D/g, '').slice(0, 30); }
+const isBb = s => !!s.lifts;
+function beeRid(s) { return (isBw(s) ? 'halbw' : isBb(s) ? 'halbb' : 'hal') + String(s.id).replace(/\D/g, '').slice(0, 30); }
 
 function beeValue(s) {
-  if (isBw(s)) return bee.metric === 'session' ? 1 : 0;
+  if (isBw(s) || isBb(s)) return bee.metric === 'session' ? 1 : 0;
   if (bee.metric === 'swings') return s.sw.reduce((sum, p) => sum + p.n * EX.sw.repsPer, 0);
   if (bee.metric === 'tonnage') return EX_IDS.reduce((sum, x) => sum + workTonnage(x, s[x]), 0);
   return 1;
@@ -1444,6 +1838,11 @@ function beeValue(s) {
 
 function beeComment(s) {
   const bits = [];
+  if (isBb(s)) {
+    bits.push('GZCLP ' + s.day + ' ' + s.lifts.map(l => fmtBbLift(l, s.u)).join(', '));
+    if (s.note) bits.push(s.note);
+    return 'halteres: ' + bits.join(' · ');
+  }
   if (isBw(s)) {
     const exs = BW_IDS.filter(x => s.ex[x]).map(x =>
       BW[x].short + ' ' + fmtLadder(s.ex[x].top) + (s.ex[x].v ? ' (' + s.ex[x].v + ')' : ''));
@@ -1574,6 +1973,47 @@ function renderTodayBw(todayK) {
   if (sessions.some(s => dayKey(s.t) === todayK)) {
     planHtml += '<div class="plan-hint">S&amp;S already practiced today, so keep this one easy</div>';
   }
+  if (bbSessions.some(s => dayKey(s.t) === todayK)) {
+    planHtml += '<div class="plan-hint">barbell logged today, so keep this one easy</div>';
+  }
+  document.getElementById('plan-rows').innerHTML = planHtml;
+}
+
+function bbPlanRow(l, u) {
+  return '<div class="plan-row"><span class="ex-bb">T' + l.tier + ' ' + BB_LIFTS[l.x].name + '</span>' +
+    '<span class="plan-what">' + esc(fmtScheme(l.tier, l.st) + ' @' + fmtNum(l.w) + ' ' + u) + '</span></div>';
+}
+
+function renderTodayBb(todayK) {
+  const todayBb = bbSessions.filter(s => dayKey(s.t) === todayK);
+  const status = document.getElementById('today-status');
+  status.className = 'today-status';
+  let planHtml = '';
+  if (todayBb.length) {
+    status.textContent = 'lifted today — ' + todayBb.map(s => s.day).join(', ');
+    status.classList.add('done');
+    for (const s of todayBb) for (const l of s.lifts) planHtml += bbPlanRow(l, s.u);
+    planHtml += '<div class="plan-hint">next: ' + bbNextDay() + '</div>';
+  } else {
+    const last = bbSessions[bbSessions.length - 1];
+    const gap = last ? dayDiff(dayKey(last.t), todayK) : null;
+    status.textContent = 'workout ' + bbSel.day + (gap == null ? ' — first barbell session'
+      : gap === 1 ? ' — lifted yesterday' : ' — last lifted ' + gap + ' days ago');
+    status.classList.add('ok');
+    const slots = bbSlots(bbSel.day).map(k => bbSel.lifts[k]);
+    for (const l of slots) if (l.on) planHtml += bbPlanRow(l, cfg.bbUnit);
+    for (const l of slots) {
+      if (!l.reset) continue;
+      planHtml += '<div class="plan-hint">' + esc(BB_LIFTS[l.x].name) + ' T' + l.tier + ' reset after a miss at ' +
+        fmtScheme(l.tier, BB_SCHEMES[l.tier].length - 1) + ', back to ' + fmtScheme(l.tier, 0) + '</div>';
+    }
+  }
+  if (sessions.some(s => dayKey(s.t) === todayK)) {
+    planHtml += '<div class="plan-hint">S&amp;S already practiced today</div>';
+  }
+  if (bwSessions.some(s => dayKey(s.t) === todayK)) {
+    planHtml += '<div class="plan-hint">strength aerobics logged today</div>';
+  }
   document.getElementById('plan-rows').innerHTML = planHtml;
 }
 
@@ -1582,6 +2022,7 @@ function renderToday() {
   document.getElementById('today-date').textContent =
     new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
   if (cfg.mode === 'bw') { renderTodayBw(todayK); return; }
+  if (cfg.mode === 'bb') { renderTodayBb(todayK); return; }
 
   const todaySessions = sessions.filter(s => dayKey(s.t) === todayK);
   const status = document.getElementById('today-status');
@@ -1623,6 +2064,9 @@ function renderToday() {
     }
     if (bwSessions.some(s => dayKey(s.t) === todayK)) {
       planHtml += '<div class="plan-hint">strength aerobics logged today</div>';
+    }
+    if (bbSessions.some(s => dayKey(s.t) === todayK)) {
+      planHtml += '<div class="plan-hint">barbell logged today</div>';
     }
   }
   document.getElementById('plan-rows').innerHTML = planHtml;
@@ -1700,12 +2144,12 @@ function renderNudge() {
 }
 
 function renderForm() {
-  const bw = cfg.mode === 'bw';
-  document.getElementById('kb-form').style.display = bw ? 'none' : '';
-  document.getElementById('bw-form').style.display = bw ? '' : 'none';
-  document.getElementById('mode-kb').classList.toggle('active', !bw);
-  document.getElementById('mode-bw').classList.toggle('active', bw);
-  if (bw) { renderBwForm(); return; }
+  for (const m of ['kb', 'bw', 'bb']) {
+    document.getElementById(m + '-form').style.display = cfg.mode === m ? '' : 'none';
+    document.getElementById('mode-' + m).classList.toggle('active', cfg.mode === m);
+  }
+  if (cfg.mode === 'bw') { renderBwForm(); return; }
+  if (cfg.mode === 'bb') { renderBbForm(); return; }
 
   for (const x of EX_IDS) {
     document.getElementById('card-' + x).classList.toggle('skipped', !incl[x]);
@@ -1774,7 +2218,7 @@ function renderForm() {
 function renderProgress() {
   const el = document.getElementById('prog-cards');
   const banner = document.getElementById('std-banner');
-  if (cfg.mode === 'bw') { el.innerHTML = ''; banner.innerHTML = ''; return; }
+  if (cfg.mode !== 'kb') { el.innerHTML = ''; banner.innerHTML = ''; return; }
   let html = '';
   const achievedBoth = EX_IDS.map(x => goalAchievedDay(x));
   if (achievedBoth.every(d => d != null)) {
@@ -1865,6 +2309,47 @@ function renderBwProgress() {
     '. When the ladders feel easy, move to a harder variation instead of adding more reps.</div></div>';
 }
 
+// Per main lift: where T1 and T2 go next and the best estimated max from
+// any T1 AMRAP set; per accessory: weight and last AMRAP against the target.
+function renderBbProgress() {
+  const el = document.getElementById('bb-prog');
+  if (!bbSessions.length) {
+    el.innerHTML = cfg.mode === 'bb'
+      ? '<div class="prog-card"><div class="prog-head"><span class="ex-name ex-bb">barbell · GZCLP</span></div>' +
+        '<div class="prog-sub">no sessions yet. Set your starting weights on the cards (light, well short of a 5-rep max) and log workout A1.</div></div>'
+      : '';
+    return;
+  }
+  const todayK = dayKey(Date.now());
+  const u = cfg.bbUnit;
+  const week = new Set(bbSessions.filter(s => dayDiff(dayKey(s.t), todayK) < 7).map(s => dayKey(s.t))).size;
+  let rows = '';
+  for (const x of BB_MAIN) {
+    const t1 = bbNext(x, 1), t2 = bbNext(x, 2);
+    let best = null;
+    for (const { l, w } of bbHistory(x, 1)) {
+      if (l.amrap > 0) best = Math.max(best ?? 0, e1rm(w, l.amrap));
+    }
+    rows += '<div class="bb-row"><span class="ex-bb">' + BB_LIFTS[x].name + '</span>' +
+      '<span class="bb-what">T1 ' + fmtScheme(1, t1.st) + ' @' + fmtNum(t1.w) + ' · T2 ' + fmtScheme(2, t2.st) + ' @' + fmtNum(t2.w) + '</span>' +
+      '<span class="bb-best">' + (best != null ? 'e1RM ' + Math.round(best) + ' ' + u : 'no T1 yet') + '</span></div>';
+  }
+  for (const x of BB_ACC) {
+    const hist = bbHistory(x, 3);
+    const n = bbNext(x, 3);
+    const last = hist.length ? hist[hist.length - 1].l.amrap : null;
+    rows += '<div class="bb-row"><span class="ex-bb">' + BB_LIFTS[x].name + '</span>' +
+      '<span class="bb-what">T3 ' + fmtScheme(3, 0) + ' @' + fmtNum(n.w) + '</span>' +
+      '<span class="bb-best">' + (last != null ? 'last set ' + last + '/' + BB_T3_TARGET : 'no T3 yet') + '</span></div>';
+  }
+  el.innerHTML = '<div class="prog-card">' +
+    '<div class="prog-head"><span class="ex-name ex-bb">barbell · GZCLP</span>' +
+    '<span class="prog-goal">' + week + ' this week · ' + bbSessions.length + ' total</span></div>' +
+    '<div class="bb-rows">' + rows + '</div>' +
+    '<div class="prog-sub">next workout ' + bbNextDay() + ' · weights in ' + u +
+    '. e1RM is the Epley estimate from your best T1 last set.</div></div>';
+}
+
 function renderHorizon() {
   const el = document.getElementById('horizon');
   const todayK = dayKey(Date.now());
@@ -1879,12 +2364,19 @@ function renderHorizon() {
     cur.kb = true;
     byDay.set(dk, cur);
   }
-  // Bodyweight days fill otherwise-empty cells. On a day with both, the
-  // kettlebell colour wins and the tooltip lists everything.
+  // Bodyweight and barbell days fill otherwise-empty cells. On a shared
+  // day the kettlebell colour wins, then barbell, and the tooltip lists everything.
   for (const s of bwSessions) {
     const dk = dayKey(s.t);
     const cur = byDay.get(dk) || { test: false, full: false, two: false, sum: [] };
     for (const x of BW_IDS) if (s.ex[x]) cur.sum.push(BW[x].name + ' ' + fmtBwEx(x, s.ex[x].top, s.ladders, s.ex[x].v));
+    byDay.set(dk, cur);
+  }
+  for (const s of bbSessions) {
+    const dk = dayKey(s.t);
+    const cur = byDay.get(dk) || { test: false, full: false, two: false, sum: [] };
+    cur.sum.push('GZCLP ' + s.day + ' ' + s.lifts.map(l => fmtBbLift(l, s.u)).join(', '));
+    cur.bb = true;
     byDay.set(dk, cur);
   }
   let html = '';
@@ -1894,7 +2386,7 @@ function renderHorizon() {
     let title = fmtDayLabel(key);
     const d = byDay.get(key);
     if (d) {
-      cls += !d.kb ? ' bw' : d.test ? ' test' : d.two ? ' two' : (d.full ? ' prac' : ' part');
+      cls += !d.kb ? (d.bb ? ' bb' : ' bw') : d.test ? ' test' : d.two ? ' two' : (d.full ? ' prac' : ' part');
       title += ': ' + d.sum.join(' · ') + (d.test ? ' ⏱ test' : '');
     } else {
       title += ': rest';
@@ -1925,6 +2417,7 @@ function renderLog() {
   const el = document.getElementById('log-list');
   el.innerHTML = '';
   const all = sessions.map(s => ({ bw: false, s })).concat(bwSessions.map(s => ({ bw: true, s })))
+    .concat(bbSessions.map(s => ({ bb: true, s })))
     .sort((a, b) => a.s.t - b.s.t);
   if (all.length === 0) {
     el.innerHTML = '<div class="log-empty">no sessions yet — pick your bell and log the first one</div>';
@@ -1934,9 +2427,28 @@ function renderLog() {
   const shown = logShowAll ? all : all.slice(-LIMIT);
   const hidden = all.length - shown.length;
   const frag = document.createDocumentFragment();
-  for (const { bw, s } of shown.slice().reverse()) {
+  for (const { bw, bb, s } of shown.slice().reverse()) {
     const row = document.createElement('div');
     row.className = 'log-row';
+    if (bb) {
+      row.innerHTML =
+        '<span class="l-day">' + esc(fmtDayLabel(dayKey(s.t))) + ' ' + fmtClock(s.t) + '</span>' +
+        '<span class="l-work"><span class="w-bb">' + s.day + '</span> ' + esc(s.lifts.map(l => fmtBbLift(l, s.u)).join(' · ')) + '</span>' +
+        '<button class="l-del" title="delete">✕</button>' +
+        (s.note ? '<span class="l-note">' + esc(s.note) + '</span>' : '');
+      row.querySelector('.l-del').onclick = (ev) => {
+        ev.stopPropagation();
+        if (!confirm('Delete this session?')) return;
+        queueBeeDelete(s);
+        bbSessions = bbSessions.filter(x => x.id !== s.id);
+        saveBbSessions();
+        reseedBb();
+        renderAll();
+      };
+      row.onclick = () => openBbEdit(s.id);
+      frag.appendChild(row);
+      continue;
+    }
     if (bw) {
       const bits = BW_IDS.filter(x => s.ex[x]).map(x =>
         BW[x].short + ' ' + fmtLadder(s.ex[x].top) + (s.ex[x].v ? ' (' + s.ex[x].v + ')' : ''));
@@ -2006,6 +2518,7 @@ function renderAll() {
   renderForm();
   renderProgress();
   renderBwProgress();
+  renderBbProgress();
   renderHorizon();
   renderStats();
   renderLog();
@@ -2036,6 +2549,8 @@ function recoverFailedReads() {
   }
   if (toRecover.has(CFG_KEY) && !pendingWrites.has(CFG_KEY)) {
     cfg = sanitizeCfg(loadJSON(CFG_KEY, null));
+    // the barbell plan was seeded in the fallback unit; re-derive it in the real one
+    reseedBb();
   }
   if (toRecover.has(BEE_KEY) && !pendingWrites.has(BEE_KEY)) {
     bee = sanitizeBee(loadJSON(BEE_KEY, null));
@@ -2059,6 +2574,16 @@ function recoverFailedReads() {
       bwSessions = sanitizeBwSessions(bwSessions.concat(missing));
       saveBwSessions();
       reseedBw();
+    }
+  }
+  if (toRecover.has(BB_KEY)) {
+    const stored = sanitizeBbSessions(loadJSON(BB_KEY, []));
+    const have = new Set(bbSessions.map(e => e.id));
+    const missing = stored.filter(e => !have.has(e.id));
+    if (missing.length) {
+      bbSessions = sanitizeBbSessions(bbSessions.concat(missing));
+      saveBbSessions();
+      reseedBb();
     }
   }
   if (toRecover.has(THEME_KEY) && !pendingWrites.has(THEME_KEY)) {
@@ -2199,6 +2724,107 @@ function deleteBwEdit() {
   renderAll();
 }
 
+// ── Barbell edit overlay ─────────────────────────────────────────
+let bbEditId = null;
+let bbEditTyped = {}; // id → typed row (null = cleared) while the overlay is open
+
+function openBbEdit(id) {
+  const s = bbSessions.find(x => x.id === id);
+  if (!s) return;
+  bbEditId = id;
+  document.getElementById('bb-edit-time').value = toLocalInput(s.t);
+  document.getElementById('bb-edit-day').innerHTML = BB_DAYS.map(d =>
+    '<option value="' + d + '"' + (d === s.day ? ' selected' : '') + '>workout ' + d + '</option>').join('');
+  document.getElementById('bb-edit-note').value = s.note;
+  document.getElementById('bb-edit-lifts').innerHTML = '';
+  bbEditTyped = {};
+  renderBbEditLifts();
+  document.getElementById('bb-edit-overlay').classList.add('visible');
+}
+
+// Rows follow the selected workout; a lift the session didn't log starts
+// empty, and an empty weight means skipped.
+function renderBbEditLifts() {
+  const s = bbSessions.find(x => x.id === bbEditId);
+  if (!s) return;
+  const day = document.getElementById('bb-edit-day').value;
+  // Whatever was typed into the rows on screen is kept for the life of the
+  // overlay, so flipping the workout away and back loses nothing; the saved
+  // session fills the rest.
+  const typed = bbEditTyped;
+  for (const wEl of document.querySelectorAll('#bb-edit-lifts [id^="bb-edit-w-"]')) {
+    const id = wEl.id.slice('bb-edit-w-'.length);
+    const rEl = document.getElementById('bb-edit-r-' + id);
+    const okEl = document.getElementById('bb-edit-ok-' + id);
+    const w = Number(wEl.value.replace(',', '.'));
+    typed[id] = w > 0 ? {
+      st: Number(document.getElementById('bb-edit-st-' + id).value), w,
+      amrap: rEl && rEl.value !== '' ? Number(rEl.value) : '', ok: okEl ? okEl.checked : true,
+    } : null;
+  }
+  document.getElementById('bb-edit-lifts').innerHTML = BB_PLAN[day].map(([x, tier]) => {
+    const id = x + tier;
+    const l = id in typed ? typed[id] : s.lifts.find(e => e.x === x && e.tier === tier);
+    return '<div class="settings-row"><label>T' + tier + ' ' + BB_LIFTS[x].name + ': scheme / weight ' + s.u +
+      ' (empty = skipped)' + (bbAmrap(tier) ? ' / last-set reps' : '') + '</label>' +
+      '<select class="half" id="bb-edit-st-' + id + '">' + BB_SCHEMES[tier].map((_, st) =>
+        '<option value="' + st + '"' + (l && l.st === st ? ' selected' : '') + '>' + fmtScheme(tier, st) + '</option>').join('') + '</select>' +
+      '<input type="text" class="half" inputmode="decimal" id="bb-edit-w-' + id + '" autocomplete="off" value="' + (l ? fmtNum(l.w) : '') + '">' +
+      (bbAmrap(tier) ? '<input type="number" class="half" min="0" max="99" step="1" id="bb-edit-r-' + id + '" value="' + (l ? l.amrap : '') + '">' : '') +
+      (tier !== 3 ? '<span class="chk"><input type="checkbox" id="bb-edit-ok-' + id + '"' + (!l || l.ok ? ' checked' : '') + '> made every rep</span>' : '') +
+      '</div>';
+  }).join('');
+}
+
+function closeBbEdit() {
+  bbEditId = null;
+  document.getElementById('bb-edit-overlay').classList.remove('visible');
+}
+
+function saveBbEdit() {
+  const s = bbSessions.find(x => x.id === bbEditId);
+  if (!s) { closeBbEdit(); return; }
+  const t = new Date(document.getElementById('bb-edit-time').value).getTime();
+  const day = document.getElementById('bb-edit-day').value;
+  const lifts = [];
+  for (const [x, tier] of BB_PLAN[day]) {
+    const id = x + tier;
+    const w = Number(document.getElementById('bb-edit-w-' + id).value.replace(',', '.'));
+    if (!(w > 0)) continue;
+    const st = Number(document.getElementById('bb-edit-st-' + id).value);
+    const rEl = document.getElementById('bb-edit-r-' + id);
+    const okEl = document.getElementById('bb-edit-ok-' + id);
+    const ok = okEl ? okEl.checked : true;
+    // An empty reps box on a made lift means the prescribed reps, not 0,
+    // which sanitizing would otherwise turn into a miss.
+    const amrap = !rEl ? 0 : rEl.value.trim() === '' ? (ok ? bbScheme(tier, st).reps : 0) : Number(rEl.value);
+    lifts.push({ x, tier, st, w, amrap, ok });
+  }
+  // As with bodyweight, an edit that doesn't survive sanitizing leaves the
+  // session as it was rather than deleting it.
+  const [fixed] = sanitizeBbSessions([{
+    id: s.id, t: isFinite(t) ? Math.min(t, Date.now()) : s.t, day, u: s.u, lifts,
+    note: document.getElementById('bb-edit-note').value,
+  }]);
+  if (fixed) Object.assign(s, fixed);
+  saveBbSessions();
+  queueBeeUpsert(s);
+  closeBbEdit();
+  reseedBb();
+  renderAll();
+}
+
+function deleteBbEdit() {
+  if (!confirm('Delete this session?')) return;
+  const s = bbSessions.find(x => x.id === bbEditId);
+  if (s) queueBeeDelete(s);
+  bbSessions = bbSessions.filter(x => x.id !== bbEditId);
+  saveBbSessions();
+  closeBbEdit();
+  reseedBb();
+  renderAll();
+}
+
 // ── Settings ─────────────────────────────────────────────────────
 function openSettings() {
   document.getElementById('bells-input').value = cfg.bells.join(', ');
@@ -2206,6 +2832,7 @@ function openSettings() {
   document.getElementById('goal-tgu').value = cfg.goal.tgu;
   markGoalButtons();
   markTwoHandButtons();
+  markBbUnitButtons();
   document.getElementById('bee-user').value = bee.user;
   document.getElementById('bee-slug').value = bee.slug;
   document.getElementById('bee-token').value = bee.token;
@@ -2250,6 +2877,18 @@ function setTwoHandEvery(n) {
   renderAll();
 }
 
+function markBbUnitButtons() {
+  for (const u of ['kg', 'lb']) document.getElementById('bb-unit-' + u).classList.toggle('sel', cfg.bbUnit === u);
+}
+
+function setBbUnit(u) {
+  cfg = sanitizeCfg({ ...cfg, bbUnit: u });
+  saveCfg();
+  markBbUnitButtons();
+  reseedBb();
+  renderAll();
+}
+
 function bellsChanged() {
   const el = document.getElementById('bells-input');
   const nums = el.value.split(',').map(v => Number(v.trim())).filter(v => isFinite(v) && v > 0);
@@ -2284,8 +2923,17 @@ function goalChanged() {
 // Bodyweight sessions share the file: kind=bw rows leave the kettlebell
 // columns empty and fill ladders, duration and a top/variation pair per
 // exercise. Rows with no kind column are from older exports, all kettlebell.
+// kind=bb rows fill day, unit and barbell, the lifts as
+// lift:tier:scheme:weight:made:last-set-reps joined by ';'.
 const CSV_HEADER = 'id,timestamp,iso,swings,getups,test,swings_time,getups_time,note,two_hand,kind,ladders,duration' +
-  BW_IDS.map(x => ',' + x + '_top,' + x + '_variation').join('');
+  BW_IDS.map(x => ',' + x + '_top,' + x + '_variation').join('') + ',day,unit,barbell';
+const bbLiftsToStr = lifts => lifts.map(l => [l.x, l.tier, l.st, l.w, l.ok ? 1 : 0, l.amrap].join(':')).join(';');
+function parseBbLifts(str) {
+  return String(str).split(';').filter(Boolean).map(part => {
+    const [x, tier, st, w, ok, amrap] = part.split(':');
+    return { x, tier: Number(tier), st: Number(st), w: Number(w), ok: ok === '1', amrap: Number(amrap) };
+  });
+}
 const csvQuote = s => '"' + String(s).replace(/"/g, '""') + '"';
 
 function buildCSV() {
@@ -2297,7 +2945,7 @@ function buildCSV() {
       s.test ? 1 : 0, s.swT ?? '', s.tguT ?? '',
       csvQuote(s.note),
       s.sw2 ? 1 : 0,
-      'kb', '', '', ...BW_IDS.flatMap(() => ['', '']),
+      'kb', '', '', ...BW_IDS.flatMap(() => ['', '']), '', '', '',
     ].join(',') });
   }
   for (const s of bwSessions) {
@@ -2308,6 +2956,17 @@ function buildCSV() {
       0,
       'bw', s.ladders, s.dur ?? '',
       ...BW_IDS.flatMap(x => s.ex[x] ? [s.ex[x].top, csvQuote(s.ex[x].v)] : ['', '']),
+      '', '', '',
+    ].join(',') });
+  }
+  for (const s of bbSessions) {
+    rows.push({ t: s.t, line: [
+      s.id, s.t, new Date(s.t).toISOString(),
+      '', '', 0, '', '',
+      csvQuote(s.note),
+      0,
+      'bb', '', '', ...BW_IDS.flatMap(() => ['', '']),
+      s.day, s.u, bbLiftsToStr(s.lifts),
     ].join(',') });
   }
   rows.sort((a, b) => a.t - b.t);
@@ -2357,10 +3016,19 @@ function handleImportFile(file) {
     const lines = String(reader.result).split(/\r?\n/).filter(l => l.trim());
     const imported = [];
     const importedBw = [];
+    const importedBb = [];
+    const bbCol = 13 + 2 * BW_IDS.length;
     for (const line of lines) {
       if (line.startsWith('id,')) continue;
       const f = parseCSVLine(line);
       if (f.length < 9) continue;
+      if (f[10] === 'bb') {
+        importedBb.push({
+          id: Number(f[0]), t: Number(f[1]), day: f[bbCol], u: f[bbCol + 1],
+          lifts: parseBbLifts(f[bbCol + 2] || ''), note: f[8],
+        });
+        continue;
+      }
       if (f[10] === 'bw') {
         const ex = {};
         BW_IDS.forEach((x, i) => { ex[x] = { top: Number(f[13 + 2 * i]), v: f[14 + 2 * i] || '' }; });
@@ -2386,30 +3054,41 @@ function handleImportFile(file) {
     const existingBw = new Set(bwSessions.map(e => e.id));
     const addedBw = importedBw.filter(e => isFinite(e.id) && !existingBw.has(e.id));
     bwSessions = sanitizeBwSessions(bwSessions.concat(addedBw));
+    const existingBb = new Set(bbSessions.map(e => e.id));
+    const addedBb = importedBb.filter(e => isFinite(e.id) && !existingBb.has(e.id));
+    bbSessions = sanitizeBbSessions(bbSessions.concat(addedBb));
     saveSessions();
     saveBwSessions();
+    saveBbSessions();
     reseedPlans();
     reseedBw();
+    reseedBb();
     renderAll();
-    const n = added.length + addedBw.length;
-    const dupes = imported.length + importedBw.length - n;
+    const n = added.length + addedBw.length + addedBb.length;
+    const dupes = imported.length + importedBw.length + importedBb.length - n;
+    const kinds = [];
+    if (addedBw.length) kinds.push(addedBw.length + ' bodyweight');
+    if (addedBb.length) kinds.push(addedBb.length + ' barbell');
     alert('Imported ' + n + ' new session' + (n === 1 ? '' : 's') +
-      (addedBw.length ? ' (' + addedBw.length + ' bodyweight)' : '') + ' · ' + dupes + ' duplicates skipped.');
+      (kinds.length ? ' (' + kinds.join(', ') + ')' : '') + ' · ' + dupes + ' duplicates skipped.');
   };
   reader.readAsText(file);
   document.getElementById('import-file').value = '';
 }
 
 function clearAll() {
-  if (!confirm('Delete ALL ' + (sessions.length + bwSessions.length) + ' sessions, kettlebell and bodyweight? Export first if you want a backup. (Datapoints already on Beeminder are left alone.)')) return;
+  if (!confirm('Delete ALL ' + (sessions.length + bwSessions.length + bbSessions.length) + ' sessions, kettlebell, bodyweight and barbell? Export first if you want a backup. (Datapoints already on Beeminder are left alone.)')) return;
   sessions = [];
   bwSessions = [];
+  bbSessions = [];
   beeLedger = [];
   saveSessions();
   saveBwSessions();
+  saveBbSessions();
   saveBeeLedger();
   reseedPlans();
   reseedBw();
+  reseedBb();
   renderAll();
 }
 
@@ -2456,7 +3135,7 @@ function renderBackupUI() {
 }
 
 function isBackupDue() {
-  if (backupCfg.freq === 'off' || !(sessions.length + bwSessions.length)) return false;
+  if (backupCfg.freq === 'off' || !(sessions.length + bwSessions.length + bbSessions.length)) return false;
   if (!backupCfg.lastBackup) return true;
   const threshold = backupCfg.freq === 'daily' ? 86400000 : 604800000;
   return Date.now() - backupCfg.lastBackup >= threshold;
@@ -2473,7 +3152,7 @@ function checkBackupDue() {
 }
 
 async function runBackupNow(silent = false) {
-  if (!(sessions.length + bwSessions.length)) { if (!silent) alert('No sessions to back up.'); return; }
+  if (!(sessions.length + bwSessions.length + bbSessions.length)) { if (!silent) alert('No sessions to back up.'); return; }
   const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const filename = 'halteres-backup-' + stamp + '.csv';
   const csv = buildCSV();
@@ -2548,10 +3227,11 @@ document.addEventListener('keydown', (ev) => {
     return;
   }
   const k = ev.key.toLowerCase();
-  if (k === 'escape') { closeSettings(); closeEdit(); closeBwEdit(); }
+  if (k === 'escape') { closeSettings(); closeEdit(); closeBwEdit(); closeBbEdit(); }
   else if (k === 'l') logSession();
   else if (k === 't') { if (cfg.mode === 'kb') toggleTest(); }
   else if (k === 'b') setMode(cfg.mode === 'bw' ? 'kb' : 'bw');
+  else if (k === 'g') setMode(cfg.mode === 'bb' ? 'kb' : 'bb');
   else if (k === 'n') { document.getElementById('note-input').focus(); ev.preventDefault(); }
   else if (k === 's') openSettings();
   else if (k === 'e') exportCSV();

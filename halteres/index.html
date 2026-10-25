@@ -525,6 +525,7 @@
   .bb-days { margin-bottom: 0.6rem; }
   .bb-days .chip.active, .bb-card .chip.active { border-color: var(--purple-dim); color: var(--purple); }
   .bb-card .chip { font-size: 0.62rem; padding: 0.25rem 0.5rem; }
+  .bb-card .chip.fixed { cursor: default; }
   .bb-card .chip.miss.active { border-color: var(--orange); color: var(--orange); }
   .bb-line { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
   .bb-line .step-row { flex: 1 1 12rem; }
@@ -582,7 +583,8 @@
     <div class="chips bb-days" id="bb-days"></div>
     <div class="ex-cards three" id="bb-cards"></div>
     <div class="bw-rules">
-      The last set of each lift is as many reps as you can (the +), stopping a rep short of a grind ·
+      On T1 and T3 the last set (the +) is as many reps as you can, stopping a rep short of a grind;
+      T2 is straight sets ·
       rest 3–5 min on T1, 2–3 on T2, 1–2 on T3 · a miss moves the lift to its next rep scheme.
     </div>
   </div>
@@ -1600,7 +1602,7 @@ function buildBbCards() {
     card.innerHTML =
       '<div class="ex-head"><span class="ex-name ex-bb"><span class="ex-tier">T' + tier + ' · </span>' + BB_LIFTS[x].name + '</span>' +
       '<button class="ex-skip" onclick="toggleBbInclude(\'' + slot + '\')"></button></div>' +
-      (BB_SCHEMES[tier].length > 1 ? '<div class="chips bb-schemes"></div>' : '') +
+      '<div class="chips bb-schemes"></div>' +
       '<div class="bb-line"><div class="step-row">' +
       '<button type="button" class="step-btn" onclick="bumpBbW(\'' + slot + '\', -1)">−</button>' +
       '<input type="text" class="bb-w" autocomplete="off" inputmode="decimal" enterkeyhint="done">' +
@@ -1638,8 +1640,11 @@ function renderBbForm() {
     const card = document.getElementById('bbcard-' + slot);
     card.classList.toggle('skipped', !l.on);
     card.querySelector('.ex-skip').textContent = l.on ? 'skip ✕' : 'skipped — include ✓';
+    // A tier with a single scheme (T3) still shows it, as a fixed label.
     const schemes = card.querySelector('.bb-schemes');
-    if (schemes) {
+    if (BB_SCHEMES[l.tier].length === 1) {
+      schemes.innerHTML = '<span class="chip active fixed">' + fmtScheme(l.tier, 0) + '</span>';
+    } else {
       schemes.innerHTML = BB_SCHEMES[l.tier].map((_, st) =>
         '<button type="button" class="chip' + (st === l.st ? ' active' : '') +
         '" onclick="setBbStage(\'' + slot + '\', ' + st + ')">' + fmtScheme(l.tier, st) + '</button>').join('');

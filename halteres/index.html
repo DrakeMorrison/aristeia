@@ -985,11 +985,20 @@ const BB_T3_TARGET = 25; // T3 adds weight once the AMRAP set reaches this
 const BB_T1_RESET = 0.85;
 const BB_UNITS = {
   kg: { inc: { upper: 2.5, lower: 5 }, t2Reset: { upper: 7.5, lower: 10 }, t3Inc: 2.5, round: 2.5, bar: 20,
-        plates: [25, 20, 15, 10, 5, 2.5, 1.25], start: { pulldown: 25, row: 10 } },
+        plates: [25, 20, 15, 10, 5, 2.5, 1.25] },
   lb: { inc: { upper: 5, lower: 10 },   t2Reset: { upper: 15, lower: 20 },  t3Inc: 5,   round: 5,   bar: 45,
-        plates: [45, 35, 25, 10, 5, 2.5], start: { pulldown: 55, row: 25 } },
+        plates: [45, 35, 25, 10, 5, 2.5] },
 };
 const LB_PER_KG = 2.20462;
+// First-session weights (lb) before a lift has any history, sized for a
+// ~150 lb lifter with pistols and one-arm push-ups: roughly 0.6/0.5/0.8/0.35×
+// bodyweight on T1, about two-thirds of that on T2. Meant as a ceiling for
+// the first session, and kg converts and rounds to the plates.
+const BB_START_LB = {
+  squat1: 90, squat2: 60, bench1: 75, bench2: 50,
+  deadlift1: 120, deadlift2: 90, ohp1: 50, ohp2: 45,
+  pulldown3: 65, row3: 40,
+};
 
 // ── Storage (meridian-style) ─────────────────────────────────────
 // Mobile WebKit can detach localStorage while the app is suspended in the
@@ -1095,7 +1104,7 @@ function sanitizeCfg(raw) {
   const the = raw ? finiteOrNull(raw.twoHandEvery) : null;
   const twoHandEvery = TWO_HAND_OPTIONS.includes(the) ? the : TWO_HAND_DEFAULT;
   const mode = raw && (raw.mode === 'bw' || raw.mode === 'bb') ? raw.mode : 'kb';
-  const bbUnit = raw && raw.bbUnit === 'lb' ? 'lb' : 'kg';
+  const bbUnit = raw && raw.bbUnit === 'kg' ? 'kg' : 'lb';
   return { bells: bells.length ? bells : [16, 24, 32], goal, twoHandEvery, mode, bbUnit };
 }
 
@@ -1473,9 +1482,8 @@ function fmtScheme(tier, st) {
   return sc.sets + '×' + sc.reps + (bbAmrap(tier) ? '+' : '');
 }
 function bbDefaultW(x, tier) {
-  const U = BB_UNITS[cfg.bbUnit];
-  if (tier === 3) return U.start[x];
-  return x === 'deadlift' ? 2 * U.bar : U.bar;
+  const lb = BB_START_LB[x + tier];
+  return cfg.bbUnit === 'lb' ? lb : bbRound(lb / LB_PER_KG, BB_UNITS.kg.round);
 }
 
 // Every logged entry for one lift at one tier, oldest first.
@@ -2316,7 +2324,7 @@ function renderBbProgress() {
   if (!bbSessions.length) {
     el.innerHTML = cfg.mode === 'bb'
       ? '<div class="prog-card"><div class="prog-head"><span class="ex-name ex-bb">barbell · GZCLP</span></div>' +
-        '<div class="prog-sub">no sessions yet. Set your starting weights on the cards (light, well short of a 5-rep max) and log workout A1.</div></div>'
+        '<div class="prog-sub">no sessions yet. The cards start at weights for a ~150 lb lifter. Work up from the empty bar and stop at 5 clean reps with 2–3 to spare; if that is lighter, type it in. Then log workout A1.</div></div>'
       : '';
     return;
   }

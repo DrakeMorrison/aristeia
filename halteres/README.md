@@ -38,14 +38,14 @@ For stretches when you can only lift about three times a week, the **barbell** t
 | A2 | bench press | squat | lat pulldown |
 | B2 | deadlift | overhead press | dumbbell row |
 
-T1 is 5×3+, T2 is 3×10 and T3 is 3×15+. The + marks an as-many-reps-as-possible last set. Each card has the scheme, the weight (− / ＋ or type it, with plates per side for barbell lifts), made ✓ / missed ✕, and the reps on the last set. The app works out every plan from the log:
+T1 is 5×3+, T2 is 3×10 and T3 is 3×15+. The + marks an as-many-reps-as-possible last set. Weights are in lb by default. Each lift starts at a weight sized for a ~150 lb lifter who can already do pistols and one-arm push-ups. For T1 that's squat 90, bench 75, deadlift 120 and press 50; T2 is about two-thirds of that. The lat pulldown starts at 65 and the dumbbell row at 40. Treat these as a ceiling for the first session and type in less if they're too heavy. After the first session, every weight comes from your log. Each card has the scheme, the weight (− / ＋ or type it, with plates per side for barbell lifts), made ✓ / missed ✕, and the reps on the last set. The app works out every plan from the log:
 
 - **Made it** → same scheme, more weight: +5 kg / 10 lb on squat and deadlift, +2.5 kg / 5 lb on bench and press.
 - **Missed** → same weight, next scheme: T1 5×3 → 6×2 → 10×1, T2 3×10 → 3×8 → 3×6.
 - **Missed the last scheme** → reset. T1 goes back to 5×3 at 85% of the weight. The original program tests a new 5-rep max and takes 85% of that, so override the weight if you do that. T2 goes back to 3×10, 7.5–10 kg (15–20 lb) above where its last 3×10 run began.
 - **T3** adds weight once the last set reaches 25 reps.
 
-Editing or deleting a session re-derives everything after it. A barbell card under Progression shows each lift's next T1 and T2, an Epley e1RM from your best T1 last set, and the T3 targets. Weights are in kg or lb (settings); switching converts the history and rounds it to your plates. Barbell days show purple in the horizon and appear in the log and CSV. On Beeminder they count like strength-aerobics days. The S&S engine and stats ignore them.
+Editing or deleting a session re-derives everything after it. A barbell card under Progression shows each lift's next T1 and T2, an Epley e1RM from your best T1 last set, and the T3 targets. Switch between lb and kg in settings; switching converts the history and rounds it to your plates. Barbell days show purple in the horizon and appear in the log and CSV. On Beeminder they count like strength-aerobics days. The S&S engine and stats ignore them.
 
 Test rarely. The standard is 100 swings in 5:00, one minute of rest, then 10 get-ups in 10:00 with the goal bell — **Simple** at 32 kg, **Sinister** at 48 kg (both configurable, so the women's standards or any custom goal work too).
 

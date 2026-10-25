@@ -1,4 +1,4 @@
-const CACHE = 'kleio-v1';
+const CACHE = 'kleio-v2';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {

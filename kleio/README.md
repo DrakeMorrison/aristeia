@@ -19,7 +19,7 @@ A card is graded twice, and the two grades are scheduled independently:
 | **When** | where you placed it | right gap: good · one gap off and within 25 years: hard · otherwise: again |
 | **What** | the detail question (who, where, what resulted), self-graded | knew it: good · forgot: again |
 
-Intervals grow SM-2 style: a first success waits 1–2 days, then about 4, then the previous interval times the card's ease (2.5 to start, lowered by hard and again answers). A lapse resets that memory to one day. A card is due when either memory is due.
+Scheduling is [FSRS](https://github.com/open-spaced-repetition/fsrs4anki/wiki/The-Algorithm) (version 6, default parameters), the algorithm Anki uses. Each memory tracks a stability (days until recall odds fall to 90%) and a difficulty, and comes back when its predicted recall drops to 90%. A first good answer waits about 2 days; hard and again answers raise difficulty and shorten the next wait. A card is due when either memory is due. Progress saved under the old SM-2 scheduler converts on load.
 
 ## Review and Run
 

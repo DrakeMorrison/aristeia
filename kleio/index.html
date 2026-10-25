@@ -556,8 +556,8 @@
       where you placed it: right gap = good, one gap off and within 25 years =
       hard, otherwise again) and <b>what</b> (the detail question, graded by you).
       Scheduled by FSRS: each memory comes back when its predicted recall
-      falls to 90%. A card is due when either memory is. Runs only
-      reschedule memories that are due or new, but a miss always counts.
+      falls to 90%. A card is due when either memory is. Runs count
+      too: an early hit earns less than an on-time one, since recall was likelier.
     </div>
 
     <div class="settings-section-title">New cards per day</div>
@@ -1235,12 +1235,12 @@ function cardNextDue(c) {
   return dues.sort()[0];
 }
 
-// Grade one memory. Runs draw cards that may not be due; those only
-// move the schedule on a miss, so a lucky early hit can't inflate an interval.
+// Grade one memory. Runs draw cards that may not be due, and those grades
+// count too: FSRS credits an early hit less, since recall was still likely.
 function applyGrade(c, trace, g) {
   const today = todayKey();
   const e = srs[c.id] || { w: null, a: null, f: today };
-  if (traceDue(e[trace], today) || g === AGAIN) e[trace] = schedule(e[trace], g, today);
+  e[trace] = schedule(e[trace], g, today);
   srs[c.id] = e;
   saveSrs();
 }

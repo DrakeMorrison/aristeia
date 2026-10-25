@@ -28,7 +28,7 @@ Both are the same loop: draw an event with its date hidden, tap the gap where it
 - **Review**: today's due cards plus up to *N* new ones (5, 10, 20 or 30 a day), placed into a timeline seeded with a few cards you already know. The timeline grows as you go. This is the daily habit.
 - **Run**: the board game. Start from one card and keep placing until you collect three strikes (configurable). Once the timeline has six cards, draws favour events that fall into narrow gaps, so a run gets harder the longer it lasts. Best streak is tracked.
 
-Runs draw cards that may not be due, so they reschedule a memory only if it was due or new; a miss always counts, so playing for fun can't inflate an interval.
+Runs draw cards that may not be due, and every grade still counts, so playing is studying. FSRS accounts for timing: a hit before the due date raises stability less than an on-time one, because recall was still likely then.
 
 ## Cards and decks
 

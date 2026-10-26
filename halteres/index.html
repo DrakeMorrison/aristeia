@@ -2281,11 +2281,10 @@ function renderProgress() {
 // the most you've done at it.
 function renderBwProgress() {
   const el = document.getElementById('bw-prog');
+  if (cfg.mode !== 'bw') { el.innerHTML = ''; return; }
   if (!bwSessions.length) {
-    el.innerHTML = cfg.mode === 'bw'
-      ? '<div class="prog-card"><div class="prog-head"><span class="ex-name ex-bw">strength aerobics</span></div>' +
-        '<div class="prog-sub">no sessions yet. Log one and this card tracks each variation.</div></div>'
-      : '';
+    el.innerHTML = '<div class="prog-card"><div class="prog-head"><span class="ex-name ex-bw">strength aerobics</span></div>' +
+      '<div class="prog-sub">no sessions yet. Log one and this card tracks each variation.</div></div>';
     return;
   }
   const todayK = dayKey(Date.now());
@@ -2326,11 +2325,10 @@ function renderBwProgress() {
 // any T1 AMRAP set; per accessory: weight and last AMRAP against the target.
 function renderBbProgress() {
   const el = document.getElementById('bb-prog');
+  if (cfg.mode !== 'bb') { el.innerHTML = ''; return; }
   if (!bbSessions.length) {
-    el.innerHTML = cfg.mode === 'bb'
-      ? '<div class="prog-card"><div class="prog-head"><span class="ex-name ex-bb">barbell · GZCLP</span></div>' +
-        '<div class="prog-sub">no sessions yet. The cards start at weights for a ~150 lb lifter. Work up from the empty bar and stop at 5 clean reps with 2–3 to spare; if that is lighter, type it in. Then log workout A1.</div></div>'
-      : '';
+    el.innerHTML = '<div class="prog-card"><div class="prog-head"><span class="ex-name ex-bb">barbell · GZCLP</span></div>' +
+      '<div class="prog-sub">no sessions yet. The cards start at weights for a ~150 lb lifter. Work up from the empty bar and stop at 5 clean reps with 2–3 to spare; if that is lighter, type it in. Then log workout A1.</div></div>';
     return;
   }
   const todayK = dayKey(Date.now());

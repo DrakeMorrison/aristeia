@@ -1121,7 +1121,7 @@ function dismissReminder() {
   renderBackupUI();
 }
 
-// ── Sync (experimental: Automerge via the public sync.automerge.org) ──
+// ── Sync (experimental: Automerge via the mac-mini, over Tailscale) ──
 // Off until turned on, so the library never loads in a browser that doesn't
 // sync. Once a device has joined, the Automerge doc is the source of truth;
 // `entries` and localStorage stay as the render copy and offline fallback.
@@ -1130,7 +1130,9 @@ function dismissReminder() {
 const SYNC_KEY = 'gnomon_sync';
 const AM_LIB = 'https://esm.sh/@automerge/vanillajs@2.5.6/slim?deps=@automerge/automerge@3.5.0&bundle';
 const AM_WASM = 'https://cdn.jsdelivr.net/npm/@automerge/automerge@3.5.0/dist/automerge.wasm';
-const SYNC_SERVER = 'wss://sync.automerge.org';
+// Tailnet-only: the server (~/automerge-sync on the mac-mini) sits behind
+// `tailscale serve` and only accepts this site's origin.
+const SYNC_SERVER = 'wss://mac-mini.tailc76981.ts.net';
 const SYNC_URL_RE = /^automerge:[1-9A-HJ-NP-Za-km-z]+$/;
 
 function sanitizeSyncCfg(raw) {
@@ -1250,7 +1252,7 @@ async function doSyncStart() {
 }
 
 async function syncCreate() {
-  if (!confirm('Start syncing this log?\n\nEntries are stored unencrypted on Automerge\'s public test server, readable by anyone who has the sync link, with no guarantee the server keeps them. Keep backups on.')) return;
+  if (!confirm('Start syncing this log?\n\nEverything syncs through your mac-mini over Tailscale, so each device needs Tailscale connected to sync. Keep backups on.')) return;
   try {
     const repo = await ensureRepo();
     const h = repo.create({ entries: {} });
@@ -1269,7 +1271,7 @@ async function syncJoin(raw) {
   const url = m[0];
   if (url === syncCfg.url) return;
   const n = entries.length;
-  if (!confirm('Join this sync log?' + (n ? '\n\nYour ' + n + ' local entr' + (n === 1 ? 'y' : 'ies') + ' will be merged into it.' : '') + '\n\nEntries are stored unencrypted on Automerge\'s public test server.')) return;
+  if (!confirm('Join this sync log?' + (n ? '\n\nYour ' + n + ' local entr' + (n === 1 ? 'y' : 'ies') + ' will be merged into it.' : '') + '\n\nThis device needs Tailscale connected to sync.')) return;
   detachSync();
   syncCfg = { url, seeded: false, pending: [] };
   saveSyncCfg();
@@ -1318,12 +1320,12 @@ function renderSyncUI() {
   const note = document.getElementById('sync-note');
   const pending = syncCfg.pending.length;
   const notes = {
-    off: 'Sync this log between devices through Automerge\'s public test server (sync.automerge.org). Experimental: entries are stored there unencrypted and readable by anyone with the sync link. Start on one device, then open its sync link on the others.',
-    connecting: 'Connecting to sync.automerge.org…',
-    online: 'Synced through sync.automerge.org. Open this link on another device to sync it too:',
-    offline: 'Offline. Changes are saved here and sync when the server is reachable again.',
+    off: 'Sync this log between devices through the Automerge server on your mac-mini, over Tailscale. Each device needs Tailscale connected to sync; offline changes catch up later. Start on one device, then open its sync link on the others.',
+    connecting: 'Connecting to the mac-mini…',
+    online: 'Synced through the mac-mini. Open this link on another device to sync it too:',
+    offline: 'Can\'t reach the mac-mini — is Tailscale connected? Changes are saved here and sync when it\'s reachable again.',
     error: 'Can\'t reach the sync log' + (syncError ? ' (' + syncError + ')' : '') + '. ' +
-      (pending ? pending + ' change' + (pending === 1 ? '' : 's') + ' waiting. ' : '') + 'Retrying when you\'re back online.',
+      (pending ? pending + ' change' + (pending === 1 ? '' : 's') + ' waiting. ' : '') + 'Retrying when you\'re back online — is Tailscale connected?',
   };
   note.textContent = notes[state];
   if (on) document.getElementById('sync-link').value = syncLink();

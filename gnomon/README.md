@@ -35,8 +35,8 @@ Everything stays in your browser via `localStorage`. Nothing is sent anywhere un
 
 ## Sync (experimental)
 
-Settings → Sync → **Start Syncing** puts the log in an [Automerge](https://automerge.org) document and syncs it through Automerge's public test server, `wss://sync.automerge.org`. Open the sync link it shows on another device (or paste it into **Join**) and that device's existing entries merge in. After that, adds, edits and deletes sync both ways, and each device keeps working offline and catches up when it reconnects.
+Settings → Sync → **Start Syncing** puts the log in an [Automerge](https://automerge.org) document and syncs it through a tailnet-only Automerge server on the mac-mini (`wss://mac-mini.tailc76981.ts.net`, behind `tailscale serve`). Open the sync link it shows on another device (or paste it into **Join**) and that device's existing entries merge in. After that, adds, edits and deletes sync both ways, and each device keeps working offline and catches up when it reconnects.
 
-- It's a prototype on a **public test server**: entries are stored there unencrypted, anyone with the sync link can read and change them, and the server makes no promise to keep them. Keep backups on.
+- Every device needs Tailscale connected to sync; the server only accepts connections from this site's origin. The doc is stored unencrypted on the mac-mini. Keep backups on.
 - The library (`@automerge/vanillajs` via esm.sh, wasm via jsDelivr, both version-pinned) loads only once sync is on, and the service worker caches it so sync also starts on an offline open.
 - Theme, report range and backup settings stay per-device.

@@ -20,6 +20,7 @@ Each log entry marks the **start** of an activity. Its duration runs until the n
 - **Editable log** — tap any entry to adjust its time or text (missed a switch? fix the timestamp), or delete it
 - **Stats** — time tracked today, entries today, distinct activities, day streak
 - **Import / Export** — CSV export and import for portability and analysis elsewhere
+- **Sync (experimental)** — keep the log in step across devices with [Automerge](https://automerge.org); see below
 - **PWA** — installable, works offline
 - **Light and dark themes**
 - **Keyboard shortcuts** — `/` focus input, `X` stop, `S` settings, `E` export, `I` import, `Escape` close
@@ -30,4 +31,12 @@ Open `index.html` (or serve the directory) and log the first activity. On mobile
 
 ## Data
 
-Everything stays in your browser via `localStorage`. Nothing is sent anywhere. Use Export CSV to back up or move your data — columns are `id,timestamp,iso,kind,text` with millisecond epoch timestamps.
+Everything stays in your browser via `localStorage`. Nothing is sent anywhere unless you turn on sync. Use Export CSV to back up or move your data — columns are `id,timestamp,iso,kind,text` with millisecond epoch timestamps.
+
+## Sync (experimental)
+
+Settings → Sync → **Start Syncing** puts the log in an [Automerge](https://automerge.org) document and syncs it through Automerge's public test server, `wss://sync.automerge.org`. Open the sync link it shows on another device (or paste it into **Join**) and that device's existing entries merge in. After that, adds, edits and deletes sync both ways, and each device keeps working offline and catches up when it reconnects.
+
+- It's a prototype on a **public test server**: entries are stored there unencrypted, anyone with the sync link can read and change them, and the server makes no promise to keep them. Keep backups on.
+- The library (`@automerge/vanillajs` via esm.sh, wasm via jsDelivr, both version-pinned) loads only once sync is on, and the service worker caches it so sync also starts on an offline open.
+- Theme, report range and backup settings stay per-device.

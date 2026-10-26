@@ -378,6 +378,8 @@
   }
   .settings-row input:focus { outline: none; border-color: var(--accent-dim); }
   .settings-note { font-size: 0.62rem; color: var(--muted); line-height: 1.5; margin-bottom: 0.5rem; }
+  .settings-row #sync-join-input { flex: 1 1 10rem; }
+  #sync-link { color: var(--text-dim); }
   .btn-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
   .btn-group .btn.sel { border-color: var(--accent-dim); color: var(--accent); }
   .edit-actions { display: flex; gap: 0.5rem; margin-top: 1.1rem; }
@@ -456,7 +458,7 @@
   <div class="section-title">Log</div>
   <div class="log-list" id="log-list"></div>
 
-  <footer>gnomon · data lives in your browser</footer>
+  <footer id="footer">gnomon · data lives in your browser</footer>
 </div>
 
 <div class="overlay" id="settings-overlay" onclick="if(event.target===this) closeSettings()">
@@ -469,7 +471,8 @@
     <div class="settings-section-title">Data</div>
     <div class="settings-note">
       Each log entry marks the start of an activity; its duration runs until the
-      next entry (or a ■ stop). Everything is stored in this browser only.
+      next entry (or a ■ stop). Everything is stored in this browser only,
+      unless you turn on sync below.
     </div>
     <div class="settings-row btn-group">
       <button class="btn btn-tiny" onclick="exportCSV()">↓ Export CSV [E]</button>
@@ -485,6 +488,27 @@
       <button class="btn btn-tiny" id="backup-daily" onclick="setBackupFreq('daily')">Daily</button>
       <button class="btn btn-tiny" id="backup-weekly" onclick="setBackupFreq('weekly')">Weekly</button>
       <button class="btn btn-tiny" onclick="runBackupNow()">↓ Backup Now</button>
+    </div>
+
+    <div class="settings-section-title">Sync · experimental</div>
+    <div class="settings-note" id="sync-note"></div>
+    <div id="sync-off">
+      <div class="settings-row btn-group">
+        <button class="btn btn-tiny" onclick="syncCreate()">⇅ Start Syncing</button>
+      </div>
+      <div class="settings-row">
+        <input type="text" id="sync-join-input" placeholder="or paste a sync link to join" autocomplete="off">
+        <button class="btn btn-tiny" onclick="syncJoin(document.getElementById('sync-join-input').value)">Join</button>
+      </div>
+    </div>
+    <div id="sync-on" style="display:none">
+      <div class="settings-row">
+        <input type="text" id="sync-link" readonly onclick="this.select()">
+      </div>
+      <div class="settings-row btn-group">
+        <button class="btn btn-tiny" onclick="copySyncLink()" id="sync-copy-btn">⧉ Copy Link</button>
+        <button class="btn btn-tiny danger" onclick="syncStop()">✕ Stop Syncing</button>
+      </div>
     </div>
 
     <div class="settings-section-title">Theme</div>
@@ -607,8 +631,10 @@ function openEntry() {
 // ── Logging ──────────────────────────────────────────────────────
 function addEntry(text, kind) {
   const t = Date.now();
-  entries.push({ id: t + Math.random(), t, kind: kind || 'act', text: kind === 'stop' ? '' : text.trim() });
+  const e = { id: t + Math.random(), t, kind: kind || 'act', text: kind === 'stop' ? '' : text.trim() };
+  entries.push(e);
   saveEntries();
+  syncPut(e);
   renderAll();
 }
 
@@ -810,6 +836,7 @@ function renderLog() {
       if (!confirm('Delete this entry?')) return;
       entries = entries.filter(x => x.id !== e.id);
       saveEntries();
+      syncDel(e.id);
       renderAll();
     };
     row.onclick = () => openEdit(e.id);
@@ -873,6 +900,7 @@ function saveEdit() {
     if (text) e.text = text;
   }
   saveEntries();
+  syncPut(e);
   closeEdit();
   renderAll();
 }
@@ -881,6 +909,7 @@ function deleteEdit() {
   if (!confirm('Delete this entry?')) return;
   entries = entries.filter(x => x.id !== editId);
   saveEntries();
+  syncDel(editId);
   closeEdit();
   renderAll();
 }
@@ -967,6 +996,8 @@ function handleImportFile(file) {
     const added = imported.filter(e => isFinite(e.id) && !existing.has(e.id));
     entries = sanitizeEntries(entries.concat(added));
     saveEntries();
+    const addedIds = new Set(added.map(e => e.id));
+    for (const e of entries) if (addedIds.has(e.id)) syncPut(e);
     renderAll();
     alert('Imported ' + added.length + ' new entr' + (added.length === 1 ? 'y' : 'ies') + ' (' + (imported.length - added.length) + ' duplicates skipped).');
   };
@@ -975,9 +1006,11 @@ function handleImportFile(file) {
 }
 
 function clearAll() {
-  if (!confirm('Delete ALL ' + entries.length + ' entries? Export first if you want a backup.')) return;
+  const where = syncCfg.url ? ' on every synced device' : '';
+  if (!confirm('Delete ALL ' + entries.length + ' entries' + where + '? Export first if you want a backup.')) return;
   entries = [];
   saveEntries();
+  syncOp({ op: 'clear' });
   renderAll();
 }
 
@@ -1088,6 +1121,233 @@ function dismissReminder() {
   renderBackupUI();
 }
 
+// ── Sync (experimental: Automerge via the public sync.automerge.org) ──
+// Off until turned on, so the library never loads in a browser that doesn't
+// sync. Once a device has joined, the Automerge doc is the source of truth;
+// `entries` and localStorage stay as the render copy and offline fallback.
+// Changes made while the doc can't load (say, a cold offline start before
+// the library is cached) go into a pending journal and replay when it does.
+const SYNC_KEY = 'gnomon_sync';
+const AM_LIB = 'https://esm.sh/@automerge/vanillajs@2.5.6/slim?deps=@automerge/automerge@3.5.0&bundle';
+const AM_WASM = 'https://cdn.jsdelivr.net/npm/@automerge/automerge@3.5.0/dist/automerge.wasm';
+const SYNC_SERVER = 'wss://sync.automerge.org';
+const SYNC_URL_RE = /^automerge:[1-9A-HJ-NP-Za-km-z]+$/;
+
+function sanitizeSyncCfg(raw) {
+  const c = raw && typeof raw === 'object' ? raw : {};
+  const ops = ['put', 'del', 'clear'];
+  return {
+    url: typeof c.url === 'string' && SYNC_URL_RE.test(c.url) ? c.url : null,
+    seeded: c.seeded === true,
+    pending: Array.isArray(c.pending) ? c.pending.filter(p => p && ops.includes(p.op)) : [],
+  };
+}
+let syncCfg = sanitizeSyncCfg(loadJSON(SYNC_KEY, null));
+
+function saveSyncCfg() {
+  localStorage.setItem(SYNC_KEY, JSON.stringify(syncCfg));
+}
+
+let amLib = null;       // the loaded Automerge module
+let syncRepo = null;
+let syncHandle = null;  // DocHandle once the doc has loaded
+let syncPeers = 0;      // open connections to the sync server
+let syncStarting = null;
+let syncError = '';
+
+const entryKey = id => String(id);
+
+// Field-wise writes, so an edit to the time on one device and to the text on
+// another both survive the merge.
+function docPut(d, e) {
+  const cur = d.entries[entryKey(e.id)];
+  if (!cur) { d.entries[entryKey(e.id)] = { id: e.id, t: e.t, kind: e.kind, text: e.text }; return; }
+  for (const f of ['t', 'kind', 'text']) if (cur[f] !== e[f]) cur[f] = e[f];
+}
+
+function applyOp(d, p) {
+  if (p.op === 'put') docPut(d, p.e);
+  else if (p.op === 'del') delete d.entries[entryKey(p.id)];
+  else if (p.op === 'clear') for (const k of Object.keys(d.entries)) delete d.entries[k];
+}
+
+// Every local mutation calls this after updating `entries`.
+function syncOp(p) {
+  if (!syncCfg.url) return;
+  if (syncHandle) { syncHandle.change(d => applyOp(d, p)); return; }
+  syncCfg.pending.push(p);
+  saveSyncCfg();
+}
+const syncPut = e => syncOp({ op: 'put', e: { id: e.id, t: e.t, kind: e.kind, text: e.text } });
+const syncDel = id => syncOp({ op: 'del', id });
+
+function pullFromDoc() {
+  const doc = syncHandle && syncHandle.doc();
+  if (!doc || !doc.entries) return;
+  entries = sanitizeEntries(Object.values(doc.entries));
+  saveEntries();
+  renderAll();
+}
+
+async function ensureRepo() {
+  if (!amLib) {
+    const m = await import(AM_LIB);
+    await m.initializeWasm(AM_WASM);
+    amLib = m;
+  }
+  if (!syncRepo) {
+    syncRepo = new amLib.Repo({
+      storage: new amLib.IndexedDBStorageAdapter('gnomon-sync'),
+      network: [new amLib.WebSocketClientAdapter(SYNC_SERVER)],
+    });
+    syncPeers = 0;
+    syncRepo.networkSubsystem.on('peer', () => { syncPeers++; renderSyncUI(); });
+    syncRepo.networkSubsystem.on('peer-disconnected', () => { syncPeers = Math.max(0, syncPeers - 1); renderSyncUI(); });
+  }
+  return syncRepo;
+}
+
+function syncStart() {
+  if (!syncCfg.url || syncHandle) return Promise.resolve();
+  if (syncStarting) return syncStarting;
+  const url = syncCfg.url;
+  syncStarting = doSyncStart().finally(() => {
+    syncStarting = null;
+    renderSyncUI();
+    if (syncCfg.url && syncCfg.url !== url) syncStart(); // joined another doc mid-start
+  });
+  return syncStarting;
+}
+
+async function doSyncStart() {
+  const url = syncCfg.url;
+  syncError = '';
+  renderSyncUI();
+  try {
+    const repo = await ensureRepo();
+    // find() waits for the server when the doc isn't stored locally yet;
+    // give up after a while and retry on the next 'online' or app focus.
+    const h = await Promise.race([
+      repo.find(url),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timed out reaching the sync server')), 20000)),
+    ]);
+    if (syncCfg.url !== url) return; // stopped or switched docs meanwhile
+    h.change(d => {
+      if (!d.entries) d.entries = {};
+      // First connection from this device: merge its existing log in.
+      if (!syncCfg.seeded) for (const e of entries) if (!d.entries[entryKey(e.id)]) docPut(d, e);
+      for (const p of syncCfg.pending) applyOp(d, p);
+    });
+    syncCfg.seeded = true;
+    syncCfg.pending = [];
+    saveSyncCfg();
+    syncHandle = h;
+    h.on('change', pullFromDoc);
+    pullFromDoc();
+  } catch (e) {
+    syncError = e && e.message ? e.message : String(e);
+  }
+}
+
+async function syncCreate() {
+  if (!confirm('Start syncing this log?\n\nEntries are stored unencrypted on Automerge\'s public test server, readable by anyone who has the sync link, with no guarantee the server keeps them. Keep backups on.')) return;
+  try {
+    const repo = await ensureRepo();
+    const h = repo.create({ entries: {} });
+    syncCfg = { url: h.url, seeded: false, pending: [] };
+    saveSyncCfg();
+  } catch (e) {
+    alert('Couldn\'t load the sync library: ' + (e && e.message ? e.message : e));
+    return;
+  }
+  await syncStart();
+}
+
+async function syncJoin(raw) {
+  const m = String(raw || '').match(/automerge:[1-9A-HJ-NP-Za-km-z]+/);
+  if (!m) { alert('That doesn\'t look like a gnomon sync link.'); return; }
+  const url = m[0];
+  if (url === syncCfg.url) return;
+  const n = entries.length;
+  if (!confirm('Join this sync log?' + (n ? '\n\nYour ' + n + ' local entr' + (n === 1 ? 'y' : 'ies') + ' will be merged into it.' : '') + '\n\nEntries are stored unencrypted on Automerge\'s public test server.')) return;
+  detachSync();
+  syncCfg = { url, seeded: false, pending: [] };
+  saveSyncCfg();
+  document.getElementById('sync-join-input').value = '';
+  await syncStart();
+}
+
+function detachSync() {
+  if (syncHandle) syncHandle.off('change', pullFromDoc);
+  syncHandle = null;
+}
+
+function syncStop() {
+  if (!confirm('Stop syncing on this device? Your entries stay here; other devices keep syncing.')) return;
+  detachSync();
+  syncCfg = sanitizeSyncCfg(null);
+  saveSyncCfg();
+  renderSyncUI();
+}
+
+function syncLink() {
+  return location.origin + location.pathname + '#sync=' + syncCfg.url;
+}
+
+function copySyncLink() {
+  const link = syncLink();
+  navigator.clipboard.writeText(link).then(() => {
+    const btn = document.getElementById('sync-copy-btn');
+    btn.textContent = '✓ Copied';
+    setTimeout(() => { btn.textContent = '⧉ Copy Link'; }, 1500);
+  }).catch(() => alert(link));
+}
+
+function syncState() {
+  if (!syncCfg.url) return 'off';
+  if (syncStarting) return 'connecting';
+  if (!syncHandle) return 'error';
+  return syncPeers > 0 ? 'online' : 'offline';
+}
+
+function renderSyncUI() {
+  const state = syncState();
+  const on = state !== 'off';
+  document.getElementById('sync-off').style.display = on ? 'none' : '';
+  document.getElementById('sync-on').style.display = on ? '' : 'none';
+  const note = document.getElementById('sync-note');
+  const pending = syncCfg.pending.length;
+  const notes = {
+    off: 'Sync this log between devices through Automerge\'s public test server (sync.automerge.org). Experimental: entries are stored there unencrypted and readable by anyone with the sync link. Start on one device, then open its sync link on the others.',
+    connecting: 'Connecting to sync.automerge.org…',
+    online: 'Synced through sync.automerge.org. Open this link on another device to sync it too:',
+    offline: 'Offline. Changes are saved here and sync when the server is reachable again.',
+    error: 'Can\'t reach the sync log' + (syncError ? ' (' + syncError + ')' : '') + '. ' +
+      (pending ? pending + ' change' + (pending === 1 ? '' : 's') + ' waiting. ' : '') + 'Retrying when you\'re back online.',
+  };
+  note.textContent = notes[state];
+  if (on) document.getElementById('sync-link').value = syncLink();
+  const footer = {
+    off: 'data lives in your browser',
+    connecting: 'connecting to sync…',
+    online: 'synced',
+    offline: 'offline · changes will sync',
+    error: 'sync unavailable · changes kept here',
+  };
+  document.getElementById('footer').textContent = 'gnomon · ' + footer[state];
+}
+
+window.addEventListener('online', () => syncStart());
+document.addEventListener('visibilitychange', () => { if (!document.hidden) syncStart(); });
+
+// Opening a sync link (…/gnomon/#sync=automerge:…) offers to join it.
+function checkSyncHash() {
+  const m = location.hash.match(/^#sync=(automerge:[1-9A-HJ-NP-Za-km-z]+)$/);
+  if (!m) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  syncJoin(m[1]);
+}
+
 // ── Settings ─────────────────────────────────────────────────────
 function openSettings() {
   document.getElementById('settings-overlay').classList.add('visible');
@@ -1142,6 +1402,9 @@ if ('serviceWorker' in navigator) {
 setTheme(localStorage.getItem(THEME_KEY) || 'auto');
 renderAll();
 renderBackupUI();
+renderSyncUI();
+syncStart();
+checkSyncHash();
 checkBackupDue();
 setInterval(checkBackupDue, 3600000);
 </script>

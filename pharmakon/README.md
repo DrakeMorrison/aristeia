@@ -30,6 +30,7 @@ The app never blocks a dose. Logging one that breaks a rule asks you to confirm 
 - **Two-week checkup** — every 14 days the app asks whether rest days feel noticeably worse than before you started; a "yes" stays on screen as the early dependence warning until the next checkup
 - **Stats** — clean streak, doses per substance, violations, average interval
 - **Import / Export** — CSV for portability and analysis elsewhere
+- **Sync (experimental)** — keep doses, checkups and presets in step across devices with [Automerge](https://automerge.org); see below
 - **PWA** — installable, works offline
 - **Light and dark themes**
 - **Keyboard shortcuts** — `1` log nicotine, `2` log caffeine, `N` focus note, `S` settings, `E` export, `I` import, `Escape` close
@@ -40,6 +41,14 @@ Open `index.html` (or serve the directory) and log your first dose. On mobile, u
 
 ## Data
 
-Everything stays in your browser via `localStorage`. Nothing is sent anywhere. Use Export CSV to back up or move your data — columns are `id,timestamp,iso,sub,dose,note` with millisecond epoch timestamps. Violations are intentionally not exported: they are always recomputed from the doses themselves.
+Everything stays in your browser via `localStorage`. Nothing is sent anywhere unless you turn on sync. Use Export CSV to back up or move your data — columns are `id,timestamp,iso,sub,dose,note` with millisecond epoch timestamps. Violations are intentionally not exported: they are always recomputed from the doses themselves.
 
 *This is a personal logging tool, not medical advice.*
+
+## Sync (experimental)
+
+Settings → Sync → **Start Syncing** puts doses, checkups and dose presets in an [Automerge](https://automerge.org) document and syncs it through Automerge's public test server, `wss://sync.automerge.org`. Open the sync link it shows on another device (or paste it into **Join**) and that device's existing doses and checkups merge in; a joining device adopts the doc's presets. After that, changes sync both ways, and each device keeps working offline and catches up when it reconnects.
+
+- It's a prototype on a **public test server**: everything is stored there unencrypted, anyone with the sync link can read and change it, and the server makes no promise to keep it. Keep backups on.
+- The library (`@automerge/vanillajs` via esm.sh, wasm via jsDelivr, both version-pinned) loads only once sync is on, and the service worker caches it so sync also starts on an offline open.
+- Theme and backup settings stay per-device.

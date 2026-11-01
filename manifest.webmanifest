@@ -1,0 +1,15 @@
+{
+  "name": "Aristeia",
+  "short_name": "Aristeia",
+  "description": "A suite of small self-improvement apps, synced between your devices",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#14130f",
+  "theme_color": "#14130f",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

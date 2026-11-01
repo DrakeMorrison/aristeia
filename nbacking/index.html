@@ -463,6 +463,9 @@
     </div>
     <input type="file" id="import-file" accept=".csv,text/csv" style="display:none" onchange="handleImportFile(this.files[0])">
 
+    <div class="settings-section-title">Sync</div>
+    <div class="settings-note"><span data-aristeia-sync>not syncing on this device</span> · <a href="../#sync">manage</a></div>
+
     <div class="settings-section-title">Theme</div>
     <div class="settings-row btn-group">
       <button class="btn btn-tiny" id="theme-auto" onclick="setTheme('auto')">Auto</button>
@@ -472,6 +475,7 @@
   </div>
 </div>
 
+<script src="../sync.js"></script>
 <script>
 'use strict';
 const DB_KEY = 'nbacking_sessions';
@@ -531,6 +535,7 @@ let sessions = sanitizeSessions(loadJSON(DB_KEY, []));
 
 function saveSessions() {
   localStorage.setItem(DB_KEY, JSON.stringify(sessions));
+  window.AristeiaSync?.touch('sessions');
 }
 
 const defaultCfg = { n: 2, adaptive: true, trials: 20, intervalSec: 3, speech: true };
@@ -538,7 +543,10 @@ let cfg = Object.assign({}, defaultCfg, loadJSON(CFG_KEY, {}));
 if (!(cfg.n >= 1 && cfg.n <= 9)) cfg.n = 2;
 if (!(cfg.trials >= 10 && cfg.trials <= 60)) cfg.trials = 20;
 if (!(cfg.intervalSec >= 1.5 && cfg.intervalSec <= 6)) cfg.intervalSec = 3;
-function saveCfg() { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
+function saveCfg() {
+  localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
+  window.AristeiaSync?.touch('config');
+}
 
 let bmCfg = Object.assign({ user: '', token: '', goal: '', auto: false }, loadJSON(BM_KEY, {}));
 function saveBm() { localStorage.setItem(BM_KEY, JSON.stringify(bmCfg)); }
@@ -1110,6 +1118,7 @@ function handleImportFile(file) {
 
 function clearAll() {
   if (!confirm('Delete ALL ' + sessions.length + ' sessions? Export first if you want a backup.')) return;
+  window.AristeiaSync?.allowClear();
   sessions = [];
   saveSessions();
   renderAll();
@@ -1200,6 +1209,22 @@ if ('serviceWorker' in navigator) {
 
 setTheme(localStorage.getItem(THEME_KEY) || 'auto');
 renderAll();
+
+// Sessions and training settings sync; speech and Beeminder stay per device.
+if (window.AristeiaSync) AristeiaSync.register({
+  app: 'nbacking',
+  stores: {
+    sessions: {
+      read: () => sessions,
+      clean: sanitizeSessions,
+      set: v => { sessions = v; saveSessions(); },
+      resolve: { bm: vals => vals.some(Boolean) }, // posted anywhere means posted
+    },
+    config: AristeiaSync.singleton(() => cfg, ['n', 'adaptive', 'trials', 'intervalSec'], next => { Object.assign(cfg, next); saveCfg(); }),
+  },
+  busy: () => game !== null,
+  onChange: () => renderAll(),
+});
 </script>
 </body>
 </html>

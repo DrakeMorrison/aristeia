@@ -501,7 +501,7 @@
     </div>
 
     <div class="settings-section-title">Data</div>
-    <div class="settings-note">Everything is stored in this browser only. JSON holds every experiment (schedules stay encoded); CSV exports one experiment's day table for analysis elsewhere.</div>
+    <div class="settings-note">Everything is stored in this browser only, unless you pair this device for sync. JSON holds every experiment (schedules stay encoded); CSV exports one experiment's day table for analysis elsewhere.</div>
     <div class="settings-row btn-group">
       <button class="btn btn-tiny" onclick="exportJSON()">↓ Export JSON</button>
       <button class="btn btn-tiny" onclick="importJSON()">↑ Import JSON [I]</button>
@@ -518,6 +518,9 @@
       <button class="btn btn-tiny" id="backup-weekly" onclick="setBackupFreq('weekly')">Weekly</button>
       <button class="btn btn-tiny" onclick="runBackupNow()">↓ Backup Now</button>
     </div>
+
+    <div class="settings-section-title">Sync</div>
+    <div class="settings-note"><span data-aristeia-sync>not syncing on this device</span> · <a href="../#sync">manage</a></div>
 
     <div class="settings-section-title">Theme</div>
     <div class="settings-row btn-group">
@@ -620,6 +623,7 @@
   </div>
 </div>
 
+<script src="../sync.js"></script>
 <script>
 'use strict';
 const DB_KEY = 'peira_experiments';
@@ -824,6 +828,7 @@ function sanitizeExperiment(raw) {
     unblindedAt: finiteOrNull(raw.unblindedAt),
     endIdx: status === 'unblinded' ? intOr(raw.endIdx, -1, -1, 100000) : null,
     created: finiteOrNull(raw.created) ?? id,
+    salt: typeof raw.salt === 'string' ? raw.salt : null,
   };
   if (exp.status !== 'draft' && !exp.startDay) exp.startDay = dayKey(Date.now());
   return exp;
@@ -859,8 +864,12 @@ function serializeExperiment(e) {
 function saveExperiments() {
   experiments.sort((a, b) => a.created - b.created);
   storageSet(DB_KEY, JSON.stringify(experiments.map(serializeExperiment)));
+  window.AristeiaSync?.touch('experiments');
 }
-function saveCfg() { storageSet(CFG_KEY, JSON.stringify(cfg)); }
+function saveCfg() {
+  storageSet(CFG_KEY, JSON.stringify(cfg));
+  window.AristeiaSync?.touch('config');
+}
 function saveSelected() { storageSet(SEL_KEY, JSON.stringify(selectedId)); }
 
 function currentExperiment() {
@@ -884,10 +893,25 @@ function dayKeyOf(exp, idx) { return addDays(exp.startDay, idx); }
 // Draw lots for periods up to `upto`, persisting as we go. Balanced pairs
 // draw two at a time (AB or BA) so any even prefix is balanced; a fixed
 // design is drawn in full at start so nothing about it is decided later.
+// An open-ended trial's later lots can be drawn on any synced device, perhaps
+// on two at once, so each is a hash of the trial's secret salt and its position
+// rather than a fresh random bit: every device draws the same lot.
+function lotBit(exp, idx) {
+  const key = (exp.salt || String(exp.id)) + ':' + idx;
+  let a = 0xdeadbeef, b = 0x41c6ce57;
+  for (let i = 0; i < key.length; i++) {
+    const c = key.charCodeAt(i);
+    a = Math.imul(a ^ c, 2654435761);
+    b = Math.imul(b ^ c, 1597334677);
+  }
+  a = Math.imul(a ^ (a >>> 16), 2246822507) ^ Math.imul(b ^ (b >>> 13), 3266489909);
+  b = Math.imul(b ^ (b >>> 16), 2246822507) ^ Math.imul(a ^ (a >>> 13), 3266489909);
+  return (a ^ b) >>> 31;
+}
 function ensureSched(exp, upto) {
   let changed = false;
   while (exp.sched.length <= upto) {
-    const b = randomBit();
+    const b = exp.periods ? randomBit() : lotBit(exp, exp.sched.length);
     if (exp.design === 'pairs') exp.sched.push(b, 1 - b);
     else exp.sched.push(b);
     changed = true;
@@ -1282,6 +1306,7 @@ function startExperiment(exp) {
   if (!exp.startDay) exp.startDay = dayKey(Date.now());
   exp.status = 'running';
   exp.sched = [];
+  exp.salt = Array.from(crypto.getRandomValues(new Uint8Array(16)), x => x.toString(16).padStart(2, '0')).join('');
   if (exp.periods) ensureSched(exp, exp.periods - 1);
   else ensureSched(exp, 0);
   saveExperiments();
@@ -2129,6 +2154,7 @@ function handleImportFile(file) {
 
 function clearAll() {
   if (!confirm('Delete ALL ' + experiments.length + ' experiments? Export first if you want a backup.')) return;
+  window.AristeiaSync?.allowClear();
   experiments = [];
   selectedId = null;
   saveExperiments();
@@ -2283,6 +2309,37 @@ renderAll();
 renderBackupUI();
 checkBackupDue();
 setInterval(checkBackupDue, 3600000);
+
+// Each day's entry merges on its own, so a dose logged on the phone and a
+// reading logged on the laptop both land. When two devices move a trial's
+// state at the same moment, the further-along state wins; going back to draft
+// after seeing the other device's state is still a plain later write.
+const STATUS_RANK = { draft: 0, running: 1, unblinded: 2 };
+if (window.AristeiaSync) AristeiaSync.register({
+  app: 'peira',
+  stores: {
+    experiments: {
+      read: () => experiments.map(serializeExperiment),
+      clean: recs => sanitizeExperiments(recs).map(serializeExperiment),
+      set: v => { experiments = sanitizeExperiments(v); saveExperiments(); },
+      flatten: ['entries'],
+      resolve: {
+        status: vals => vals.reduce((a, b) => ((STATUS_RANK[b] ?? 0) > (STATUS_RANK[a] ?? 0) ? b : a)),
+        sched: vals => vals.reduce((a, b) => (String(b).length > String(a).length ? b : a)),
+      },
+    },
+    config: AristeiaSync.singleton(() => cfg, ['prior', 'interim'], next => { cfg = sanitizeCfg({ ...cfg, ...next }); saveCfg(); }),
+  },
+  onChange: ch => {
+    // A draft of a day that just changed elsewhere would overwrite it on commit.
+    for (const { old, rec } of ch.experiments.changed) {
+      for (const dk of Object.keys({ ...old.entries, ...rec.entries })) {
+        if (JSON.stringify(old.entries[dk]) !== JSON.stringify(rec.entries[dk])) drafts.delete(rec.id + ':' + dk);
+      }
+    }
+    renderAll();
+  },
+});
 </script>
 </body>
 </html>

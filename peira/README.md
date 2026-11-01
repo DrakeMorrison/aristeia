@@ -67,6 +67,6 @@ The Bayes factor integral, t-distribution, and incomplete beta are implemented i
 
 ## Data
 
-Everything stays in your browser via `localStorage`. Nothing is sent anywhere. The CSV columns are `day,date,period,<label>,condition,washout,taken,skipped,guess,<one column per outcome>,note`; the condition column is only filled once unblinded.
+Everything stays in your browser via `localStorage`. Nothing is sent anywhere unless you [pair this device for sync](../README.md#sync). The CSV columns are `day,date,period,<label>,condition,washout,taken,skipped,guess,<one column per outcome>,note`; the condition column is only filled once unblinded.
 
 *This is a personal experimentation tool, not medical advice. Don't blind yourself to anything you'd need to know in an emergency.*

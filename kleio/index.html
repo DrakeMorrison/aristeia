@@ -601,7 +601,7 @@
     </div>
 
     <div class="settings-section-title">Data</div>
-    <div class="settings-note">Everything is stored in this browser only. JSON holds your own cards, all progress and the session log (not the Beeminder token); importing one merges it in. CSV is the session log, for analysis elsewhere.</div>
+    <div class="settings-note">Everything is stored in this browser only, unless you pair this device for sync. JSON holds your own cards, all progress and the session log (not the Beeminder token); importing one merges it in. CSV is the session log, for analysis elsewhere.</div>
     <div class="settings-row btn-group">
       <button class="btn btn-tiny" onclick="exportJSON()">↓ Export JSON</button>
       <button class="btn btn-tiny" onclick="importJSON()">↑ Import JSON [I]</button>
@@ -623,6 +623,9 @@
       <button class="btn btn-tiny" onclick="runBackupNow()">↓ Backup Now</button>
     </div>
 
+    <div class="settings-section-title">Sync</div>
+    <div class="settings-note"><span data-aristeia-sync>not syncing on this device</span> · <a href="../#sync">manage</a></div>
+
     <div class="settings-section-title">Theme</div>
     <div class="settings-row btn-group">
       <button class="btn btn-tiny" id="theme-auto" onclick="setTheme('auto')">Auto</button>
@@ -638,6 +641,7 @@
   </div>
 </div>
 
+<script src="../sync.js"></script>
 <script>
 'use strict';
 const CARDS_KEY = 'kleio_cards';
@@ -1077,14 +1081,27 @@ let cfg = sanitizeCfg(loadJSON(CFG_KEY, null));
 let bee = sanitizeBee(loadJSON(BEE_KEY, null));
 let beeLedger = sanitizeBeeLedger(loadJSON(BEEQ_KEY, []));
 
-function saveCustom() { storageSet(CARDS_KEY, JSON.stringify(custom)); }
-function saveHidden() { storageSet(HIDDEN_KEY, JSON.stringify([...hidden])); }
-function saveSrs() { storageSet(SRS_KEY, JSON.stringify(srs)); }
+function saveCustom() {
+  storageSet(CARDS_KEY, JSON.stringify(custom));
+  window.AristeiaSync?.touch('cards');
+}
+function saveHidden() {
+  storageSet(HIDDEN_KEY, JSON.stringify([...hidden]));
+  window.AristeiaSync?.touch('hidden');
+}
+function saveSrs() {
+  storageSet(SRS_KEY, JSON.stringify(srs));
+  window.AristeiaSync?.touch('srs');
+}
 function saveSessions() {
   sessions.sort((a, b) => a.t - b.t);
   storageSet(LOG_KEY, JSON.stringify(sessions));
+  window.AristeiaSync?.touch('sessions');
 }
-function saveCfg() { storageSet(CFG_KEY, JSON.stringify(cfg)); }
+function saveCfg() {
+  storageSet(CFG_KEY, JSON.stringify(cfg));
+  window.AristeiaSync?.touch('config');
+}
 function saveBee() { storageSet(BEE_KEY, JSON.stringify(bee)); }
 function saveBeeLedger() { storageSet(BEEQ_KEY, JSON.stringify(beeLedger)); }
 
@@ -1283,6 +1300,7 @@ let view = 'home';
 let play = null; // the session in progress
 
 function saveLive() {
+  window.AristeiaSync?.touch('sessions'); // a session syncs once its play ends
   storageSet(LIVE_KEY, play ? JSON.stringify({ play }) : null);
 }
 
@@ -1589,8 +1607,11 @@ function queueBeeUpsert(s) {
 function queueBeeDelete(s) {
   const rid = beeRid(s);
   const item = beeLedger.find(x => x.rid === rid);
-  if (!item) return;
-  if (!item.synced) {
+  if (!item) {
+    // Posted from another device, perhaps: zero it by requestid to be sure.
+    if (!beeConfigured()) return;
+    beeLedger.push({ rid, value: 0, ts: Math.floor(s.t / 1000), comment: 'kleio: session deleted', synced: false });
+  } else if (!item.synced) {
     // never reached Beeminder — just forget it
     beeLedger = beeLedger.filter(x => x.rid !== rid);
   } else {
@@ -2075,6 +2096,7 @@ function handleImportFile(file) {
 
 function restoreStarter() {
   if (!hidden.size) return;
+  window.AristeiaSync?.allowClear();
   hidden.clear();
   saveHidden();
   rebuildCards();
@@ -2084,6 +2106,7 @@ function restoreStarter() {
 
 function clearProgress() {
   if (!confirm('Forget all progress and delete all ' + sessions.length + ' sessions? Your cards stay. Export first if you want a backup. (Datapoints already on Beeminder are left alone.)')) return;
+  window.AristeiaSync?.allowClear();
   srs = {};
   sessions = [];
   beeLedger = [];
@@ -2093,6 +2116,7 @@ function clearProgress() {
 
 function clearAll() {
   if (!confirm('Delete ALL your own cards, progress and sessions, and restore the starter deck? Export first if you want a backup.')) return;
+  window.AristeiaSync?.allowClear();
   custom = []; hidden = new Set(); srs = {}; sessions = []; beeLedger = [];
   cfg.off = [];
   saveCustom(); saveHidden(); saveSrs(); saveSessions(); saveBeeLedger(); saveCfg();
@@ -2348,6 +2372,46 @@ checkBackupDue();
 setInterval(checkBackupDue, 3600000);
 // roll the today card over at midnight if the app is left open
 setInterval(() => { if (view === 'home') renderToday(); }, 60000);
+
+// Your cards, deck settings, schedules and finished sessions sync; the session
+// in play stays local until it ends. Each FSRS trace is one atomic value, so
+// two devices reviewing a card at once keep the later review whole rather than
+// a blend. Beeminder settings and the ledger stay per device, as in halteres.
+const srsRows = m => Object.entries(m).map(([id, e]) => ({ id, ...e }));
+const srsMap = rows => Object.fromEntries(rows.map(({ id, ...e }) => [id, e]));
+const newestTrace = vals => vals.reduce((a, b) => (((b && b.last) || '') > ((a && a.last) || '') ? b : a));
+if (window.AristeiaSync) AristeiaSync.register({
+  app: 'kleio',
+  stores: {
+    cards: { read: () => custom, clean: recs => sanitizeCards(recs), set: v => { custom = v; saveCustom(); rebuildCards(); } },
+    hidden: {
+      read: () => [...hidden].map(id => ({ id })),
+      clean: recs => recs.filter(r => typeof r.id === 'string').map(r => ({ id: r.id })),
+      set: v => { hidden = new Set(v.map(r => r.id)); saveHidden(); rebuildCards(); },
+    },
+    srs: {
+      read: () => srsRows(srs),
+      clean: recs => srsRows(sanitizeSrs(srsMap(recs))),
+      set: v => { srs = srsMap(v); saveSrs(); },
+      resolve: { w: newestTrace, a: newestTrace, f: vals => vals.filter(Boolean).sort()[0] ?? null },
+    },
+    sessions: {
+      read: () => sessions.filter(s => !play || s.id !== play.id),
+      clean: sanitizeSessions,
+      set: v => { sessions = v; saveSessions(); },
+    },
+    config: AristeiaSync.singleton(() => cfg, ['newPerDay', 'strikes', 'off'], next => { cfg = sanitizeCfg({ ...cfg, ...next }); saveCfg(); }),
+  },
+  busy: () => !!play,
+  onChange: (ch, { seed }) => {
+    if (!seed) {
+      for (const s of ch.sessions.added) queueBeeUpsert(s);
+      for (const c of ch.sessions.changed) queueBeeUpsert(c.rec);
+      for (const s of ch.sessions.removed) queueBeeDelete(s);
+    }
+    renderAll();
+  },
+});
 </script>
 </body>
 </html>

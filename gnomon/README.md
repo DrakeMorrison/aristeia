@@ -20,7 +20,7 @@ Each log entry marks the **start** of an activity. Its duration runs until the n
 - **Editable log** — tap any entry to adjust its time or text (missed a switch? fix the timestamp), or delete it
 - **Stats** — time tracked today, entries today, distinct activities, day streak
 - **Import / Export** — CSV export and import for portability and analysis elsewhere
-- **Sync (experimental)** — keep the log in step across devices with [Automerge](https://automerge.org); see below
+- **Sync** — keep the log in step across devices with [Automerge](https://automerge.org); see below
 - **PWA** — installable, works offline
 - **Light and dark themes**
 - **Keyboard shortcuts** — `/` focus input, `X` stop, `S` settings, `E` export, `I` import, `Escape` close
@@ -31,12 +31,8 @@ Open `index.html` (or serve the directory) and log the first activity. On mobile
 
 ## Data
 
-Everything stays in your browser via `localStorage`. Nothing is sent anywhere unless you turn on sync. Use Export CSV to back up or move your data — columns are `id,timestamp,iso,kind,text` with millisecond epoch timestamps.
+Everything stays in your browser via `localStorage`. Nothing is sent anywhere unless you pair this device for sync. Use Export CSV to back up or move your data — columns are `id,timestamp,iso,kind,text` with millisecond epoch timestamps.
 
-## Sync (experimental)
+## Sync
 
-Settings → Sync → **Start Syncing** puts the log in an [Automerge](https://automerge.org) document and syncs it through a tailnet-only Automerge server on the mac-mini (`wss://mac-mini.tailc76981.ts.net`, behind `tailscale serve`). Open the sync link it shows on another device (or paste it into **Join**) and that device's existing entries merge in. After that, adds, edits and deletes sync both ways, and each device keeps working offline and catches up when it reconnects.
-
-- Every device needs Tailscale connected to sync; the server only accepts connections from this site's origin. The doc is stored unencrypted on the mac-mini. Keep backups on.
-- The library (`@automerge/vanillajs` via esm.sh, wasm via jsDelivr, both version-pinned) loads only once sync is on, and the service worker caches it so sync also starts on an offline open.
-- Theme, report range and backup settings stay per-device.
+Pair this device from the [landing page](../) and the log syncs with your other devices, along with the other aristeia apps. See the [root README](../README.md#sync). Report range, theme and backup settings stay per-device.

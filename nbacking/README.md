@@ -27,4 +27,4 @@ For Beeminder: enter your username, [auth token](https://www.beeminder.com/api/v
 
 ## Data
 
-Everything stays in your browser via `localStorage`. Nothing is sent anywhere except the Beeminder datapoints you explicitly configure. Use Export CSV to back up or move your data.
+Everything stays in your browser via `localStorage`. Nothing is sent anywhere except the Beeminder datapoints you explicitly configure, and your data if you [pair this device for sync](../README.md#sync). Use Export CSV to back up or move your data.

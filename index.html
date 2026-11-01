@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Aristeia</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#14130f">
 <style>
   :root {
     --bg: #faf8f4; --fg: #1c1a17; --muted: #6b675f; --card: #ffffff;
@@ -43,6 +47,13 @@
     transition: border-color 0.15s, color 0.15s;
   }
   #exportAll:hover { border-color: var(--accent); color: var(--fg); }
+  #sync { margin-top: 2rem; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.2rem; }
+  #sync h2 { margin: 0; font-size: 1.15rem; font-weight: normal; }
+  #sync p { margin: 0.35rem 0 0.8rem; color: var(--muted); font-size: 0.95rem; overflow-wrap: anywhere; }
+  #sync .row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+  #sync input { flex: 1 1 12rem; min-width: 0; padding: 0.5rem 0.7rem; background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: 7px; font: inherit; font-size: 0.9rem; }
+  #sync button { padding: 0.5rem 0.9rem; background: none; color: var(--fg); border: 1px solid var(--border); border-radius: 7px; font: inherit; font-size: 0.95rem; cursor: pointer; }
+  #sync button:hover { border-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -58,10 +69,74 @@
     <li><a class="app" href="peira/"><strong>peira</strong><span>blinded, randomised n-of-1 self-experiments with Bayesian evidence</span></a></li>
     <li><a class="app" href="kleio/"><strong>kleio</strong><span>history on a timeline: place events, recall details, spaced repetition</span></a></li>
   </ul>
+  <section id="sync">
+    <h2>Sync</h2>
+    <p id="sync-status"></p>
+    <div id="sync-off">
+      <div class="row"><button id="sync-create" type="button">start syncing</button></div>
+      <div class="row">
+        <input id="sync-join-input" type="text" placeholder="or paste a sync link" autocomplete="off" aria-label="Sync link">
+        <button id="sync-join" type="button">join</button>
+      </div>
+    </div>
+    <div id="sync-on" hidden>
+      <div class="row"><input id="sync-link" type="text" readonly aria-label="This device's sync link"></div>
+      <div class="row">
+        <button id="sync-copy" type="button">copy link</button>
+        <button id="sync-stop" type="button">stop on this device</button>
+      </div>
+    </div>
+  </section>
   <button id="exportAll" type="button">export all app data</button>
   <footer><a href="https://github.com/DrakeMorrison/aristeia">source on GitHub</a></footer>
 </main>
+<script src="sync.js"></script>
 <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+  }
+
+  // One link pairs a device for every app. Each app's data merges in the first
+  // time that app is opened on the device.
+  const S = window.AristeiaSync;
+  const $ = id => document.getElementById(id);
+  const syncLink = () => location.origin + location.pathname + '#sync=' + S.rootUrl();
+  function renderSync(state, text) {
+    $('sync-off').hidden = state !== 'off';
+    $('sync-on').hidden = state === 'off';
+    $('sync-status').textContent = state === 'off'
+      ? 'Sync every app between your devices through Automerge\'s public test server (sync.automerge.org). Everything is stored there unencrypted and readable by anyone with the sync link. Theme, backup, Slack and Beeminder settings stay per device.'
+      : 'This device is paired: ' + text + '. Open this link on your other devices.';
+    if (state !== 'off') $('sync-link').value = syncLink();
+  }
+  async function joinFromLink(raw) {
+    if (!S.parseLink(raw)) { alert('That doesn\'t look like an aristeia sync link.'); return; }
+    if (S.rootUrl() === S.parseLink(raw)) return;
+    if (!confirm('Pair this device?\n\nEach app\'s data here merges with the synced data the next time you open it. Everything is stored unencrypted on Automerge\'s public test server, readable by anyone with this link. Keep backups on.')) return;
+    await S.joinPairing(raw);
+  }
+  $('sync-create').addEventListener('click', async () => {
+    if (!confirm('Start syncing every app?\n\nEverything is stored unencrypted on Automerge\'s public test server (sync.automerge.org), readable by anyone with the sync link, with no guarantee the server keeps it. Keep backups on.')) return;
+    try { await S.createPairing(); } catch (e) { alert('Couldn\'t start sync: ' + (e && e.message ? e.message : e)); }
+  });
+  $('sync-join').addEventListener('click', () => joinFromLink($('sync-join-input').value));
+  $('sync-link').addEventListener('click', e => e.target.select());
+  $('sync-copy').addEventListener('click', () => {
+    navigator.clipboard.writeText(syncLink()).then(() => {
+      $('sync-copy').textContent = 'copied';
+      setTimeout(() => { $('sync-copy').textContent = 'copy link'; }, 1500);
+    }).catch(() => alert(syncLink()));
+  });
+  $('sync-stop').addEventListener('click', () => {
+    if (confirm('Stop syncing on this device? Your data stays here; other devices keep syncing.')) S.stopPairing();
+  });
+  S.hub({ onStatus: renderSync }).then(() => {
+    const m = location.hash.match(/^#sync=(automerge:[1-9A-HJ-NP-Za-km-z]+)$/);
+    if (!m) return;
+    history.replaceState(null, '', location.pathname + location.search);
+    joinFromLink(m[1]);
+  });
+
   document.getElementById('exportAll').addEventListener('click', () => {
     const apps = ['meridian', 'gnomon', 'pharmakon', 'halteres', 'nbacking', 'peira', 'kleio'];
     const data = {};

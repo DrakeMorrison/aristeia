@@ -28,4 +28,4 @@ No install, no account, no server. All data is stored locally in your browser vi
 
 ## Data
 
-Everything stays in your browser. Nothing is sent anywhere. Use Export CSV to back up your data or move it between devices.
+Everything stays in your browser. Nothing is sent anywhere unless you [pair this device for sync](../README.md#sync). Use Export CSV to back up your data or move it between devices.

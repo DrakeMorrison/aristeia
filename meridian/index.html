@@ -1069,7 +1069,7 @@
     </div>
   </div>
 
-  <footer>all data stored locally · no server · no cloud</footer>
+  <footer id="footer-note">all data stored locally · no server · no cloud</footer>
 </div>
 
 <div id="report-ui">
@@ -1103,7 +1103,10 @@
   <div class="settings-body">
 
     <div>
-      <div class="settings-section-title">Appearance</div>
+      <div class="settings-section-title">Sync</div>
+    <div class="settings-note"><span data-aristeia-sync>not syncing on this device</span> · <a href="../#sync">manage</a></div>
+
+    <div class="settings-section-title">Appearance</div>
       <div class="theme-switcher" id="theme-switcher">
         <button id="theme-auto" onclick="setTheme('auto')"><span class="key">A</span>uto</button>
         <button id="theme-light" onclick="setTheme('light')"><span class="key">L</span>ight</button>
@@ -1198,6 +1201,7 @@
   </div>
 </div>
 
+<script src="../sync.js"></script>
 <script>
 const DB_KEY = 'meridian_logs';
 const ACTIVE_KEY = 'meridian_active';
@@ -1329,6 +1333,7 @@ const ctx = canvas.getContext('2d');
 
 function saveLogs() {
   storageSet(DB_KEY, JSON.stringify(logs));
+  window.AristeiaSync?.touch('logs');
 }
 
 function saveActive() {
@@ -2305,6 +2310,7 @@ function importCSV(input) {
     if (merge) {
       logs = logs.concat(imported).sort((a, b) => b.startTime - a.startTime);
     } else {
+      window.AristeiaSync?.allowClear();
       logs = imported.sort((a, b) => b.startTime - a.startTime);
     }
     saveLogs();
@@ -2317,6 +2323,7 @@ function importCSV(input) {
 function clearLog() {
   if (!logs.length) return;
   if (!confirm('Clear all log entries?')) return;
+  window.AristeiaSync?.allowClear();
   logs = [];
   saveLogs();
   renderLog();
@@ -3504,6 +3511,29 @@ document.addEventListener('visibilitychange', () => {
 // iOS standalone apps sometimes resume without firing visibilitychange.
 window.addEventListener('focus', () => {
   if (!document.hidden) resyncAfterResume();
+});
+
+// Finished log rows sync. Running and paused timers, and everything Slack,
+// stay on this device: a timer moves between keys as it stops, and its clock,
+// notification and the daily summary all assume one device owns them.
+const logSortTime = e => e.endTime ?? e.startTime ?? e.id;
+if (!REPORT_MODE) window.AristeiaSync?.register({
+  app: 'meridian',
+  stores: {
+    logs: {
+      read: () => logs,
+      clean: recs => sanitizeLogs(recs).sort((a, b) => logSortTime(b) - logSortTime(a)),
+      set: v => { logs = v; saveLogs(); },
+    },
+  },
+  // Edits address rows by index, which a remote insert would shift.
+  busy: () => editingIndex !== -1 || editingPausedId !== null,
+  onChange: () => { renderLog(); drawBgGraph(); },
+  onStatus: state => {
+    document.getElementById('footer-note').textContent = state === 'off'
+      ? 'all data stored locally · no server · no cloud'
+      : 'data stored locally · synced through sync.automerge.org';
+  },
 });
 </script>
 </body>

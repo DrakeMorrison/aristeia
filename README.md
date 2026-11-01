@@ -25,8 +25,38 @@ Every app follows the same pattern:
 
 - **Single file** — all HTML, CSS, and JS in one `index.html`
 - **Offline-first PWA** — service worker (`sw.js`) + web manifest, installable to a phone home screen
-- **Local data** — browser storage only, no backend; CSV export/backup where it matters
-- **Relative paths** — each app runs from any subdirectory
+- **Local-first data** — each app reads and writes browser storage and never waits on a network; CSV export/backup where it matters
+- **Optional sync** — once a device is paired, `sync.js` keeps it in step with your others
+- **Relative paths** — each app runs from any subdirectory of a checkout that has `sync.js` beside it (without it, an app just doesn't sync)
+
+## Sync
+
+The landing page's **Sync** section pairs a device for every app with one link. Data syncs through [Automerge](https://automerge.org)'s public test server, `wss://sync.automerge.org`, so no device needs an account or a VPN. Changes made offline wait and catch up. **It's a public test server:** everything is stored there unencrypted, anyone with the sync link can read and change it, and the server makes no promise to keep it. Treat the link like a password and keep backups on. Each device holds a full copy.
+
+The link names a root doc that maps each app to its own doc, so opening one app never loads another's history. All the apps share one origin, so pairing once covers them all, except on iPhone, where each Home Screen app has its own storage. There, install **the landing page** rather than the separate apps: everything opens inside one window and shares one pairing.
+
+| App | Synced | Stays per device |
+|---|---|---|
+| meridian | finished log rows | running and paused timers, Slack, notifications |
+| gnomon | log entries | report range |
+| pharmakon | doses, checkups, presets | |
+| halteres | all three session logs; bells, goal, two-hand spacing, bar unit | current tab, Beeminder settings and ledger |
+| nbacking | sessions; level, trials, interval, adaptive | speech, Beeminder settings |
+| peira | experiments, with each day's entry merging separately; analysis settings | selected experiment |
+| kleio | your cards, deleted starters, schedules, finished sessions, deck settings | session in play, Beeminder settings and ledger |
+
+Theme and backup settings stay per device everywhere. No token or webhook ever enters a doc, because a doc keeps its full history. A device with a Beeminder token posts every session it learns of, including ones logged elsewhere; the requestid makes that an upsert, so two configured devices don't double-count.
+
+How merges work (the header of `sync.js` has more):
+
+- **Each field of each record is its own register.** Editing a dose's amount on one device and its note on another keeps both. If both edit the same field at once, one value wins, the same one everywhere.
+- **Local edits are a diff against what was last synced**, so a device that missed an edit can't undo it, and offline changes need no journal.
+- **Deletes beat concurrent edits**, and stay deleted.
+- **A few fields merge by rule when written concurrently:** a kleio schedule keeps the later review, whole; a card's first-seen date keeps the earlier; nbacking's posted flag is true if either side posted; a peira trial keeps its further-along status and longer allocation. Open-ended peira trials derive each lot from a salt, so two devices drawing the same period offline get the same lot.
+- **A save that would drop most of a store is refused** and restored from the doc, unless it came from an explicit Clear; this guards against a failed read or evicted storage wiping every device.
+- **Remote changes wait** while you're typing, editing in an overlay or mid-session, then apply.
+
+The Automerge build is committed in `vendor/` so sync depends on no CDN; see its README.
 
 ## History
 

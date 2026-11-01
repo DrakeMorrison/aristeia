@@ -796,7 +796,7 @@
     </div>
 
     <div class="settings-section-title">Data</div>
-    <div class="settings-note">Everything is stored in this browser only.</div>
+    <div class="settings-note">Everything is stored in this browser only, unless you pair this device for sync.</div>
     <div class="settings-row btn-group">
       <button class="btn btn-tiny" onclick="exportCSV()">↓ Export CSV [E]</button>
       <button class="btn btn-tiny" onclick="importCSV()">↑ Import CSV [I]</button>
@@ -812,6 +812,9 @@
       <button class="btn btn-tiny" id="backup-weekly" onclick="setBackupFreq('weekly')">Weekly</button>
       <button class="btn btn-tiny" onclick="runBackupNow()">↓ Backup Now</button>
     </div>
+
+    <div class="settings-section-title">Sync</div>
+    <div class="settings-note"><span data-aristeia-sync>not syncing on this device</span> · <a href="../#sync">manage</a></div>
 
     <div class="settings-section-title">Theme</div>
     <div class="settings-row btn-group">
@@ -912,6 +915,7 @@
   </div>
 </div>
 
+<script src="../sync.js"></script>
 <script>
 'use strict';
 const DB_KEY = 'halteres_sessions';
@@ -1216,17 +1220,21 @@ let bbSessions = sanitizeBbSessions(loadJSON(BB_KEY, []));
 function saveSessions() {
   sessions.sort((a, b) => a.t - b.t);
   storageSet(DB_KEY, JSON.stringify(sessions));
+  window.AristeiaSync?.touch('sessions');
 }
 function saveBwSessions() {
   bwSessions.sort((a, b) => a.t - b.t);
   storageSet(BW_KEY, JSON.stringify(bwSessions));
+  window.AristeiaSync?.touch('bodyweight');
 }
 function saveBbSessions() {
   bbSessions.sort((a, b) => a.t - b.t);
   storageSet(BB_KEY, JSON.stringify(bbSessions));
+  window.AristeiaSync?.touch('barbell');
 }
 function saveCfg() {
   storageSet(CFG_KEY, JSON.stringify(cfg));
+  window.AristeiaSync?.touch('config');
 }
 function saveBee() {
   storageSet(BEE_KEY, JSON.stringify(bee));
@@ -1878,6 +1886,8 @@ function beeComment(s) {
 function queueBeeUpsert(s) {
   if (!beeConfigured()) return;
   const item = { rid: beeRid(s), value: beeValue(s), ts: Math.floor(s.t / 1000), comment: beeComment(s), synced: false };
+  const old = beeLedger.find(x => x.rid === item.rid);
+  if (old && old.synced && old.value === item.value && old.comment === item.comment) return;
   beeLedger = beeLedger.filter(x => x.rid !== item.rid).concat(item);
   saveBeeLedger();
   syncBee();
@@ -1886,8 +1896,11 @@ function queueBeeUpsert(s) {
 function queueBeeDelete(s) {
   const rid = beeRid(s);
   const item = beeLedger.find(x => x.rid === rid);
-  if (!item) return;
-  if (!item.synced) {
+  if (!item) {
+    // Posted from another device, perhaps: zero it by requestid to be sure.
+    if (!beeConfigured()) return;
+    beeLedger.push({ rid, value: 0, ts: Math.floor(s.t / 1000), comment: 'halteres: session deleted', synced: false });
+  } else if (!item.synced) {
     // never reached Beeminder — just forget it
     beeLedger = beeLedger.filter(x => x.rid !== rid);
   } else {
@@ -3089,6 +3102,7 @@ function handleImportFile(file) {
 
 function clearAll() {
   if (!confirm('Delete ALL ' + (sessions.length + bwSessions.length + bbSessions.length) + ' sessions, kettlebell, bodyweight and barbell? Export first if you want a backup. (Datapoints already on Beeminder are left alone.)')) return;
+  window.AristeiaSync?.allowClear();
   sessions = [];
   bwSessions = [];
   bbSessions = [];
@@ -3263,6 +3277,34 @@ syncBee();
 renderBackupUI();
 checkBackupDue();
 setInterval(checkBackupDue, 3600000);
+
+// Sessions and the kit sync. Beeminder settings stay per device (the token
+// shouldn't live in a doc's permanent history) and so does the ledger: each
+// device with a token keeps its goal right, and the requestid makes two
+// devices posting one session an upsert rather than a duplicate.
+if (window.AristeiaSync) AristeiaSync.register({
+  app: 'halteres',
+  stores: {
+    sessions: { read: () => sessions, clean: sanitizeSessions, set: v => { sessions = v; saveSessions(); } },
+    bodyweight: { read: () => bwSessions, clean: sanitizeBwSessions, set: v => { bwSessions = v; saveBwSessions(); } },
+    barbell: { read: () => bbSessions, clean: sanitizeBbSessions, set: v => { bbSessions = v; saveBbSessions(); } },
+    config: AristeiaSync.singleton(() => cfg, ['bells', 'goal', 'twoHandEvery', 'bbUnit'], next => { cfg = sanitizeCfg({ ...cfg, ...next }); saveCfg(); }),
+  },
+  onChange: (ch, { seed }) => {
+    if (!seed) {
+      for (const st of [ch.sessions, ch.bodyweight, ch.barbell]) {
+        for (const s of st.added) queueBeeUpsert(s);
+        for (const c of st.changed) queueBeeUpsert(c.rec);
+        for (const s of st.removed) queueBeeDelete(s);
+      }
+    }
+    const touched = st => st.added.length || st.changed.length || st.removed.length;
+    if (touched(ch.sessions) || touched(ch.config)) reseedPlans();
+    if (touched(ch.bodyweight)) reseedBw();
+    if (touched(ch.barbell) || touched(ch.config)) reseedBb();
+    renderAll();
+  },
+});
 </script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 // The hub's worker. Each app registers its own worker on first open, which then
 // takes over that app's more specific scope; until then this one serves the
 // app's page, so an app can be opened offline before it was ever visited.
-const CACHE = 'aristeia-v1';
+const CACHE = 'aristeia-v2';
 const APPS = ['meridian', 'gnomon', 'pharmakon', 'halteres', 'nbacking', 'peira', 'kleio'];
 const CORE = ['./', './index.html', './sync.js', './manifest.webmanifest', './icon-192.png', './icon-512.png',
   './vendor/automerge.js', './vendor/automerge.wasm', ...APPS.map(a => './' + a + '/')];

@@ -100,23 +100,24 @@
   // time that app is opened on the device.
   const S = window.AristeiaSync;
   const $ = id => document.getElementById(id);
-  const syncLink = () => location.origin + location.pathname + '#sync=' + S.rootUrl();
+  const syncLink = () => location.origin + location.pathname + '#' + S.linkFragment();
   function renderSync(state, text) {
     $('sync-off').hidden = state !== 'off';
     $('sync-on').hidden = state === 'off';
     $('sync-status').textContent = state === 'off'
-      ? 'Sync every app between your devices through Automerge\'s public test server (sync.automerge.org). Everything is stored there unencrypted and readable by anyone with the sync link. Theme, backup, Slack and Beeminder settings stay per device.'
-      : 'This device is paired: ' + text + '. Open this link on your other devices.';
+      ? 'Sync every app between your devices through Automerge\'s public test server (sync.automerge.org). Everything is end-to-end encrypted with a key only your sync link holds, so treat the link like a password. Theme, backup, Slack and Beeminder settings stay per device.'
+      : 'This device is paired: ' + text + '. Open this link on your other devices. It holds your encryption key: anyone with it can read everything.';
     if (state !== 'off') $('sync-link').value = syncLink();
   }
   async function joinFromLink(raw) {
-    if (!S.parseLink(raw)) { alert('That doesn\'t look like an aristeia sync link.'); return; }
-    if (S.rootUrl() === S.parseLink(raw)) return;
-    if (!confirm('Pair this device?\n\nEach app\'s data here merges with the synced data the next time you open it. Everything is stored unencrypted on Automerge\'s public test server, readable by anyone with this link. Keep backups on.')) return;
+    const parsed = S.parseLink(raw);
+    if (!parsed) { alert('That doesn\'t look like an aristeia sync link.'); return; }
+    if (S.rootUrl() === parsed.root) return;
+    if (!confirm('Pair this device?\n\nEach app\'s data here merges with the synced data the next time you open it. Data syncs end-to-end encrypted through Automerge\'s public test server, which promises to keep nothing. Keep backups on.')) return;
     await S.joinPairing(raw);
   }
   $('sync-create').addEventListener('click', async () => {
-    if (!confirm('Start syncing every app?\n\nEverything is stored unencrypted on Automerge\'s public test server (sync.automerge.org), readable by anyone with the sync link, with no guarantee the server keeps it. Keep backups on.')) return;
+    if (!confirm('Start syncing every app?\n\nData syncs end-to-end encrypted through Automerge\'s public test server (sync.automerge.org), which promises to keep nothing. Your sync link holds the only key: lose it and every device stays usable, but a new device can\'t join; leak it and you\'ll need to pair again. Keep backups on.')) return;
     try { await S.createPairing(); } catch (e) { alert('Couldn\'t start sync: ' + (e && e.message ? e.message : e)); }
   });
   $('sync-join').addEventListener('click', () => joinFromLink($('sync-join-input').value));
@@ -131,10 +132,10 @@
     if (confirm('Stop syncing on this device? Your data stays here; other devices keep syncing.')) S.stopPairing();
   });
   S.hub({ onStatus: renderSync }).then(() => {
-    const m = location.hash.match(/^#sync=(automerge:[1-9A-HJ-NP-Za-km-z]+)$/);
-    if (!m) return;
-    history.replaceState(null, '', location.pathname + location.search);
-    joinFromLink(m[1]);
+    const link = location.hash;
+    if (!link.startsWith('#sync=')) return;
+    history.replaceState(null, '', location.pathname + location.search); // it holds the key
+    joinFromLink(link);
   });
 
   document.getElementById('exportAll').addEventListener('click', () => {

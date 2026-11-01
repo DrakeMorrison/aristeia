@@ -31,7 +31,9 @@ Every app follows the same pattern:
 
 ## Sync
 
-The landing page's **Sync** section pairs a device for every app with one link. Data syncs through [Automerge](https://automerge.org)'s public test server, `wss://sync.automerge.org`, so no device needs an account or a VPN. Changes made offline wait and catch up. **It's a public test server:** everything is stored there unencrypted, anyone with the sync link can read and change it, and the server makes no promise to keep it. Treat the link like a password and keep backups on. Each device holds a full copy.
+The landing page's **Sync** section pairs a device for every app with one link. Data syncs through [Automerge](https://automerge.org)'s public test server, `wss://sync.automerge.org`, so no device needs an account or a VPN. Changes made offline wait and catch up. Each device holds a full copy, and the server promises to keep nothing.
+
+**Everything in a doc is end-to-end encrypted.** The key is in the `#` part of the sync link, which browsers never send to a server, and in each paired device's localStorage. Record ids, field names and values are all hidden, as are which docs belong to which app. The server still sees how many records and fields a doc has, their sizes and when they change, and it could withhold or delete them. Forged values are rejected and a mass deletion nobody recorded is undone, but a small deletion would sync. Treat the link like a password: if it leaks, the only remedy is to pair every device again with a new one.
 
 The link names a root doc that maps each app to its own doc, so opening one app never loads another's history. All the apps share one origin, so pairing once covers them all, except on iPhone, where each Home Screen app has its own storage. There, install **the landing page** rather than the separate apps: everything opens inside one window and shares one pairing.
 
@@ -53,7 +55,7 @@ How merges work (the header of `sync.js` has more):
 - **Local edits are a diff against what was last synced**, so a device that missed an edit can't undo it, and offline changes need no journal.
 - **Deletes beat concurrent edits**, and stay deleted.
 - **A few fields merge by rule when written concurrently:** a kleio schedule keeps the later review, whole; a card's first-seen date keeps the earlier; nbacking's posted flag is true if either side posted; a peira trial keeps its further-along status and longer allocation. Open-ended peira trials derive each lot from a salt, so two devices drawing the same period offline get the same lot.
-- **A save that would drop most of a store is refused** and restored from the doc, unless it came from an explicit Clear; this guards against a failed read or evicted storage wiping every device.
+- **A save that would drop most of a store is refused** and restored from the doc, unless it came from an explicit Clear; this guards against a failed read or evicted storage wiping every device. A doc that loses most of a store with no Clear recorded is repaired the same way.
 - **Remote changes wait** while you're typing, editing in an overlay or mid-session, then apply.
 
 The Automerge build is committed in `vendor/` so sync depends on no CDN; see its README.

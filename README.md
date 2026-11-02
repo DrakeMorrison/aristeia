@@ -18,6 +18,7 @@ locally in the browser, and works offline.
 | [nbacking](nbacking/) | Dual n-back working memory training with local stats and Beeminder integration | [open](https://drakemorrison.github.io/aristeia/nbacking/) |
 | [peira](peira/) | Blinded, randomised N-of-1 self-experiments: lots drawn per period, jar-based blinding, Bayes factors instead of p-values | [open](https://drakemorrison.github.io/aristeia/peira/) |
 | [kleio](kleio/) | History on a timeline: place each event, recall one detail, with spaced repetition, a Timeline-style run mode and Beeminder integration | [open](https://drakemorrison.github.io/aristeia/kleio/) |
+| [keryx](keryx/) | Small RSS/Atom reader: unread list across feeds, read state synced between devices | [open](https://drakemorrison.github.io/aristeia/keryx/) |
 
 ## Architecture
 
@@ -46,6 +47,7 @@ The link names a root doc that maps each app to its own doc, so opening one app 
 | nbacking | sessions; level, trials, interval, adaptive | speech, Beeminder settings |
 | peira | experiments, with each day's entry merging separately; analysis settings | selected experiment |
 | kleio | your cards, deleted starters, schedules, finished sessions, deck settings | session in play, Beeminder settings and ledger |
+| keryx | subscriptions, read marks | fetched posts, feed filter |
 
 Theme and backup settings stay per device everywhere. No token or webhook ever enters a doc, because a doc keeps its full history. A device with a Beeminder token posts every session it learns of, including ones logged elsewhere; the requestid makes that an upsert, so two configured devices don't double-count.
 

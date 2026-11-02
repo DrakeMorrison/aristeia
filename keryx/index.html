@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1d2021">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Keryx</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 20px; }
+
+  :root {
+    --bg: #1d2021;
+    --surface: #282828;
+    --surface2: #32302f;
+    --border: #504945;
+    --text: #ebdbb2;
+    --text-dim: #d5c4a1;
+    --muted: #928374;
+    --accent: #b8bb26;
+    --accent-dim: #98971a;
+    --accent2: #fabd2f;
+    --accent2-dim: #d79921;
+    --danger: #fb4934;
+    --danger-dim: #cc241d;
+    --orange: #fe8019;
+    --info: #83a598;
+    --mono: 'IBM Plex Mono', monospace;
+    --display: 'Cinzel', serif;
+    --data: 'Cormorant Garamond', serif;
+  }
+
+  body.light {
+    --bg: #f9f5d7;
+    --surface: #ebdbb2;
+    --surface2: #d5c4a1;
+    --border: #bdae93;
+    --text: #282828;
+    --text-dim: #3c3836;
+    --muted: #7c6f64;
+    --accent: #79740e;
+    --accent-dim: #98971a;
+    --accent2: #b57614;
+    --accent2-dim: #d79921;
+    --danger: #9d0006;
+    --danger-dim: #cc241d;
+    --orange: #d65d0e;
+    --info: #076678;
+  }
+
+  body {
+    font-family: var(--mono);
+    font-size: 1rem;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  a { color: var(--info); }
+
+  .app {
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  header h1 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.4rem;
+    letter-spacing: 0.12em;
+  }
+  header h1 .herald { color: var(--orange); }
+  .header-btns { display: flex; gap: 0.5rem; }
+  .icon-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    padding: 0.25rem 0.55rem;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .icon-btn:hover { color: var(--text); border-color: var(--muted); }
+  .icon-btn.spinning { color: var(--accent2); border-color: var(--accent2-dim); }
+
+  /* ── Toolbar ────────────────────────────────────────────────── */
+  .toolbar {
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    margin-bottom: 1rem; font-size: 0.65rem; color: var(--muted);
+  }
+  .toolbar .spacer { flex: 1; }
+  .toolbar select {
+    font-family: var(--mono); font-size: 0.7rem;
+    background: var(--surface); color: var(--text); border: 1px solid var(--border);
+    padding: 0.3rem 0.4rem; max-width: 14rem;
+  }
+
+  .btn {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    padding: 0.5rem 0.8rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { border-color: var(--accent-dim); color: var(--accent); }
+  .btn.danger { border-color: var(--danger-dim); color: var(--danger); }
+  .btn-tiny { font-size: 0.7rem; padding: 0.35rem 0.6rem; }
+  .btn-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .btn-group .btn.sel { border-color: var(--accent-dim); color: var(--accent); }
+
+  /* ── Items ──────────────────────────────────────────────────── */
+  .errors { margin-bottom: 1rem; }
+  .err {
+    font-size: 0.62rem; color: var(--danger); line-height: 1.5;
+    border: 1px solid var(--danger-dim); padding: 0.5rem 0.7rem; margin-bottom: 0.4rem;
+  }
+  .day {
+    font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted); margin: 1.1rem 0 0.4rem;
+  }
+  .day:first-child { margin-top: 0; }
+  .item {
+    display: flex; gap: 0.7rem; align-items: flex-start;
+    border-bottom: 1px solid var(--border);
+    padding: 0.6rem 0;
+  }
+  .dot {
+    flex: 0 0 auto; width: 1.1rem; height: 1.1rem; margin-top: 0.25rem;
+    background: none; border: none; cursor: pointer; position: relative;
+  }
+  .dot::after {
+    content: ''; position: absolute; inset: 0.3rem; border-radius: 50%;
+    border: 1px solid var(--muted);
+  }
+  .item.unread .dot::after { background: var(--accent2); border-color: var(--accent2); }
+  .item-main { flex: 1; min-width: 0; }
+  .item-title {
+    display: block;
+    font-family: var(--data); font-size: 1.15rem; font-weight: 600; line-height: 1.25;
+    color: var(--text); text-decoration: none;
+  }
+  .item:not(.unread) .item-title { color: var(--muted); font-weight: 400; }
+  .item-title:hover { text-decoration: underline; }
+  .item-meta { font-size: 0.6rem; color: var(--muted); margin-top: 0.2rem; }
+  .item-snippet {
+    font-family: var(--data); font-size: 0.95rem; color: var(--text-dim); line-height: 1.35;
+    margin-top: 0.3rem;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .item:not(.unread) .item-snippet { display: none; }
+  .empty { font-size: 0.75rem; color: var(--muted); text-align: center; padding: 2.5rem 0; line-height: 1.6; }
+  .more { display: block; margin: 1rem auto 0; }
+
+  /* ── Overlays ───────────────────────────────────────────────── */
+  .overlay {
+    position: fixed; inset: 0;
+    background: color-mix(in srgb, var(--bg) 70%, transparent);
+    backdrop-filter: blur(4px);
+    display: none;
+    z-index: 20;
+    overflow-y: auto;
+  }
+  .overlay.visible { display: block; }
+  .panel {
+    max-width: 26rem;
+    margin: 3rem auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.2rem 1.4rem 1.6rem;
+  }
+  .panel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem; }
+  .panel-head h2 { font-family: var(--display); font-size: 0.95rem; letter-spacing: 0.12em; }
+  .settings-section-title {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted); margin: 1.2rem 0 0.5rem; padding-top: 0.9rem;
+    border-top: 1px solid var(--border);
+  }
+  .settings-section-title:first-of-type { margin-top: 0; border-top: none; padding-top: 0; }
+  .settings-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.55rem; flex-wrap: wrap; }
+  .settings-row input[type="url"] {
+    font-family: var(--mono); font-size: 0.8rem;
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    padding: 0.4rem 0.5rem; flex: 1 1 12rem; min-width: 0;
+  }
+  .settings-row input:focus { outline: none; border-color: var(--accent-dim); }
+  .settings-note { font-size: 0.62rem; color: var(--muted); line-height: 1.5; margin-bottom: 0.5rem; }
+  .feed-row {
+    display: flex; align-items: center; gap: 0.5rem;
+    border-bottom: 1px solid var(--border); padding: 0.45rem 0;
+  }
+  .feed-row .feed-info { flex: 1; min-width: 0; }
+  .feed-row .feed-name { font-size: 0.75rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .feed-row .feed-url { font-size: 0.58rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .feed-row .feed-url.bad { color: var(--danger); white-space: normal; }
+
+  footer { margin-top: auto; padding-top: 2rem; font-size: 0.6rem; color: var(--muted); text-align: center; letter-spacing: 0.05em; }
+
+  @media (max-width: 480px) {
+    html { font-size: 17px; }
+    .app { padding: 1.5rem 1rem 3rem; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>KER<span class="herald">Y</span>X</h1>
+    <div class="header-btns">
+      <button class="icon-btn" id="refresh-btn" onclick="refreshAll()" title="Refresh [R]">↻</button>
+      <button class="icon-btn" onclick="toggleThemeQuick()" title="Theme">◐</button>
+      <button class="icon-btn" onclick="openSettings()" title="Feeds &amp; settings [S]">⚙</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <select id="feed-filter" onchange="setFilter(this.value)"></select>
+    <div class="btn-group">
+      <button class="btn btn-tiny" id="show-unread" onclick="setShowAll(false)">Unread</button>
+      <button class="btn btn-tiny" id="show-all" onclick="setShowAll(true)">All</button>
+    </div>
+    <span class="spacer"></span>
+    <button class="btn btn-tiny" onclick="markAllRead()" title="Mark all read [A]">✓ all read</button>
+  </div>
+
+  <div class="errors" id="errors"></div>
+  <div id="items"></div>
+
+  <footer id="footer">keryx · data lives in your browser</footer>
+</div>
+
+<div class="overlay" id="settings-overlay" onclick="if(event.target===this) closeSettings()">
+  <div class="panel">
+    <div class="panel-head">
+      <h2>FEEDS</h2>
+      <button class="icon-btn" onclick="closeSettings()">✕</button>
+    </div>
+
+    <div class="settings-section-title">Subscriptions</div>
+    <div id="feed-list"></div>
+    <form class="settings-row" style="margin-top:0.7rem" onsubmit="event.preventDefault(); addFeedFromInput()">
+      <input type="url" id="feed-url" placeholder="https://example.com/feed.xml" required>
+      <button class="btn btn-tiny primary" type="submit" id="add-btn">+ Add</button>
+    </form>
+    <div class="settings-note" id="add-note">
+      RSS or Atom. Feeds are fetched straight from this browser, so a site has
+      to allow cross-origin reads (send <code>Access-Control-Allow-Origin</code>);
+      many do, some don't.
+    </div>
+
+    <div class="settings-section-title">Data</div>
+    <div class="settings-note">
+      Feeds are checked whenever you open keryx, and again on return if it's been
+      half an hour. Your subscriptions and what you've read sync; fetched posts are
+      cached on each device.
+    </div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" onclick="exportOPML()">↓ Export OPML</button>
+    </div>
+
+    <div class="settings-section-title">Sync</div>
+    <div class="settings-note"><span data-aristeia-sync>not syncing on this device</span> · <a href="../#sync">manage</a></div>
+
+    <div class="settings-section-title">Theme</div>
+    <div class="settings-row btn-group">
+      <button class="btn btn-tiny" id="theme-auto" onclick="setTheme('auto')">Auto</button>
+      <button class="btn btn-tiny" id="theme-dark" onclick="setTheme('dark')">Dark</button>
+      <button class="btn btn-tiny" id="theme-light" onclick="setTheme('light')">Light</button>
+    </div>
+  </div>
+</div>
+
+<script src="../sync.js"></script>
+<script>
+'use strict';
+
+const FEEDS_KEY = 'keryx_feeds';
+const READ_KEY = 'keryx_read';
+const CACHE_KEY = 'keryx_cache';
+const VIEW_KEY = 'keryx_view';
+const THEME_KEY = 'keryx_theme';
+
+const STARTER_FEEDS = [
+  { url: 'https://vitalik.eth.limo/feed.xml', title: "Vitalik Buterin's website" },
+];
+const STALE_AFTER = 30 * 60 * 1000;
+const FETCH_TIMEOUT = 20000;
+// A newly added feed arrives with its whole archive; only this recent a slice starts unread.
+const FRESH_ON_ADD = 30 * 86400000;
+const MAX_ITEMS_PER_FEED = 300;
+const PAGE = 60;
+
+// ── Storage (meridian's defensive wrappers) ──────────────────────
+const pendingWrites = new Map();
+
+function storageGet(key) {
+  try { return localStorage.getItem(key); }
+  catch (e) { return pendingWrites.has(key) ? pendingWrites.get(key) : null; }
+}
+
+function storageSet(key, val) {
+  pendingWrites.set(key, val);
+  try { localStorage.setItem(key, val); pendingWrites.delete(key); } catch (e) {}
+}
+
+function loadJSON(key, fallback) {
+  const raw = storageGet(key);
+  if (raw == null) return fallback;
+  try { return JSON.parse(raw); }
+  catch (e) {
+    storageSet(key + '_corrupt', raw);
+    return fallback;
+  }
+}
+
+// Ids are derived from the URL, so two devices adding the same feed (or both
+// seeding the starter) agree on one record instead of syncing a duplicate.
+function feedId(url) {
+  let h1 = 0x811c9dc5, h2 = 0x01000193;
+  for (let i = 0; i < url.length; i++) {
+    const c = url.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 16777619);
+    h2 = Math.imul(h2 ^ c, 2246822519);
+  }
+  return 'f' + (h1 >>> 0).toString(36) + (h2 >>> 0).toString(36);
+}
+
+function sanitizeFeeds(raw) {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set(), clean = [];
+  for (const f of raw) {
+    if (!f || typeof f !== 'object' || typeof f.url !== 'string') continue;
+    let url;
+    try { url = new URL(f.url).href; } catch (e) { continue; }
+    const id = feedId(url);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    clean.push({
+      id, url,
+      title: typeof f.title === 'string' ? f.title.slice(0, 200) : '',
+      added: Number.isFinite(f.added) ? f.added : Date.now(),
+    });
+  }
+  return clean.sort((a, b) => a.added - b.added);
+}
+
+function sanitizeRead(raw) {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set(), clean = [];
+  for (const r of raw) {
+    if (!r || typeof r.id !== 'string' || seen.has(r.id)) continue;
+    seen.add(r.id);
+    clean.push({ id: r.id, t: Number.isFinite(r.t) ? r.t : 0 });
+  }
+  return clean;
+}
+
+let feeds = (() => {
+  const raw = loadJSON(FEEDS_KEY, null);
+  if (raw !== null) return sanitizeFeeds(raw);
+  return sanitizeFeeds(STARTER_FEEDS.map(f => ({ ...f, added: Date.now() })));
+})();
+let readMarks = sanitizeRead(loadJSON(READ_KEY, []));
+let readSet = new Set(readMarks.map(r => r.id));
+// Per device: { [feedId]: { items: [...], fetched, error } }
+let cache = (() => {
+  const c = loadJSON(CACHE_KEY, {});
+  return c && typeof c === 'object' && !Array.isArray(c) ? c : {};
+})();
+let view = Object.assign({ filter: 'all', showAll: false }, loadJSON(VIEW_KEY, {}));
+let shown = PAGE;
+
+function saveFeeds() {
+  storageSet(FEEDS_KEY, JSON.stringify(feeds));
+  window.AristeiaSync?.touch('feeds');
+}
+function saveRead() {
+  storageSet(READ_KEY, JSON.stringify(readMarks));
+  window.AristeiaSync?.touch('read');
+}
+function saveCache() {
+  storageSet(CACHE_KEY, JSON.stringify(cache));
+}
+function saveView() {
+  storageSet(VIEW_KEY, JSON.stringify(view));
+}
+function setReadMarks(list) {
+  readMarks = list;
+  readSet = new Set(list.map(r => r.id));
+}
+
+// ── Parsing ──────────────────────────────────────────────────────
+function childText(el, ...names) {
+  for (const name of names) {
+    for (const c of el.children) {
+      if (c.localName === name || c.nodeName === name) {
+        const t = c.textContent.trim();
+        if (t) return t;
+      }
+    }
+  }
+  return '';
+}
+
+// Feed HTML is only ever turned into plain text here: DOMParser documents are
+// inert (no scripts, no image loads), and nothing from a feed reaches innerHTML.
+function htmlToText(html) {
+  if (!html) return '';
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return (doc.body ? doc.body.textContent : '').replace(/\s+/g, ' ').trim().slice(0, 400);
+}
+
+function safeLink(href, base) {
+  try {
+    const u = new URL(href, base);
+    return u.protocol === 'https:' || u.protocol === 'http:' ? u.href : '';
+  } catch (e) { return ''; }
+}
+
+function parseFeed(text, feedUrl) {
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
+  if (doc.querySelector('parsererror')) throw new Error("isn't valid XML (is this the feed URL, not the site?)");
+  const root = doc.documentElement;
+  const items = [];
+  let title = '';
+  if (root.localName === 'feed') {
+    title = childText(root, 'title');
+    for (const e of root.children) {
+      if (e.localName !== 'entry') continue;
+      let link = '';
+      for (const l of e.children) {
+        if (l.localName !== 'link') continue;
+        const rel = l.getAttribute('rel') || 'alternate';
+        if (rel === 'alternate' && !link) link = l.getAttribute('href') || '';
+      }
+      items.push({
+        guid: childText(e, 'id') || link,
+        title: childText(e, 'title'),
+        link: safeLink(link, feedUrl),
+        date: Date.parse(childText(e, 'published', 'updated')) || 0,
+        snippet: htmlToText(childText(e, 'summary', 'content')),
+      });
+    }
+  } else {
+    const channel = root.querySelector('channel') || root;
+    title = childText(channel, 'title');
+    for (const e of root.getElementsByTagName('item')) {
+      const link = childText(e, 'link');
+      items.push({
+        guid: childText(e, 'guid') || link,
+        title: childText(e, 'title'),
+        link: safeLink(link, feedUrl),
+        date: Date.parse(childText(e, 'pubDate', 'date', 'dc:date')) || 0,
+        snippet: htmlToText(childText(e, 'description', 'encoded', 'content:encoded')),
+      });
+    }
+  }
+  if (!items.length && !title) throw new Error("doesn't look like an RSS or Atom feed");
+  return {
+    title,
+    items: items.filter(i => i.guid).slice(0, MAX_ITEMS_PER_FEED).map(i => ({
+      ...i,
+      title: (i.title || i.link || 'untitled').slice(0, 300),
+    })),
+  };
+}
+
+const itemId = (fid, guid) => fid + '|' + guid;
+
+// ── Fetching ─────────────────────────────────────────────────────
+async function fetchFeed(url) {
+  let res;
+  try {
+    res = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT), cache: 'no-cache' });
+  } catch (e) {
+    if (e.name === 'TimeoutError') throw new Error('timed out');
+    // A CORS refusal and being offline look identical from here.
+    throw new Error(navigator.onLine ? "couldn't be read — the site may not allow cross-origin reads" : 'offline');
+  }
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return parseFeed(await res.text(), url);
+}
+
+let refreshing = false;
+async function refreshAll(onlyStale = false) {
+  if (refreshing) return;
+  const due = feeds.filter(f => !onlyStale || !cache[f.id] || Date.now() - (cache[f.id].fetched || 0) > STALE_AFTER);
+  if (!due.length) return;
+  refreshing = true;
+  document.getElementById('refresh-btn').classList.add('spinning');
+  await Promise.all(due.map(refreshFeed));
+  refreshing = false;
+  document.getElementById('refresh-btn').classList.remove('spinning');
+  saveCache();
+  renderAll();
+}
+
+async function refreshFeed(f) {
+  const prev = cache[f.id];
+  try {
+    const parsed = await fetchFeed(f.url);
+    if (!feeds.some(x => x.id === f.id)) return; // removed while fetching
+    cache[f.id] = { items: parsed.items, fetched: Date.now(), error: null };
+    if (!f.title && parsed.title) { f.title = parsed.title.slice(0, 200); saveFeeds(); }
+    // First fetch of a feed: its back catalogue counts as read.
+    if (!prev || !prev.fetched) {
+      const cutoff = Date.now() - FRESH_ON_ADD;
+      const old = parsed.items.map(i => ({ id: itemId(f.id, i.guid), date: i.date })).filter(i => i.date < cutoff && !readSet.has(i.id));
+      if (old.length) {
+        setReadMarks(readMarks.concat(old.map(i => ({ id: i.id, t: Date.now() }))));
+        saveRead();
+      }
+    }
+  } catch (e) {
+    cache[f.id] = { items: prev ? prev.items : [], fetched: prev ? prev.fetched : 0, error: e.message, tried: Date.now() };
+  }
+}
+
+// ── Actions ──────────────────────────────────────────────────────
+function markRead(id, read = true) {
+  if (read === readSet.has(id)) return;
+  setReadMarks(read ? readMarks.concat({ id, t: Date.now() }) : readMarks.filter(r => r.id !== id));
+  saveRead();
+}
+
+function toggleRead(id) {
+  markRead(id, !readSet.has(id));
+  renderItems();
+}
+
+function openItem(id) {
+  markRead(id, true);
+  // Let the link open before the row re-renders under the pointer.
+  setTimeout(renderItems, 50);
+}
+
+function markAllRead() {
+  const ids = visibleItems().map(i => i.id).filter(id => !readSet.has(id));
+  if (!ids.length) return;
+  setReadMarks(readMarks.concat(ids.map(id => ({ id, t: Date.now() }))));
+  saveRead();
+  renderAll();
+}
+
+async function addFeedFromInput() {
+  const input = document.getElementById('feed-url');
+  const note = document.getElementById('add-note');
+  const btn = document.getElementById('add-btn');
+  let url;
+  try { url = new URL(input.value.trim()).href; } catch (e) { return; }
+  const id = feedId(url);
+  if (feeds.some(f => f.id === id)) { note.textContent = 'Already subscribed.'; return; }
+  btn.disabled = true;
+  note.textContent = 'Fetching…';
+  try {
+    const parsed = await fetchFeed(url);
+    if (!feeds.some(f => f.id === id)) {
+      feeds.push({ id, url, title: (parsed.title || url).slice(0, 200), added: Date.now() });
+      saveFeeds();
+    }
+    input.value = '';
+    note.textContent = `Added ${parsed.title || url} · ${parsed.items.length} posts.`;
+    await refreshFeed(feeds.find(f => f.id === id));
+    saveCache();
+    renderAll();
+  } catch (e) {
+    note.textContent = 'That feed ' + e.message + '.';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function removeFeed(id) {
+  const f = feeds.find(x => x.id === id);
+  if (!f || !confirm(`Unsubscribe from ${f.title || f.url}?`)) return;
+  feeds = feeds.filter(x => x.id !== id);
+  delete cache[id];
+  if (view.filter === id) view.filter = 'all';
+  saveFeeds();
+  saveCache();
+  saveView();
+  renderAll();
+}
+
+function setFilter(v) { view.filter = v; shown = PAGE; saveView(); renderItems(); }
+function setShowAll(v) { view.showAll = v; shown = PAGE; saveView(); renderAll(); }
+
+function exportOPML() {
+  const esc = s => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const body = feeds.map(f => `    <outline type="rss" text="${esc(f.title || f.url)}" title="${esc(f.title || f.url)}" xmlUrl="${esc(f.url)}"/>`).join('\n');
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0">\n  <head><title>keryx subscriptions</title></head>\n  <body>\n${body}\n  </body>\n</opml>\n`;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([xml], { type: 'text/x-opml' }));
+  a.download = 'keryx-feeds.opml';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+// ── Rendering ────────────────────────────────────────────────────
+function el(tag, props = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
+  }
+  for (const k of kids) if (k != null) e.append(k);
+  return e;
+}
+
+function allItems() {
+  const out = [];
+  for (const f of feeds) {
+    const c = cache[f.id];
+    if (!c || !Array.isArray(c.items)) continue;
+    for (const i of c.items) out.push({ ...i, id: itemId(f.id, i.guid), feed: f });
+  }
+  return out.sort((a, b) => b.date - a.date);
+}
+
+function visibleItems() {
+  return allItems().filter(i =>
+    (view.filter === 'all' || i.feed.id === view.filter) && (view.showAll || !readSet.has(i.id)));
+}
+
+function dayLabel(t) {
+  if (!t) return 'undated';
+  // Exactly midnight UTC means the feed only knows the date (Vitalik's does);
+  // keep that date rather than sliding to the evening before west of Greenwich.
+  const d = t % 86400000 === 0
+    ? new Date(new Date(t).getUTCFullYear(), new Date(t).getUTCMonth(), new Date(t).getUTCDate())
+    : new Date(t);
+  const now = new Date();
+  const days = Math.round((new Date(now.toDateString()) - new Date(d.toDateString())) / 86400000);
+  if (days === 0) return 'today';
+  if (days === 1) return 'yesterday';
+  return d.toLocaleDateString(undefined, { weekday: days < 7 ? 'long' : undefined, year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function renderItems() {
+  const box = document.getElementById('items');
+  const list = visibleItems();
+  box.replaceChildren();
+  if (!feeds.length) {
+    box.append(el('div', { class: 'empty' }, 'No feeds yet. Add one under ⚙.'));
+  } else if (!list.length) {
+    const fetchedAny = feeds.some(f => cache[f.id] && cache[f.id].fetched);
+    box.append(el('div', { class: 'empty' },
+      !fetchedAny ? (refreshing ? 'Fetching…' : 'Nothing fetched yet.')
+        : view.showAll ? 'No posts.' : 'All caught up.'));
+  }
+  let lastDay = null;
+  for (const i of list.slice(0, shown)) {
+    const day = dayLabel(i.date);
+    if (day !== lastDay) { box.append(el('div', { class: 'day' }, day)); lastDay = day; }
+    const unread = !readSet.has(i.id);
+    const title = i.link
+      ? el('a', { class: 'item-title', href: i.link, target: '_blank', rel: 'noopener noreferrer', onclick: () => openItem(i.id) }, i.title)
+      : el('span', { class: 'item-title' }, i.title);
+    box.append(el('div', { class: 'item' + (unread ? ' unread' : '') },
+      el('button', { class: 'dot', title: unread ? 'Mark read' : 'Mark unread', 'aria-label': unread ? 'Mark read' : 'Mark unread', onclick: () => toggleRead(i.id) }),
+      el('div', { class: 'item-main' },
+        title,
+        el('div', { class: 'item-meta' }, i.feed.title || new URL(i.feed.url).host),
+        i.snippet ? el('div', { class: 'item-snippet' }, i.snippet) : null)));
+  }
+  if (list.length > shown) {
+    box.append(el('button', { class: 'btn btn-tiny more', onclick: () => { shown += PAGE; renderItems(); } }, `show more (${list.length - shown})`));
+  }
+  updateCounts();
+}
+
+function updateCounts() {
+  const unread = allItems().filter(i => !readSet.has(i.id)).length;
+  document.title = unread ? `(${unread}) Keryx` : 'Keryx';
+  if (navigator.setAppBadge) (unread ? navigator.setAppBadge(unread) : navigator.clearAppBadge()).catch(() => {});
+}
+
+function renderFilter() {
+  const sel = document.getElementById('feed-filter');
+  if (view.filter !== 'all' && !feeds.some(f => f.id === view.filter)) view.filter = 'all';
+  const unreadIn = id => allItems().filter(i => (id === 'all' || i.feed.id === id) && !readSet.has(i.id)).length;
+  const label = (name, n) => n ? `${name} (${n})` : name;
+  sel.replaceChildren(
+    el('option', { value: 'all' }, label('All feeds', unreadIn('all'))),
+    ...feeds.map(f => el('option', { value: f.id }, label(f.title || f.url, unreadIn(f.id)))));
+  sel.value = view.filter;
+  document.getElementById('show-unread').classList.toggle('sel', !view.showAll);
+  document.getElementById('show-all').classList.toggle('sel', view.showAll);
+}
+
+function renderErrors() {
+  const box = document.getElementById('errors');
+  box.replaceChildren(...feeds.filter(f => cache[f.id] && cache[f.id].error).map(f =>
+    el('div', { class: 'err' }, `${f.title || f.url}: ${cache[f.id].error}`)));
+}
+
+function renderFeedList() {
+  const box = document.getElementById('feed-list');
+  if (!feeds.length) { box.replaceChildren(el('div', { class: 'settings-note' }, 'No subscriptions.')); return; }
+  box.replaceChildren(...feeds.map(f => {
+    const c = cache[f.id];
+    const status = c && c.error ? c.error
+      : c && c.fetched ? `${c.items.length} posts · checked ${new Date(c.fetched).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`
+      : 'not fetched yet';
+    return el('div', { class: 'feed-row' },
+      el('div', { class: 'feed-info' },
+        el('div', { class: 'feed-name' }, f.title || f.url),
+        el('div', { class: 'feed-url', title: f.url }, f.url),
+        el('div', { class: 'feed-url' + (c && c.error ? ' bad' : '') }, status)),
+      el('button', { class: 'btn btn-tiny danger', title: 'Unsubscribe', onclick: () => removeFeed(f.id) }, '✕'));
+  }));
+}
+
+function renderAll() {
+  renderFilter();
+  renderErrors();
+  renderItems();
+  renderFeedList();
+}
+
+// ── Settings ─────────────────────────────────────────────────────
+function openSettings() {
+  renderFeedList();
+  document.getElementById('settings-overlay').classList.add('visible');
+}
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.remove('visible');
+}
+
+// ── Theme (meridian-style: auto / dark / light) ──────────────────
+function setTheme(pref) {
+  storageSet(THEME_KEY, pref);
+  applyTheme(pref);
+  for (const p of ['auto', 'dark', 'light']) {
+    document.getElementById('theme-' + p).classList.toggle('sel', p === pref);
+  }
+}
+function applyTheme(pref) {
+  const dark = pref === 'dark' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.body.classList.toggle('light', !dark);
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if ((storageGet(THEME_KEY) || 'auto') === 'auto') applyTheme('auto');
+});
+function toggleThemeQuick() {
+  const dark = !document.body.classList.contains('light');
+  setTheme(dark ? 'light' : 'dark');
+}
+
+// ── Keyboard ─────────────────────────────────────────────────────
+document.addEventListener('keydown', (ev) => {
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+    if (ev.key === 'Escape') document.activeElement.blur();
+    return;
+  }
+  if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+  const k = ev.key.toLowerCase();
+  if (k === 'escape') closeSettings();
+  else if (k === 'r') refreshAll();
+  else if (k === 's') openSettings();
+  else if (k === 'a') markAllRead();
+  else if (k === 'u') setShowAll(!view.showAll);
+});
+
+// Coming back to the app after a while counts as opening it.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') refreshAll(true);
+});
+
+// ── Service worker (PWA install + offline) ───────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+setTheme(storageGet(THEME_KEY) || 'auto');
+if (storageGet(FEEDS_KEY) === null) saveFeeds();
+renderAll();
+refreshAll();
+window.AristeiaSync?.register({
+  app: 'keryx',
+  stores: {
+    feeds: { read: () => feeds, clean: sanitizeFeeds, set: v => { feeds = v; saveFeeds(); } },
+    read: { read: () => readMarks, clean: sanitizeRead, set: v => { setReadMarks(v); saveRead(); } },
+  },
+  // A feed subscribed on another device gets fetched here too.
+  onChange: () => { renderAll(); refreshAll(true); },
+  onStatus: state => {
+    document.getElementById('footer').textContent = 'keryx · ' + {
+      off: 'data lives in your browser',
+      connecting: 'connecting to sync…',
+      online: 'synced',
+      offline: 'offline · changes will sync',
+      error: 'sync unavailable · changes kept here',
+    }[state];
+  },
+});
+</script>
+</body>
+</html>

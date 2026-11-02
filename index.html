@@ -68,6 +68,7 @@
     <li><a class="app" href="nbacking/"><strong>nbacking</strong><span>dual n-back working memory training</span></a></li>
     <li><a class="app" href="peira/"><strong>peira</strong><span>blinded, randomised n-of-1 self-experiments with Bayesian evidence</span></a></li>
     <li><a class="app" href="kleio/"><strong>kleio</strong><span>history on a timeline: place events, recall details, spaced repetition</span></a></li>
+    <li><a class="app" href="keryx/"><strong>keryx</strong><span>a small feed reader: RSS and Atom, read state synced</span></a></li>
   </ul>
   <section id="sync">
     <h2>Sync</h2>
@@ -139,7 +140,7 @@
   });
 
   document.getElementById('exportAll').addEventListener('click', () => {
-    const apps = ['meridian', 'gnomon', 'pharmakon', 'halteres', 'nbacking', 'peira', 'kleio'];
+    const apps = ['meridian', 'gnomon', 'pharmakon', 'halteres', 'nbacking', 'peira', 'kleio', 'keryx'];
     const data = {};
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);

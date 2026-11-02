@@ -35,7 +35,7 @@
   // Automerge's public test server: no account or VPN needed on any device. It
   // promises to keep nothing, but every device holds a full copy regardless.
   const DEFAULT_SERVER = 'wss://sync.automerge.org';
-  const APPS = ['meridian', 'gnomon', 'pharmakon', 'halteres', 'nbacking', 'peira', 'kleio'];
+  const APPS = ['meridian', 'gnomon', 'pharmakon', 'halteres', 'nbacking', 'peira', 'kleio', 'keryx'];
   const URL_RE = /automerge:[1-9A-HJ-NP-Za-km-z]+/;
   const KEY_RE = /[#&?]key=([A-Za-z0-9_-]{43})(?![A-Za-z0-9_-])/;
   const CLEAR_STORE = '__clear'; // records an explicit Clear, sealed like any other

@@ -673,13 +673,10 @@ function respond(kind, ev) {
   const g = game;
   if (!g || g.i < 0) return;
   const btn = document.getElementById(kind === 'vis' ? 'btn-vis' : 'btn-aud');
-  if (kind === 'vis') {
-    if (g.pressedVis) return;
-    g.pressedVis = true;
-  } else {
-    if (g.pressedAud) return;
-    g.pressedAud = true;
-  }
+  // a second press before the trial ends takes the answer back
+  const on = kind === 'vis' ? (g.pressedVis = !g.pressedVis) : (g.pressedAud = !g.pressedAud);
+  btn.classList.remove('hit', 'wrong');
+  if (!on) return;
   // immediate feedback
   let correct = false;
   if (g.i >= g.n) {
@@ -1190,6 +1187,7 @@ document.addEventListener('keydown', (ev) => {
   const tag = document.activeElement && document.activeElement.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
   const k = ev.key.toLowerCase();
+  if (ev.repeat && (k === 'a' || k === 'l')) { ev.preventDefault(); return; } // held key must not re-toggle
   if (k === 'a') { respond('vis'); ev.preventDefault(); }
   else if (k === 'l') { respond('aud'); ev.preventDefault(); }
   else if (k === ' ') { toggleSession(); ev.preventDefault(); }

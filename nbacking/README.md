@@ -21,7 +21,7 @@ A single-page dual n-back trainer in the style of [Meridian](https://github.com/
 
 ## Usage
 
-Open `index.html` (or serve the directory) and press Start. During a session, press `A` when the position matches the one n trials back, `L` when the letter matches.
+Open `index.html` (or serve the directory) and press Start. During a session, press `A` when the position matches the one n trials back, `L` when the letter matches. Pressing the same key (or button) again before the next trial takes the answer back.
 
 For Beeminder: enter your username, [auth token](https://www.beeminder.com/api/v1/auth_token.json), and goal slug in Settings, then enable auto-post. The token is stored only in your browser's `localStorage`.
 

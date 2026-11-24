@@ -1,4 +1,4 @@
-const CACHE = 'halteres-v14';
+const CACHE = 'halteres-v15';
 const CORE = ['./', './index.html', '../sync.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {

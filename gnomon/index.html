@@ -1002,6 +1002,7 @@ function sanitizeBackupCfg(raw) {
     freq: c.freq === 'daily' || c.freq === 'weekly' ? c.freq : 'off',
     lastBackup: finiteOrNull(c.lastBackup),
     lastReminder: finiteOrNull(c.lastReminder),
+    lastHash: typeof c.lastHash === 'string' ? c.lastHash : null,
   };
 }
 let backupCfg = sanitizeBackupCfg(loadJSON(BACKUP_KEY, null));
@@ -1026,14 +1027,32 @@ function renderBackupUI() {
   if (backupCfg.freq === 'off') {
     noteEl.textContent = 'Periodic timestamped CSV backups of your log. Last backup: ' + last + '.';
   } else if ('showSaveFilePicker' in window) {
-    noteEl.textContent = 'A timestamped CSV downloads automatically when you open the app and a ' + backupCfg.freq + ' backup is due. Last backup: ' + last + '.';
+    noteEl.textContent = 'A timestamped CSV downloads automatically when you open the app and a ' + backupCfg.freq + ' backup is due and something has changed since the last one. Last backup: ' + last + '.';
   } else {
-    noteEl.textContent = 'This browser can\'t save files unprompted, so you\'ll get an in-app reminder to back up on a ' + backupCfg.freq + ' basis. Last backup: ' + last + '.';
+    noteEl.textContent = 'This browser can\'t save files unprompted, so you\'ll get an in-app reminder to back up on a ' + backupCfg.freq + ' basis, whenever something has changed since the last one. Last backup: ' + last + '.';
   }
 }
 
+// A backup is only due when the data differs from what the last backup
+// saved: the fingerprint is a hash of the backup's contents (minus its
+// export timestamp), so an unchanged log never prompts or downloads again.
+function hashString(s) {
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 2654435761);
+    h2 = Math.imul(h2 ^ c, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (h2 >>> 0).toString(36) + (h1 >>> 0).toString(36);
+}
+function backupFingerprint() { return hashString(buildCSV()); }
+function hasUnbackedChanges() { return backupCfg.lastHash !== backupFingerprint(); }
+
 function isBackupDue() {
   if (backupCfg.freq === 'off' || !entries.length) return false;
+  if (!hasUnbackedChanges()) return false;
   if (!backupCfg.lastBackup) return true;
   const threshold = backupCfg.freq === 'daily' ? 86400000 : 604800000;
   return Date.now() - backupCfg.lastBackup >= threshold;
@@ -1068,6 +1087,7 @@ async function runBackupNow(silent = false) {
     downloadCSV(csv, filename);
   }
   backupCfg.lastBackup = Date.now();
+  backupCfg.lastHash = hashString(csv);
   saveBackupCfg();
   hideBackupReminder();
   renderBackupUI();

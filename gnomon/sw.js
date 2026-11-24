@@ -1,4 +1,4 @@
-const CACHE = 'gnomon-v4';
+const CACHE = 'gnomon-v5';
 const CORE = ['./', './index.html', '../sync.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {

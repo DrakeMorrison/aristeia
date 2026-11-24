@@ -2762,6 +2762,7 @@ let backupCfg = loadJSON(BACKUP_KEY, null) || {
   freq: 'weekly',
   lastBackup: null,
   lastReminder: null,
+  lastHash: null,
   useFSAPI: false
 };
 
@@ -2811,15 +2812,48 @@ function renderBackupUI() {
   document.getElementById('backup-now-row').style.display = hasFSAPI ? '' : 'none';
 
   if (hasFSAPI) {
-    noteEl.innerHTML = 'A timestamped CSV will be saved automatically when you open the app and a ' + freqLabel + ' backup is due.<br><br>Last backup: <span style="color:var(--text)">' + last + '</span>';
+    noteEl.innerHTML = 'A timestamped CSV will be saved automatically when you open the app and a ' + freqLabel + ' backup is due and something has changed since the last one.<br><br>Last backup: <span style="color:var(--text)">' + last + '</span>';
   } else {
-    noteEl.innerHTML = 'Auto-backup requires a browser with File System Access API (e.g. Chrome). You\'ll receive an in-app reminder to export manually on a ' + freqLabel + ' basis.<br><br>Last backup: <span style="color:var(--text)">' + last + '</span>';
+    noteEl.innerHTML = 'Auto-backup requires a browser with File System Access API (e.g. Chrome). You\'ll receive an in-app reminder to export manually on a ' + freqLabel + ' basis, whenever something has changed since the last one.<br><br>Last backup: <span style="color:var(--text)">' + last + '</span>';
   }
   statusEl.textContent = '';
 }
 
+function buildBackupCSV() {
+  const csvLines = ['Task,Predicted (min),Actual (min),Delta %,Start,End'];
+  logs.forEach(e => {
+    csvLines.push([
+      '"' + e.task.replace(/"/g, '""') + '"',
+      e.pctDiff == null ? '' : (e.predictedMs / 60000).toFixed(2),
+      (e.actualMs / 60000).toFixed(2),
+      e.pctDiff == null ? '' : e.pctDiff.toFixed(2),
+      new Date(e.startTime).toISOString(),
+      new Date(e.endTime).toISOString()
+    ].join(','));
+  });
+  return csvLines.join('\n');
+}
+
+// A backup is only due when the data differs from what the last backup
+// saved: the fingerprint is a hash of the backup's contents (minus its
+// export timestamp), so an unchanged log never prompts or downloads again.
+function hashString(s) {
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 2654435761);
+    h2 = Math.imul(h2 ^ c, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (h2 >>> 0).toString(36) + (h1 >>> 0).toString(36);
+}
+function backupFingerprint() { return hashString(buildBackupCSV()); }
+function hasUnbackedChanges() { return backupCfg.lastHash !== backupFingerprint(); }
+
 function isBackupDue() {
   if (!backupCfg.enabled || !logs.length) return false;
+  if (!hasUnbackedChanges()) return false;
   if (!backupCfg.lastBackup) return true;
   const now = Date.now();
   const elapsed = now - backupCfg.lastBackup;
@@ -2849,18 +2883,7 @@ async function runBackupNow(silent = false) {
   const hasFSAPI = 'showSaveFilePicker' in window;
   const dateStr = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const filename = 'meridian_backup_' + dateStr + '.csv';
-  const csvLines = ['Task,Predicted (min),Actual (min),Delta %,Start,End'];
-  logs.forEach(e => {
-    csvLines.push([
-      '"' + e.task.replace(/"/g, '""') + '"',
-      e.pctDiff == null ? '' : (e.predictedMs / 60000).toFixed(2),
-      (e.actualMs / 60000).toFixed(2),
-      e.pctDiff == null ? '' : e.pctDiff.toFixed(2),
-      new Date(e.startTime).toISOString(),
-      new Date(e.endTime).toISOString()
-    ].join(','));
-  });
-  const csvContent = csvLines.join('\n');
+  const csvContent = buildBackupCSV();
 
   if (hasFSAPI && !silent) {
     try {
@@ -2881,6 +2904,7 @@ async function runBackupNow(silent = false) {
   }
 
   backupCfg.lastBackup = Date.now();
+  backupCfg.lastHash = hashString(csvContent);
   saveBackupCfg();
   hideReminder();
   renderBackupUI();
